@@ -1,0 +1,103 @@
+<!-- ============ IDENTIDAD ============ -->
+<div id="v-identidad" class="sheet" hidden>
+  <section>
+    <h2>Nombre y personalidad</h2>
+    <div class="brand" style="font-size:2.4rem"><svg viewBox="0 0 48 48" aria-hidden="true" style="width:3.6rem;height:3.6rem"><rect width="48" height="48" rx="12" fill="#18213B"/><circle cx="23" cy="22" r="13" fill="#fff"/><circle cx="23" cy="20" r="5" fill="#18213B"/><path d="M13 33c2-6 6-8 10-8s8 2 10 8c-3 3-6 4-10 4s-7-1-10-4z" fill="#18213B"/><circle cx="36" cy="36" r="8" fill="#0F5F28" stroke="#18213B" stroke-width="2.5"/><path d="M32.3 36.2l2.6 2.6 4.4-5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Cuentas conmigo</span></div>
+    <p>Tono de trabajo: claro, cercano y sin prisa. Frases cortas, un verbo por botón y ninguna palabra de banco. La cara de cada persona es lo más grande de la pantalla. Todo lo demás se queda quieto: tinta azul marino, mucho espacio y color solo donde significa algo.</p>
+  </section>
+
+  <section>
+    <h2>Dos capas</h2>
+    <ul class="plain">
+      <li><b>Modo sencillo (el de siempre).</b> Cuatro pasos, una sola acción por pantalla, letra grande y botón principal único. Es lo que ve quien cobra.</li>
+      <li><b>Modo avanzado (bajo demanda).</b> Personas y Ajustes, con formularios. Se abre con "Ayuda de un familiar" y siempre tiene un botón grande para volver al modo sencillo.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Estados: ícono, palabras y forma</h2>
+    <p>Verde y amarillo solo existen para "pagado" y "pendiente". Aun así, ningún estado depende del color: en alto contraste el verde y el amarillo casi se confunden por brillo (1.12 a 1), así que cada uno lleva ícono, palabras y un borde distinto.</p>
+    <div class="states">
+      <div class="state" style="padding:14px"><span class="stt stt-paid"><span class="ico" id="id-check"></span><span>Ya pagó</span></span><small>Palomita, borde sólido</small></div>
+      <div class="state" style="padding:14px"><span class="stt stt-wait"><span class="ico" id="id-clock"></span><span>Esperando pago</span></span><small>Reloj, borde punteado y franjas</small></div>
+      <div class="state" style="padding:14px"><span class="stt stt-due"><span class="ico" id="id-ring"></span><span>Falta pagar</span></span><small>Círculo vacío, borde de puntos</small></div>
+    </div>
+    <div class="label">Un color por periodo, sin verdes ni amarillos</div>
+    <div class="months" id="monthswatches"></div>
+    <p>Los meses llevan texto blanco sobre un fondo más oscuro (7.29 a 1 como mínimo) y la palabra del mes siempre está escrita.</p>
+  </section>
+
+  <section>
+    <h2>Contraste calculado</h2>
+    <p>Cifras sacadas con la fórmula WCAG a partir de los colores exactos. La meta del modo sencillo es 7 a 1 para todo texto.</p>
+    <ul class="plain">
+      <li><b>Claro.</b> Tinta sobre blanco 15.9. Texto secundario 9.4. "Ya pagó" 7.8. "Esperando pago" 8.6. Rojo de error 8.1. Meses 7.3. Bordes de controles 4.7 (meta 3).</li>
+      <li><b>Oscuro.</b> Tinta 14.2. Texto secundario 7.3. "Ya pagó" 7.7. "Esperando pago" 9.7. Rojo de error 7.0. Bordes 5.6.</li>
+      <li><b>Alto contraste (fondo negro, se activa en "Ver mejor" o con el ajuste del iPhone).</b> Blanco sobre negro 21. "Ya pagó" 11.8. "Esperando pago" 13.2. Rojo de error 9.2. Foco amarillo 17.2.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Tipografía y tamaños</h2>
+    <div class="spec">
+      <div><div class="sample-ui" style="font-size:2rem;font-weight:800">¿Quién paga?</div><span class="label">Atkinson Hyperlegible 800 · títulos de 32 px</span></div>
+      <div><div class="sample-ui">Toca la foto de quien paga</div><span class="label">Atkinson Hyperlegible 400 y 700 · texto de 22 px</span></div>
+    </div>
+    <p>Atkinson Hyperlegible se diseñó para baja visión: distingue letras y números parecidos. Se usa una sola familia en todo el modo sencillo. Texto de 22 px, botones de 24 px, títulos de 32 px, interlineado de 1.5. Todo lo tocable mide al menos 56 px de alto, el botón principal 88 px y entre botones hay 12 px. Las medidas siguen el tamaño de letra del iPhone y hay un ajuste "Letra extra grande" (25 % más).</p>
+  </section>
+
+  <section>
+    <h2>Ícono de la app</h2>
+    <div class="iconrow">
+      <figure><svg id="appicon" viewBox="0 0 180 180" width="180" height="180" aria-label="Ícono de la app"></svg>180 × 180</figure>
+      <figure><svg id="appicon2" viewBox="0 0 180 180" width="90" height="90" aria-hidden="true"></svg>90</figure>
+      <figure><svg id="appicon3" viewBox="0 0 180 180" width="44" height="44" aria-hidden="true"></svg>44</figure>
+    </div>
+    <p>Una foto enmarcada con una palomita verde. Para instalarla en iPhone se necesita la versión de 180 × 180 como apple-touch-icon.</p>
+  </section>
+
+  <section>
+    <h2>Reglas del modo sencillo</h2>
+    <ul class="plain">
+      <li><b>Cuatro pasos siempre.</b> "Paso 1 de 4" con círculos numerados. El total nunca cambia a mitad del camino.</li>
+      <li><b>Una acción por pantalla.</b> Un solo botón principal y, como máximo, cuatro opciones. Si hay más personas o meses, se muestran de tres en tres con "Ver más".</li>
+      <li><b>Cómo se cuentan las opciones.</b> Se cuentan las opciones de la pantalla. La barra de abajo (Atrás, Escuchar, Cancelar) es fija y no se cuenta. Es una interpretación de la regla de 3 o 4 elementos.</li>
+      <li><b>Sin gestos ni menús escondidos.</b> Todo se toca. No hay menú de hamburguesa, pestañas ni deslizar.</li>
+      <li><b>Atrás y Cancelar siempre a la vista.</b> Cancelar ofrece guardar y seguir después: la pantalla de inicio lo recuerda con "Continuar".</li>
+      <li><b>Confirmación en pantalla.</b> Palomita grande y la palabra PAGADO, con sonido y vibración si el teléfono los permite. La pantalla se entiende sola, sin sonido.</li>
+      <li><b>Errores.</b> Ícono grande, una frase y dos botones: "Intentar de nuevo" y "Volver".</li>
+      <li><b>Montos libres.</b> En fiado se escribe cualquier cantidad. Los montos rápidos son opcionales y nunca son un límite.</li>
+      <li><b>Voz.</b> Se lee cada pantalla y el botón Escuchar la repite con las opciones.</li>
+      <li><b>Fotos.</b> Solo se muestra la foto si hay permiso. Si no, un dibujo con la inicial.</li>
+      <li>Nunca usar logotipos del DIF, de Pey ni de CoDi en la marca.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Lista de revisión por pantalla</h2>
+    <p>Qué se comprobó y qué falta. Lo automático lo hizo un recorrido que abre cada pantalla en cinco configuraciones distintas.</p>
+    <ul class="plain">
+      <li><b>Una acción principal por pantalla.</b> Comprobado en el recorrido automático.</li>
+      <li><b>Texto de 20 px o más y 7 a 1 de contraste.</b> Tamaños revisados en el CSS. Contraste calculado, no medido en pantalla real.</li>
+      <li><b>Botones de 48 dp o más y separados.</b> Definidos en el CSS (56 px mínimo, 12 px de separación). No medidos en un iPhone.</li>
+      <li><b>Información que no depende del color.</b> Comprobado: cada estado tiene ícono y palabras.</li>
+      <li><b>Sin gestos ni menús escondidos.</b> Comprobado: no hay manejadores de gestos.</li>
+      <li><b>Atrás y Cancelar fáciles.</b> Comprobado en cada pantalla donde aplican.</li>
+      <li><b>Cabe en dos renglones por bloque.</b> Solo se revisó el largo de las frases. Falta verlo en un teléfono.</li>
+      <li><b>Letra del sistema, sonido y voz en iPhone.</b> Sin probar. En iPhone la vibración del navegador no está disponible, así que la confirmación visual es la que cuenta.</li>
+      <li><b>Se entiende en menos de 5 segundos.</b> Sin probar con personas.</li>
+      <li><b>Prueba con adultos mayores o con simuladores de baja visión y daltonismo.</b> No se ha hecho. Es lo siguiente.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Por decidir</h2>
+    <ul class="plain">
+      <li><b>Nombre.</b> El proyecto se llama «Cuentas conmigo». La foto sirve para reconocer a la persona en la lista, no para reconocer su cara de forma automática.</li>
+      <li><b>Tanda.</b> Falta confirmar si quien recibe la bolsa también aporta esa ronda, cada cuánto es y cómo se registra la entrega, porque Pey solo recibe dinero.</li>
+      <li><b>Escribir montos.</b> En fiado se usa el teclado numérico del iPhone en un solo campo. Si en la prueba con personas resulta pequeño, se cambia por un teclado propio.</li>
+      <li><b>Permiso de foto.</b> Redactar el texto del permiso en lenguaje simple y decidir si se imprime para firmar.</li>
+      <li><b>Cuenta de una institución.</b> Puede quedar por confirmar. El prototipo usa datos de ejemplo.</li>
+    </ul>
+  </section>
+</div>

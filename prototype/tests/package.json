@@ -1,0 +1,15 @@
+{
+  "name": "facepay-prototype-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Checks for the static prototype. Dev-only: jsdom drives the screens, puppeteer-core measures layout in an installed Chrome (CHROME_PATH overrides the default location).",
+  "scripts": {
+    "smoke": "node smoke5.js ../paga-con-tu-foto.html",
+    "layout": "node render5.js ../paga-con-tu-foto.html"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "jsdom": "^31.0.1",
+    "puppeteer-core": "^25.17.0"
+  }
+}

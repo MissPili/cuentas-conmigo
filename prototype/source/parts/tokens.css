@@ -1,0 +1,51 @@
+:root {
+  --font-ui: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --fs: 1;
+  --bg: #EEF1F8;
+  --surface: #FFFFFF;
+  --ink: #18213B;
+  --ink-soft: #3B4660;
+  --line: #CBD2E3;
+  --edge: #5F6B8A;
+  --paid: #0F5F28;
+  --on-paid: #FFFFFF;
+  --wait: #F2B01E;
+  --on-wait: #2A1D00;
+  --annual: #2E3550;
+  --on-annual: #FFFFFF;
+  --danger: #9C1C15;
+  --ml: 28%;
+  --focus: #2B4BD8;
+  --chip-edge: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1322; --surface: #192039; --ink: #EEF1FA; --ink-soft: #A5AFCB; --line: #2E3858; --edge: #8C97BC;
+    --paid: #4CC474; --on-paid: #07200F; --wait: #F5BE3F; --on-wait: #2A1D00;
+    --annual: #C9CFE6; --on-annual: #18213B; --danger: #FF8A80; --focus: #8FA6FF; --chip-edge: #C9CFE6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1322; --surface: #192039; --ink: #EEF1FA; --ink-soft: #A5AFCB; --line: #2E3858; --edge: #8C97BC;
+  --paid: #4CC474; --on-paid: #07200F; --wait: #F5BE3F; --on-wait: #2A1D00;
+  --annual: #C9CFE6; --on-annual: #18213B; --danger: #FF8A80; --focus: #8FA6FF; --chip-edge: #C9CFE6;
+  color-scheme: dark;
+}
+/* High contrast goes AFTER both dark blocks: same specificity, so order decides. */
+:root[data-contrast="high"] {
+  --bg: #000000; --surface: #000000; --ink: #FFFFFF; --ink-soft: #FFFFFF; --line: #FFFFFF; --edge: #FFFFFF;
+  --paid: #3DDC84; --on-paid: #000000; --wait: #FFC400; --on-wait: #000000;
+  --annual: #FFFFFF; --on-annual: #000000; --danger: #FF8A80; --focus: #FFEB3B; --chip-edge: #FFFFFF;
+  color-scheme: dark;
+}
+@media (prefers-contrast: more) {
+  :root:not([data-contrast="normal"]) {
+    --bg: #000000; --surface: #000000; --ink: #FFFFFF; --ink-soft: #FFFFFF; --line: #FFFFFF; --edge: #FFFFFF;
+    --paid: #3DDC84; --on-paid: #000000; --wait: #FFC400; --on-wait: #000000;
+    --annual: #FFFFFF; --on-annual: #000000; --danger: #FF8A80; --focus: #FFEB3B; --chip-edge: #FFFFFF;
+    color-scheme: dark;
+  }
+}
+[hidden] { display: none !important; }

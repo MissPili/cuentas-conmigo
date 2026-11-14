@@ -1,0 +1,542 @@
+<title>Cuentas conmigo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap">
+<style>
+/* Layout: one column of full-width bands; the hero pairs the pitch with a real phone capture.
+   Palette and type are the product's own (navy ink, paid green, waiting amber), so the brochure
+   looks like the app it describes. Every text pair is at least 7:1, like the app. */
+:root {
+  --font-ui: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --bg: #EEF1F8;
+  --surface: #FFFFFF;
+  --ink: #18213B;
+  --ink-soft: #3B4660;
+  --line: #CBD2E3;
+  --edge: #5F6B8A;
+  --paid: #0F5F28;
+  --on-paid: #FFFFFF;
+  --wait: #F2B01E;
+  --on-wait: #2A1D00;
+  --link: #1F3FBF;
+  --focus: #2B4BD8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1322; --surface: #192039; --ink: #EEF1FA; --ink-soft: #A5AFCB; --line: #2E3858; --edge: #8C97BC;
+    --paid: #4CC474; --on-paid: #07200F; --wait: #F5BE3F; --on-wait: #2A1D00; --link: #A9BBFF; --focus: #8FA6FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1322; --surface: #192039; --ink: #EEF1FA; --ink-soft: #A5AFCB; --line: #2E3858; --edge: #8C97BC;
+  --paid: #4CC474; --on-paid: #07200F; --wait: #F5BE3F; --on-wait: #2A1D00; --link: #A9BBFF; --focus: #8FA6FF;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 18px/1.6 var(--font-ui);
+  -webkit-text-size-adjust: 100%;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 800; line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2.6rem, 7vw, 4.6rem); letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.7rem, 3.8vw, 2.5rem); letter-spacing: -0.01em; }
+h3 { font-size: 1.3rem; line-height: 1.2; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--link); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+.band { border-top: 2px solid var(--line); }
+.band.alt { background: var(--surface); }
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-block: clamp(40px, 7vw, 76px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.stack { display: grid; gap: 28px; }
+.head { display: grid; gap: 14px; max-width: 46rem; }
+.eyebrow { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-soft); }
+.lead { font-size: 1.2rem; color: var(--ink-soft); max-width: 40rem; }
+.prose { display: grid; gap: 14px; max-width: 42rem; color: var(--ink-soft); }
+.prose strong { color: var(--ink); }
+.cols { display: grid; gap: 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); align-items: start; }
+.cols > * { min-width: 0; }
+
+/* top bar */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding-bottom: 28px; }
+.mark { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+.nav { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 1rem; }
+.nav a { color: var(--ink-soft); font-weight: 700; text-decoration: none; padding: 6px 0; }
+.nav a:hover { color: var(--ink); text-decoration: underline; }
+
+/* hero */
+.hero { display: grid; gap: 44px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); align-items: center; }
+.hero-text { display: grid; gap: 22px; min-width: 0; }
+.hero-text .lead + .lead { margin-top: -6px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; min-height: 56px; padding: 0 26px; border-radius: 16px; font: 700 1.05rem var(--font-ui); text-decoration: none; border: 3px solid var(--ink); }
+.btn.primary { background: var(--ink); color: var(--bg); }
+.btn.quiet { background: transparent; color: var(--ink); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 14px 24px; margin: 8px 0 0; padding-top: 22px; border-top: 2px solid var(--line); }
+.facts div { display: grid; gap: 2px; }
+.facts dt { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.facts dd { margin: 0; font-weight: 700; }
+
+/* phone captures */
+.shot { margin: 0; }
+.frame { border: 3px solid var(--ink); border-radius: 30px; overflow: hidden; background: #EEF1F8; }
+.frame img { display: block; width: 100%; height: auto; }
+.shot figcaption { margin-top: 12px; font-size: 1rem; line-height: 1.45; color: var(--ink-soft); }
+.hero .shot { max-width: 320px; justify-self: center; width: 100%; }
+.strip { display: grid; gap: 28px 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+
+/* cards */
+.cards { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.card { background: var(--surface); border: 2px solid var(--edge); border-radius: 20px; padding: 24px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.band.alt .card { background: var(--bg); }
+.card p { color: var(--ink-soft); }
+.tag { justify-self: start; font-size: 0.9rem; font-weight: 700; padding: 3px 12px; border-radius: 999px; border: 2px solid var(--ink); }
+.tag.first { background: var(--ink); color: var(--bg); }
+.small { font-size: 1rem; color: var(--ink-soft); }
+.on { font-size: 1rem; color: var(--ink-soft); border-top: 2px solid var(--line); padding-top: 12px; margin-top: 4px; }
+.on strong { color: var(--ink); }
+
+/* definition rows */
+.defs { display: grid; gap: 18px; }
+.defs li { display: grid; gap: 2px; padding-left: 18px; border-left: 4px solid var(--edge); }
+.defs strong { font-weight: 700; }
+.defs span { color: var(--ink-soft); }
+
+/* tables */
+.scroll { overflow-x: auto; border: 2px solid var(--edge); border-radius: 16px; background: var(--surface); }
+.band.alt .scroll { background: var(--bg); }
+table { border-collapse: collapse; width: 100%; font-size: 1rem; line-height: 1.45; }
+caption { text-align: left; padding: 14px 16px 0; font-weight: 700; color: var(--ink-soft); }
+th, td { text-align: left; vertical-align: top; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+tr:last-child > * { border-bottom: 0; }
+thead th { font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); border-bottom: 2px solid var(--edge); }
+tbody th { font-weight: 700; }
+td.mid, th.mid { text-align: center; }
+.yes, .no { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.no { color: var(--ink-soft); font-weight: 400; }
+.matrix { min-width: 30rem; }
+.spec { min-width: 40rem; }
+
+/* status pills: icon + words + border style, never color alone (same rule as the app) */
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px 4px 10px; border-radius: 999px; font-weight: 700; font-size: 1rem; white-space: nowrap; border: 2px solid transparent; }
+.pill svg { width: 1.1em; height: 1.1em; flex: none; }
+.pill.done { background: var(--paid); color: var(--on-paid); border-color: var(--paid); }
+.pill.todo { border: 2px dotted var(--ink); color: var(--ink); }
+.pill.check { background: var(--wait); color: var(--on-wait); border: 2px dashed var(--on-wait); }
+.ico { width: 1.15em; height: 1.15em; flex: none; vertical-align: -0.2em; }
+
+/* two lists: what is measured, what is not */
+.two { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
+.two .card h3 { display: flex; align-items: center; gap: 10px; }
+.bul { display: grid; gap: 10px; }
+.bul li { position: relative; padding-left: 22px; color: var(--ink-soft); }
+.bul li::before { content: ""; position: absolute; left: 2px; top: 0.72em; width: 8px; height: 8px; border-radius: 2px; background: var(--edge); }
+
+/* how it works inside */
+.flowgroup { display: grid; gap: 10px; }
+.flowgroup > h3 { font-size: 1rem; letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--font-ui); font-weight: 700; color: var(--ink-soft); }
+.flow { display: grid; gap: 28px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.flow li { position: relative; background: var(--surface); border: 2px solid var(--edge); border-radius: 16px; padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+.band.alt .flow li { background: var(--bg); }
+.flow li b { font-size: 1.05rem; }
+.flow li span { color: var(--ink-soft); font-size: 1rem; line-height: 1.45; }
+.flow li:not(:last-child)::after { content: "\2192"; position: absolute; right: -24px; top: 50%; transform: translateY(-50%); width: 20px; text-align: center; font-weight: 700; color: var(--ink-soft); }
+@media (max-width: 700px) {
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+  .flow li:not(:last-child)::after { content: "\2193"; right: auto; left: 50%; top: auto; bottom: -28px; transform: translateX(-50%); }
+}
+
+/* roles */
+.role { gap: 14px; }
+.role h3 { font-size: 1.4rem; }
+.role dl { margin: 0; display: grid; gap: 12px; }
+.role dt { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.role dd { margin: 2px 0 0; color: var(--ink); }
+.role .opt { justify-self: start; font-size: 0.9rem; font-weight: 700; padding: 3px 12px; border-radius: 999px; border: 2px dashed var(--edge); color: var(--ink-soft); }
+
+/* route: the app's own "Paso X de 4" circles, here for the four real weeks */
+.route { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); counter-reset: none; }
+.route li { display: grid; gap: 10px; align-content: start; background: var(--surface); border: 2px solid var(--edge); border-radius: 20px; padding: 22px; }
+.band.alt .route li { background: var(--bg); }
+.wk { display: flex; align-items: center; gap: 12px; }
+.dot { width: 48px; height: 48px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font: 800 1.25rem var(--font-display); flex: none; }
+.wk small { display: grid; line-height: 1.25; color: var(--ink-soft); font-size: 1rem; }
+.wk small b { color: var(--ink); font-size: 1.05rem; }
+.route p { color: var(--ink-soft); font-size: 1rem; line-height: 1.5; }
+
+.foot { font-size: 1rem; color: var(--ink-soft); display: grid; gap: 10px; max-width: 52rem; }
+
+@media print {
+  body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .nav, .actions { display: none; }
+  .band, .card, .shot, .route li, .flow li, .scroll { break-inside: avoid; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5 11-11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 7v5.5l3.5 2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<header class="band" style="border-top:0">
+  <div class="wrap" style="padding-bottom:clamp(40px,7vw,76px)">
+    <div class="top">
+      <span class="mark">Cuentas conmigo</span>
+      <nav class="nav" aria-label="Secciones">
+        <a href="#caso">El caso</a>
+        <a href="#plantilla">La plantilla</a>
+        <a href="#pantallas">Pantallas</a>
+        <a href="#diseno">Diseño</a>
+        <a href="#interior">Por dentro</a>
+        <a href="#roles">Roles</a>
+        <a href="#ruta">Ruta</a>
+      </nav>
+    </div>
+
+    <div class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">Hackatón México 2026 · CoDi con el API de Pey</p>
+        <h1>Cuentas conmigo</h1>
+        <p class="lead">Una app para cobrar sin perderse en la pantalla, pensada para adultos mayores que cobran a su gente: talleres, tandas y tiendas que fían.</p>
+        <p class="lead">Estamos armando el equipo. Buscamos desarrollo, diseño UX y pruebas con personas mayores.</p>
+        <div class="actions">
+          <a class="btn primary" href="#roles">Ver los roles</a>
+          <a class="btn quiet" href="#pantallas">Ver cómo se ve</a>
+        </div>
+        <dl class="facts">
+          <div><dt>Inicio</dt><dd>14 de noviembre de 2026</dd></div>
+          <div><dt>Entrega</dt><dd>12 de diciembre de 2026</dd></div>
+          <div><dt>Resultados</dt><dd>14 de diciembre de 2026</dd></div>
+        </dl>
+      </div>
+      <figure class="shot">
+        <div class="frame"><img {{IMG:who}} alt="Pantalla del prototipo: Paso 1 de 4, ¿Quién paga? Tres personas con su foto y el estado de su pago: Rosa y Juanita faltan por pagar, Lupita ya pagó."></div>
+        <figcaption>El prototipo en un teléfono. Las personas y las fotos son inventadas.</figcaption>
+      </figure>
+    </div>
+  </div>
+</header>
+
+<section class="band alt" id="caso" aria-labelledby="t-caso">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">El caso</p>
+      <h2 id="t-caso">Empieza con un taller</h2>
+    </div>
+    <div class="prose">
+      <p>El ejemplo del prototipo es un taller: una cuota al mes y otra, aparte, que llega a otra cuenta. Quien cobra lo hace desde un celular. Las personas y los montos de la demo son inventados.</p>
+      <p>El mismo problema aparece en otros lugares. Quien organiza una tanda lleva turnos y aportaciones. Quien tiene una tienda anota lo que cada cliente se lleva fiado. La app cubre los tres casos con una sola plantilla.</p>
+    </div>
+    <ul class="cards">
+      <li class="card">
+        <span class="tag first">Ejemplo</span>
+        <h3>Taller o clase</h3>
+        <p>Una mensualidad de $130 durante 12 meses y un pago anual de $40 que va a otra cuenta.</p>
+        <p class="on"><strong>Enciende:</strong> cobros por calendario y cobro aparte.</p>
+      </li>
+      <li class="card">
+        <span class="tag">Ejemplo</span>
+        <h3>Tanda</h3>
+        <p>Una aportación de $200 cada quincena, con turnos para saber a quién le toca recibir.</p>
+        <p class="on"><strong>Enciende:</strong> cobros por calendario y turnos.</p>
+      </li>
+      <li class="card">
+        <span class="tag">Ejemplo</span>
+        <h3>Tienda con fiado</h3>
+        <p>Cada cliente tiene un saldo. Se anota la cantidad que se lleve, sea cual sea, y cada abono la reduce.</p>
+        <p class="on"><strong>Enciende:</strong> fiado.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="plantilla" aria-labelledby="t-plantilla">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">La plantilla</p>
+      <h2 id="t-plantilla">Una sola plantilla con cuatro interruptores</h2>
+      <p class="lead">No hay una app por tipo de cobro. Quien configura el proyecto enciende lo que necesita y puede combinar funciones, por ejemplo un taller que además fía material.</p>
+    </div>
+    <div class="cols">
+      <ul class="defs">
+        <li><strong>Cobros por calendario</strong><span>Monto, frecuencia (semanal, quincenal, mensual, anual o una sola vez), primera fecha y número de pagos.</span></li>
+        <li><strong>Cobro aparte</strong><span>Un segundo cobro con su propio monto y su propia cuenta de destino.</span></li>
+        <li><strong>Turnos</strong><span>Para tandas: a quién le toca recibir en cada vuelta.</span></li>
+        <li><strong>Fiado</strong><span>Saldo por persona. Quien cobra escribe la cantidad que quiera, con decimales y una nota. Nunca hay montos fijos.</span></li>
+      </ul>
+      <div class="stack" style="gap:14px">
+        <div class="scroll" role="region" aria-label="Interruptores que enciende cada plantilla de arranque" tabindex="0">
+          <table class="matrix">
+            <caption>Qué enciende cada plantilla de arranque</caption>
+            <thead><tr><th scope="col">Interruptor</th><th scope="col" class="mid">Taller</th><th scope="col" class="mid">Tanda</th><th scope="col" class="mid">Tienda</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Cobros por calendario</th><td class="mid"><span class="yes"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Sí</span></td><td class="mid"><span class="yes"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Sí</span></td><td class="mid"><span class="no">No</span></td></tr>
+              <tr><th scope="row">Cobro aparte</th><td class="mid"><span class="yes"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Sí</span></td><td class="mid"><span class="no">No</span></td><td class="mid"><span class="no">No</span></td></tr>
+              <tr><th scope="row">Turnos</th><td class="mid"><span class="no">No</span></td><td class="mid"><span class="yes"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Sí</span></td><td class="mid"><span class="no">No</span></td></tr>
+              <tr><th scope="row">Fiado</th><td class="mid"><span class="no">No</span></td><td class="mid"><span class="no">No</span></td><td class="mid"><span class="yes"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Sí</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small">Las plantillas solo encienden interruptores y cargan personas de ejemplo. Debajo es la misma app.</p>
+      </div>
+    </div>
+    <div class="head">
+      <h3>Para cada persona y cada cobro</h3>
+    </div>
+    <ul class="cards">
+      <li class="card"><h3>Foto con consentimiento</h3><p>Una casilla registra quién dio el permiso y cuándo. Sin permiso, la app muestra una silueta con la inicial.</p></li>
+      <li class="card"><h3>Pagadores a distancia</h3><p>Hasta 3 por persona, por ejemplo un familiar que paga desde otra ciudad. Cada uno con nombre, teléfono de 10 dígitos y relación.</p></li>
+      <li class="card"><h3>Cuentas de cobro</h3><p>El proyecto tiene una lista de cuentas (CLABE con dígito verificador) y cada cobro elige cuál lo recibe.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="band alt" id="pantallas" aria-labelledby="t-pantallas">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">Pantallas</p>
+      <h2 id="t-pantallas">Cuatro pasos y una acción por pantalla</h2>
+      <p class="lead">Capturas del prototipo en un teléfono de 390×844. Los nombres, las fotos y los montos son de ejemplo. El prototipo interactivo se pide a quien te compartió esta página.</p>
+    </div>
+    <div class="strip">
+      <figure class="shot">
+        <div class="frame"><img {{IMG:home}} alt="Pantalla de inicio: ¿Qué quieres hacer? Un botón principal, Cobrar, y dos de apoyo, Ver mejor y Ayuda de un familiar."></div>
+        <figcaption><b>Inicio.</b> Un botón principal y dos de apoyo.</figcaption>
+      </figure>
+      <figure class="shot">
+        <div class="frame"><img {{IMG:amount}} alt="Paso 3 de 4: ¿Cuánto se lleva? Un solo campo para escribir el monto y el botón Seguir."></div>
+        <figcaption><b>Fiado.</b> Un campo para escribir cualquier monto.</figcaption>
+      </figure>
+      <figure class="shot">
+        <div class="frame"><img {{IMG:qr}} alt="Paso 4 de 4: Muestra el QR. Aparecen el QR, el aviso Esperando el pago y el botón Ya pagó."></div>
+        <figcaption><b>Paso 4.</b> El QR, el estado y un botón principal.</figcaption>
+      </figure>
+      <figure class="shot">
+        <div class="frame"><img {{IMG:hc}} alt="La pantalla de elegir persona en modo de alto contraste, con fondo negro y bordes blancos."></div>
+        <figcaption><b>Alto contraste.</b> El estado se distingue por ícono, palabras y borde.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="diseno" aria-labelledby="t-diseno">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">Diseño</p>
+      <h2 id="t-diseno">Reglas para quien casi no usa el teléfono</h2>
+      <p class="lead">El público tiene poca escolaridad, poca experiencia con tecnología y a veces baja visión o daltonismo. Se diseñó primero el modo sencillo completo. El modo avanzado, llamado «Ayuda de un familiar», aparece solo cuando se pide.</p>
+    </div>
+    <div class="scroll" role="region" aria-label="Reglas de diseño y lo medido" tabindex="0">
+      <table class="spec">
+        <caption>Medido en 20 pantallas, en tres configuraciones: 390×844, 375×667 (iPhone SE) y letra extra grande</caption>
+        <thead><tr><th scope="col">Regla</th><th scope="col">Meta</th><th scope="col">Resultado</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Texto</th><td>20 px o más; 24 px el principal</td><td>Mínimo medido: 20 px</td></tr>
+          <tr><th scope="row">Contraste</th><td>7:1 o más, y un modo de alto contraste</td><td>Calculado. Por ejemplo, 7.81:1 de blanco sobre el verde de «Ya pagó»</td></tr>
+          <tr><th scope="row">Botones</th><td>48 px o más, con 8 a 16 px entre ellos</td><td>Botón más pequeño: 56 px. Separación mínima: 12 px</td></tr>
+          <tr><th scope="row">Pasos y opciones</th><td>Cuatro pasos por flujo y máximo 4 opciones por pantalla</td><td>Cumplido. La barra de abajo (Atrás, Escuchar, Cancelar) se cuenta aparte, y falta confirmar esa lectura</td></tr>
+          <tr><th scope="row">Largo del texto</th><td>Máximo 2 líneas por bloque</td><td>Máximo medido: 2 líneas</td></tr>
+          <tr><th scope="row">Color</th><td>Nunca como única señal</td><td>Cada estado lleva ícono, palabras y un borde distinto</td></tr>
+          <tr><th scope="row">Interlineado</th><td>1.4 a 1.6</td><td>Algunos bloques apretados quedaron en 1.25 a 1.3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3><span class="pill done"><svg aria-hidden="true"><use href="#i-check"/></svg>Hecho</span></h3>
+        <ul class="bul">
+          <li>105 comprobaciones automáticas que recorren las pantallas, las reglas y el modelo de datos.</li>
+          <li>Medición de tamaños, espacios y líneas en Chrome, en tres configuraciones.</li>
+          <li>Contraste calculado para el modo claro, el oscuro y el de alto contraste.</li>
+          <li>Letra extra grande, voz con el botón Escuchar, sonido y vibración que se pueden apagar.</li>
+          <li>Guardar y continuar después, y pantalla de error con «Intentar de nuevo» y «Volver».</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="pill check"><svg aria-hidden="true"><use href="#i-clock"/></svg>Falta verificar</span></h3>
+        <ul class="bul">
+          <li>Un iPhone real: texto ajustable del sistema, voz y vibración.</li>
+          <li>Personas mayores reales usando la app.</li>
+          <li>Simuladores de baja visión y de daltonismo.</li>
+          <li>Pantallas largas. En 390×844 dos hacen scroll, y en 375×667 lo hacen 14 de 20.</li>
+          <li>El interlineado de los bloques apretados.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band alt" id="interior" aria-labelledby="t-interior">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">Por dentro</p>
+      <h2 id="t-interior">Cómo se cobra y cómo se entera la app</h2>
+      <p class="lead">El pago llega por CoDi. Pey avisa por webhook y la app marca a la persona como pagada.</p>
+    </div>
+    <div class="stack" style="gap:22px">
+      <div class="flowgroup">
+        <h3>Crear el cobro</h3>
+        <ol class="flow">
+          <li><b>App (PWA)</b><span>Quien cobra elige persona, monto y cuenta.</span></li>
+          <li><b>Función en AWS</b><span>Pide el QR o el cobro a Pey.</span></li>
+          <li><b>API de Pey y CoDi</b><span>Genera el cobro. La persona paga desde su banco.</span></li>
+        </ol>
+      </div>
+      <div class="flowgroup">
+        <h3>Confirmar el pago</h3>
+        <ol class="flow">
+          <li><b>Webhook de Pey</b><span>Avisa cuando llega el pago.</span></li>
+          <li><b>Función en AWS</b><span>Verifica el aviso y marca el pago.</span></li>
+          <li><b>Base de datos y app</b><span>La app muestra «Ya pagó».</span></li>
+        </ol>
+      </div>
+    </div>
+    <div class="cols">
+      <div class="stack" style="gap:14px">
+        <h3>Pila decidida</h3>
+        <ul class="bul">
+          <li><b>Front:</b> Vite, React y TypeScript, como PWA instalable.</li>
+          <li><b>Backend:</b> AWS Amplify Gen 2 en us-east-2, con DynamoDB, S3 para las fotos, Cognito y funciones Lambda.</li>
+          <li><b>Pagos:</b> POST /codi/qr y POST /codi/pn del API de Pey, con los webhooks codi.qr.payment_received y codi.pn.payment_received.</li>
+          <li><b>Datos:</b> el prototipo ya define el modelo (proyecto, personas, pagadores, cuentas, pagos y fiado) para copiarlo al esquema de Amplify.</li>
+          <li><b>Costos:</b> la responsable es principiante en AWS, así que antes de desplegar se pone una alerta de presupuesto.</li>
+        </ul>
+      </div>
+      <div class="stack" style="gap:14px">
+        <h3>Lo que ya se sabe de Pey</h3>
+        <ul class="bul">
+          <li>No hay sandbox. Las pruebas se hacen en producción con $0.01.</li>
+          <li>Hay un solo webhook por llave de API.</li>
+          <li>No hay consulta de estado para QR ni push. El pago se conoce solo por webhook, y por eso la app conserva un botón manual «Ya pagó».</li>
+          <li>Por verificar con la cuenta real: cómo se registra una cuenta de cobro y si una llave puede manejar dos cuentas.</li>
+        </ul>
+        <p class="small">Leído en docs.pey.mx. La cuenta y la llave se crean el 14 de noviembre.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="estado" aria-labelledby="t-estado">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">Estado</p>
+      <h2 id="t-estado">Qué hay hoy y qué falta</h2>
+    </div>
+    <div class="scroll" role="region" aria-label="Estado de cada pieza del proyecto" tabindex="0">
+      <table class="spec" style="min-width:36rem">
+        <thead><tr><th scope="col">Pieza</th><th scope="col">Estado</th><th scope="col">Detalle</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Prototipo del front</th><td><span class="pill done"><svg aria-hidden="true"><use href="#i-check"/></svg>Hecho</span></td><td>Modo sencillo completo y capa avanzada, en un solo archivo con datos inventados.</td></tr>
+          <tr><th scope="row">Identidad y reglas de diseño</th><td><span class="pill done"><svg aria-hidden="true"><use href="#i-check"/></svg>Hecho</span></td><td>Paleta con contraste calculado, tipografía y reglas escritas. Falta validarlas con personas.</td></tr>
+          <tr><th scope="row">Pruebas del prototipo</th><td><span class="pill done"><svg aria-hidden="true"><use href="#i-check"/></svg>Hecho</span></td><td>105 comprobaciones automáticas y una medición de diseño en Chrome.</td></tr>
+          <tr><th scope="row">Cuenta y llave de Pey</th><td><span class="pill check"><svg aria-hidden="true"><use href="#i-clock"/></svg>Por verificar</span></td><td>Se crean el 14 de noviembre. Ahí se confirma cómo se registran las cuentas.</td></tr>
+          <tr><th scope="row">Proyecto real (PWA)</th><td><span class="pill todo"><svg aria-hidden="true"><use href="#i-circle"/></svg>Por hacer</span></td><td>Vite, React y TypeScript. El prototipo es la referencia.</td></tr>
+          <tr><th scope="row">Backend en AWS</th><td><span class="pill todo"><svg aria-hidden="true"><use href="#i-circle"/></svg>Por hacer</span></td><td>Esquema de datos, almacenamiento de fotos, acceso y funciones.</td></tr>
+          <tr><th scope="row">Integración con Pey</th><td><span class="pill todo"><svg aria-hidden="true"><use href="#i-circle"/></svg>Por hacer</span></td><td>Crear cobros CoDi y recibir el webhook.</td></tr>
+          <tr><th scope="row">Pruebas con personas mayores y en iPhone</th><td><span class="pill todo"><svg aria-hidden="true"><use href="#i-circle"/></svg>Por hacer</span></td><td>Con la primera usuaria y con más personas.</td></tr>
+          <tr><th scope="row">Entrega del hackatón</th><td><span class="pill todo"><svg aria-hidden="true"><use href="#i-circle"/></svg>Por hacer</span></td><td>Nombre del equipo y descripción, repositorio público, app en vivo y video demo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="band alt" id="roles" aria-labelledby="t-roles">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">Roles</p>
+      <h2 id="t-roles">A quién buscamos</h2>
+      <p class="lead">Cada rol puede ser una persona o varias. Las horas se acuerdan contigo.</p>
+    </div>
+    <ul class="cards">
+      <li class="card role">
+        <h3>Desarrollo full-stack</h3>
+        <dl>
+          <div><dt>Harías</dt><dd>Convertir el prototipo en la PWA real. Armar el esquema de datos en Amplify y las funciones que llaman a Pey y reciben el webhook.</dd></div>
+          <div><dt>Ya está resuelto</dt><dd>El modelo de datos, las pantallas, los textos en español y las pruebas automáticas.</dd></div>
+          <div><dt>Ayuda saber</dt><dd>React y TypeScript, AWS (Amplify Gen 2, Lambda) y webhooks.</dd></div>
+        </dl>
+      </li>
+      <li class="card role">
+        <h3>Diseño UX y UI con accesibilidad</h3>
+        <dl>
+          <div><dt>Harías</dt><dd>Mejorar lo que falta: interlineado, pantallas largas, íconos y guion de la voz. Preparar las pruebas con personas mayores.</dd></div>
+          <div><dt>Ya está resuelto</dt><dd>El sistema de color, los componentes, el alto contraste y la letra extra grande.</dd></div>
+          <div><dt>Ayuda saber</dt><dd>Diseño para adultos mayores, WCAG y textos claros en español de México.</dd></div>
+        </dl>
+      </li>
+      <li class="card role">
+        <h3>Pruebas con personas y en iPhone</h3>
+        <dl>
+          <div><dt>Harías</dt><dd>Sesiones con personas mayores, simuladores de baja visión y daltonismo, y pruebas en iPhone de texto ajustable, voz e instalación como app.</dd></div>
+          <div><dt>Ya está resuelto</dt><dd>Una lista de reglas y pruebas automáticas que se repiten en cada cambio.</dd></div>
+          <div><dt>Ayuda saber</dt><dd>Pruebas de usabilidad y trato con personas mayores.</dd></div>
+        </dl>
+      </li>
+      <li class="card role">
+        <span class="opt">Opcional</span>
+        <h3>Comunicación y video</h3>
+        <dl>
+          <div><dt>Harías</dt><dd>El video demo y la descripción de la entrega, que incluye el nombre del equipo.</dd></div>
+          <div><dt>Ya está resuelto</dt><dd>Este folleto y el prototipo para grabar.</dd></div>
+          <div><dt>Ayuda saber</dt><dd>Edición de video y redacción clara.</dd></div>
+        </dl>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="ruta" aria-labelledby="t-ruta">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">Ruta</p>
+      <h2 id="t-ruta">Cuatro semanas, a ajustar con el equipo</h2>
+      <p class="lead">Las fechas del hackatón están fijas. Las semanas son una propuesta.</p>
+    </div>
+    <ol class="route">
+      <li>
+        <div class="wk"><span class="dot" aria-hidden="true">1</span><small><b>Semana 1 de 4</b>14 al 20 de nov</small></div>
+        <p>Cuenta y llave de Pey, esqueleto del proyecto real, esquema de datos y repositorio público.</p>
+      </li>
+      <li>
+        <div class="wk"><span class="dot" aria-hidden="true">2</span><small><b>Semana 2 de 4</b>21 al 27 de nov</small></div>
+        <p>Cobro con QR y webhook funcionando. Cobro en efectivo y botón «Ya pagó» manual.</p>
+      </li>
+      <li>
+        <div class="wk"><span class="dot" aria-hidden="true">3</span><small><b>Semana 3 de 4</b>28 de nov al 4 de dic</small></div>
+        <p>Tanda, fiado, foto con consentimiento y cuentas de cobro. Primeras pruebas con personas mayores.</p>
+      </li>
+      <li>
+        <div class="wk"><span class="dot" aria-hidden="true">4</span><small><b>Semana 4 de 4</b>5 al 12 de dic</small></div>
+        <p>Prueba en iPhone, ajustes de accesibilidad, app en vivo, video y descripción. Entrega el 12 de diciembre.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="band alt" id="sumate" aria-labelledby="t-sumate">
+  <div class="wrap stack">
+    <div class="head">
+      <p class="eyebrow">Súmate</p>
+      <h2 id="t-sumate">Cómo participar</h2>
+    </div>
+    <div class="prose">
+      <p>Responde a quien te compartió esta página. Cuéntale qué rol te interesa, qué experiencia tienes que venga al caso y cuántas horas a la semana puedes dar.</p>
+      <p>El código y los comentarios van en inglés y la interfaz en español de México. El proyecto se llama «Cuentas conmigo».</p>
+    </div>
+    <div class="foot">
+      <p>Proyecto independiente. El DIF, CoDi y Pey se mencionan para describir el caso de uso y la integración, y no se usan sus logotipos.</p>
+      <p>Las personas, teléfonos, fotos y cuentas del prototipo son inventados. El prototipo no genera cobros reales, y su QR no es un código CoDi.</p>
+    </div>
+  </div>
+</section>

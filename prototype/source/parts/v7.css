@@ -1,0 +1,22 @@
+/* v7: receipt, registration and report (outside the simple-mode block; sizes stay >= 1.1rem) */
+.screen .rcpt { border: 3px solid var(--ink); border-radius: 22px; overflow: hidden; background: #fff; }
+.screen .rcpt svg { display: block; width: 100%; height: auto; }
+.screen .check { display: flex; align-items: flex-start; gap: 12px; font-size: calc(1.25rem * var(--fs)); font-weight: 700; }
+.screen .check { min-height: 3rem; }
+.screen .check input { width: 3rem; height: 3rem; flex: none; margin: 0; }
+.repsum { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; padding: 14px 16px; border: 3px solid var(--edge); border-radius: 16px; background: var(--surface); font-size: 1.15rem; }
+.repsum dt { color: var(--ink-soft); }
+.repsum dd { margin: 0; font-weight: 800; text-align: right; }
+.repwrap { overflow-x: auto; }
+table.rep { border-collapse: collapse; width: 100%; font-size: 1.1rem; }
+table.rep th, table.rep td { padding: 8px 10px; border-bottom: 2px solid var(--line); text-align: left; vertical-align: middle; }
+table.rep thead th { border-bottom: 3px solid var(--ink); }
+#rep-nav { align-items: center; justify-content: space-between; }
+#rep-nav[hidden] { display: none; }
+#pane-reporte, #pane-reporte section { min-width: 0; max-width: 100%; }
+#pane-reporte .btnrow { display: flex; flex-wrap: wrap; gap: 12px; }
+#pane-reporte .btnrow .btn { flex: 1 1 auto; justify-content: center; }
+.repsum { grid-template-columns: 1fr auto; }
+.repwrap { max-width: 100%; }
+#pane-reporte section { grid-template-columns: minmax(0, 1fr); }
+#pane-reporte section > * { min-width: 0; }

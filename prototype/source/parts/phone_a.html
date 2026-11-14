@@ -1,0 +1,23 @@
+<!-- ============ PROTOTIPO ============ -->
+<div id="v-prototipo" class="stage">
+  <div class="phone" id="phone" aria-label="Pantalla de la app">
+    <div id="pane-cobrar" class="pane simple">
+      <header class="stephead" id="stephead"></header>
+      <div id="screen" class="screen"></div>
+      <nav class="bar" id="bar" aria-label="Controles de la pantalla">
+        <button class="barbtn" id="bar-back" data-act="back" aria-label="Atrás"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>Atrás</span></button>
+        <button class="barbtn" id="bar-listen" data-act="listen" aria-label="Escuchar esta pantalla"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h4l5 4v-13l-5 4z" fill="currentColor"/><path d="M16.5 9a4 4 0 010 6M18.8 6.5a7.5 7.5 0 010 11"/></svg><span>Escuchar</span></button>
+        <button class="barbtn" id="bar-cancel" data-act="cancel" aria-label="Cancelar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Cancelar</span></button>
+      </nav>
+    </div>
+
+    <div id="advwrap" class="advwrap" hidden>
+      <header class="advbar">
+        <button class="btn" data-goto="cobrar" id="adv-exit"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>Volver al modo sencillo</button>
+        <p>Modo avanzado: para quien ayuda con la app.</p>
+        <div class="advtabs" id="advtabs" role="tablist" aria-label="Secciones avanzadas">
+          <button role="tab" data-tab="personas" aria-selected="false">Personas</button>
+          <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
+          <button role="tab" data-tab="reporte" aria-selected="false">Reporte</button>
+        </div>
+      </header>

@@ -1,0 +1,2088 @@
+<title>Cuentas conmigo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap">
+<style>
+:root {
+  --font-ui: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --fs: 1;
+  --bg: #EEF1F8;
+  --surface: #FFFFFF;
+  --ink: #18213B;
+  --ink-soft: #3B4660;
+  --line: #CBD2E3;
+  --edge: #5F6B8A;
+  --paid: #0F5F28;
+  --on-paid: #FFFFFF;
+  --wait: #F2B01E;
+  --on-wait: #2A1D00;
+  --annual: #2E3550;
+  --on-annual: #FFFFFF;
+  --danger: #9C1C15;
+  --ml: 28%;
+  --focus: #2B4BD8;
+  --chip-edge: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1322; --surface: #192039; --ink: #EEF1FA; --ink-soft: #A5AFCB; --line: #2E3858; --edge: #8C97BC;
+    --paid: #4CC474; --on-paid: #07200F; --wait: #F5BE3F; --on-wait: #2A1D00;
+    --annual: #C9CFE6; --on-annual: #18213B; --danger: #FF8A80; --focus: #8FA6FF; --chip-edge: #C9CFE6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1322; --surface: #192039; --ink: #EEF1FA; --ink-soft: #A5AFCB; --line: #2E3858; --edge: #8C97BC;
+  --paid: #4CC474; --on-paid: #07200F; --wait: #F5BE3F; --on-wait: #2A1D00;
+  --annual: #C9CFE6; --on-annual: #18213B; --danger: #FF8A80; --focus: #8FA6FF; --chip-edge: #C9CFE6;
+  color-scheme: dark;
+}
+/* High contrast goes AFTER both dark blocks: same specificity, so order decides. */
+:root[data-contrast="high"] {
+  --bg: #000000; --surface: #000000; --ink: #FFFFFF; --ink-soft: #FFFFFF; --line: #FFFFFF; --edge: #FFFFFF;
+  --paid: #3DDC84; --on-paid: #000000; --wait: #FFC400; --on-wait: #000000;
+  --annual: #FFFFFF; --on-annual: #000000; --danger: #FF8A80; --focus: #FFEB3B; --chip-edge: #FFFFFF;
+  color-scheme: dark;
+}
+@media (prefers-contrast: more) {
+  :root:not([data-contrast="normal"]) {
+    --bg: #000000; --surface: #000000; --ink: #FFFFFF; --ink-soft: #FFFFFF; --line: #FFFFFF; --edge: #FFFFFF;
+    --paid: #3DDC84; --on-paid: #000000; --wait: #FFC400; --on-wait: #000000;
+    --annual: #FFFFFF; --on-annual: #000000; --danger: #FF8A80; --focus: #FFEB3B; --chip-edge: #FFFFFF;
+    color-scheme: dark;
+  }
+}
+[hidden] { display: none !important; }
+
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-ui); font-size: 1.25rem; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 40px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
+svg { display: block; }
+.ico { width: 1.5rem; height: 1.5rem; flex: none; }
+
+/* page header */
+.top { max-width: 980px; margin: 0 auto 20px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; letter-spacing: -0.01em; }
+.brand svg { width: 2.4rem; height: 2.4rem; }
+.tabs { display: flex; gap: 6px; padding: 5px; background: var(--surface); border: 2px solid var(--line); border-radius: 18px; }
+.tabs button { min-height: 3rem; padding: 0 16px; border: 0; border-radius: 13px; background: none; font-weight: 700; font-size: 1.05rem; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+
+/* prototype stage */
+.stage { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; }
+.phone { width: 100%; max-width: 420px; min-height: 780px; background: var(--surface); border: 2px solid var(--line); border-radius: 32px; overflow: clip; display: flex; flex-direction: column; }
+.apphead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 6px; }
+.apphead .brand { font-size: 1.15rem; min-width: 0; }
+.apphead .brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apphead .brand svg { width: 1.8rem; height: 1.8rem; flex: none; }
+.iconbtn { width: 3.25rem; height: 3.25rem; flex: none; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; }
+#screen { flex: 1; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+.caption { margin: 0 16px 16px; padding: 12px 16px; border-radius: 16px; background: var(--bg); border: 2px dashed var(--line); display: flex; gap: 10px; align-items: center; font-size: 1.05rem; color: var(--ink-soft); min-height: 3.6rem; }
+.caption b { color: var(--ink); font-weight: 700; }
+
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; text-wrap: balance; margin: 0; }
+.q { font-size: 2.1rem; font-weight: 800; line-height: 1.05; }
+.row { display: flex; align-items: center; gap: 14px; }
+.grow { flex: 1; min-width: 0; }
+
+.seg { display: flex; height: 16px; border-radius: 99px; overflow: hidden; background: var(--line); }
+.seg i { display: block; height: 100%; }
+.seg .p { background: var(--paid); } .seg .w { background: var(--wait); }
+.sum { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 1.05rem; color: var(--ink-soft); margin-top: 8px; }
+.sum b { color: var(--ink); }
+
+.faces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.person { position: relative; aspect-ratio: 1; border: 5px solid var(--line); border-radius: 24px; overflow: hidden; padding: 0; background: var(--bg); }
+.person svg { width: 100%; height: 100%; }
+.person.paid { border-color: var(--paid); } .person.wait { border-color: var(--wait); }
+.badge { position: absolute; right: 6px; bottom: 6px; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; }
+.badge .ico { width: 1.25rem; height: 1.25rem; }
+.badge.paid { background: var(--paid); color: var(--on-paid); } .badge.wait { background: var(--wait); color: var(--on-wait); }
+.amtbadge { position: absolute; left: 6px; bottom: 6px; background: var(--wait); color: var(--on-wait); font-weight: 800; font-size: 1rem; padding: 1px 10px; border-radius: 99px; }
+.turnflag { position: absolute; left: 6px; top: 6px; background: var(--ink); color: var(--bg); border-radius: 12px; padding: 2px 8px 2px 6px; font-size: .85rem; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+.turnflag .ico { width: 1rem; height: 1rem; }
+
+.turn { border: 3px solid var(--ink); border-radius: 22px; padding: 12px; display: grid; gap: 10px; }
+.turn .ava { width: 4.2rem; height: 4.2rem; border-radius: 18px; overflow: hidden; flex: none; }
+.turn .ava svg { width: 100%; height: 100%; }
+.turn strong { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.1; display: block; }
+
+.btn { min-height: 4.5rem; border-radius: 20px; border: 3px solid var(--ink); background: var(--surface); font-weight: 700; font-size: 1.3rem; padding: 0 18px; display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; text-align: left; }
+.btn.primary { background: var(--ink); color: var(--bg); }
+.btn.quiet { border-color: var(--line); min-height: 3.5rem; font-size: 1.1rem; color: var(--ink-soft); justify-content: center; }
+.btn[disabled] { border-style: dashed; color: var(--ink-soft); background: transparent; cursor: not-allowed; }
+.btn.sim { border-style: dashed; border-color: var(--ink-soft); color: var(--ink-soft); min-height: 3.4rem; font-size: 1rem; }
+.btn.small { min-height: 3.25rem; font-size: 1.05rem; width: auto; padding: 0 16px; border-width: 2px; }
+.btn.danger { border-color: var(--danger); color: var(--danger); }
+.btn .ico { width: 1.7rem; height: 1.7rem; }
+.back { align-self: flex-start; min-height: 3.5rem; width: auto; padding: 0 16px 0 10px; border-color: var(--line); font-size: 1.1rem; }
+
+.who { display: flex; align-items: center; gap: 14px; }
+.who .ava { width: 5.5rem; height: 5.5rem; border-radius: 22px; overflow: hidden; border: 4px solid var(--line); flex: none; }
+.who .ava svg { width: 100%; height: 100%; }
+.who strong { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; line-height: 1; overflow-wrap: anywhere; }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile { min-height: 4.9rem; border-radius: 18px; border: 4px solid hsl(var(--h) 62% var(--ml)); background: hsl(var(--h) 62% var(--ml)); color: #fff; font-weight: 800; font-size: 1.55rem; letter-spacing: .02em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; }
+.tile small { font-size: .85rem; font-weight: 700; letter-spacing: 0; }
+.tile.future { background: transparent; color: var(--ink); }
+.tile.na { background: transparent; border-color: var(--line); color: var(--ink-soft); border-style: dashed; font-weight: 700; }
+.tile.paid { background: var(--paid); border-color: var(--paid); color: var(--on-paid); }
+.tile.wait { background: var(--wait); border-color: var(--wait); color: var(--on-wait); }
+.tile .ico { width: 1.3rem; height: 1.3rem; }
+.annual-wrap { display: grid; gap: 8px; margin-top: 4px; padding-top: 14px; border-top: 3px dashed var(--line); }
+.label { font-size: .95rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.annual { min-height: 5.4rem; border-radius: 18px; border: 4px solid var(--annual); background: var(--annual); color: var(--on-annual); width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 20px; font-weight: 800; font-size: 1.4rem; text-align: left; }
+.annual.paid { background: var(--paid); border-color: var(--paid); color: var(--on-paid); }
+.annual.wait { background: var(--wait); border-color: var(--wait); color: var(--on-wait); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 1rem; color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 1.3rem; height: 1.3rem; border-radius: 50%; display: grid; place-items: center; }
+.dot .ico { width: .9rem; height: .9rem; }
+
+.amount { text-align: center; display: grid; gap: 4px; }
+.amount .big { font-family: var(--font-display); font-weight: 800; font-size: 4rem; line-height: 1; }
+.chip { justify-self: center; padding: 6px 16px; border-radius: 99px; font-weight: 800; background: hsl(var(--h, 225) 62% var(--ml)); color: #fff; max-width: 100%; overflow-wrap: anywhere; }
+.chip.annual-chip { background: var(--annual); color: var(--on-annual); }
+.qrbox { background: #fff; padding: 14px; border-radius: 22px; border: 4px solid var(--ink); width: min(100%, 290px); margin: 0 auto; }
+.qrbox svg { width: 100%; height: auto; }
+.qrnote { text-align: center; color: var(--ink-soft); font-size: .95rem; margin-top: 6px; }
+.waiting { display: flex; align-items: center; gap: 12px; justify-content: center; padding: 14px; border-radius: 18px; background: var(--wait); color: var(--on-wait); font-weight: 800; text-align: center; }
+.pulse { width: 14px; height: 14px; flex: none; border-radius: 50%; background: currentColor; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+.stack { display: grid; gap: 12px; }
+.quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: 10px; }
+.quick .btn { justify-content: center; text-align: center; font-size: 1.5rem; }
+.debt { text-align: center; }
+.debt .big { font-family: var(--font-display); font-weight: 800; font-size: 3.4rem; line-height: 1; }
+.ledger { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 1rem; color: var(--ink-soft); }
+.ledger li { display: flex; justify-content: space-between; gap: 8px; }
+
+.done { text-align: center; display: grid; gap: 10px; justify-items: center; }
+.bigcheck { width: 7rem; height: 7rem; border-radius: 50%; background: var(--paid); color: var(--on-paid); display: grid; place-items: center; }
+.bigcheck .ico { width: 4.2rem; height: 4.2rem; }
+.done h1 { font-size: 2.8rem; font-weight: 800; color: var(--paid); letter-spacing: .02em; }
+.receipt { width: 100%; border: 3px solid var(--ink); border-radius: 22px; padding: 14px; display: grid; gap: 12px; text-align: left; }
+.receipt dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 1.05rem; }
+.receipt dt { color: var(--ink-soft); } .receipt dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.empty { text-align: center; display: grid; gap: 14px; justify-items: center; padding: 28px 8px; color: var(--ink-soft); }
+
+/* side panel + cards */
+.panel { width: 100%; max-width: 420px; display: grid; gap: 16px; align-content: start; }
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { font-size: 1.3rem; }
+.card p { margin: 0; font-size: 1rem; color: var(--ink-soft); }
+.cfg { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 1rem; }
+.cfg dt { color: var(--ink-soft); } .cfg dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+
+/* configuration */
+.sheet { max-width: 980px; margin: 0 auto; display: grid; gap: 20px; }
+.sheet section { background: var(--surface); border: 2px solid var(--line); border-radius: 24px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.sheet h2 { font-size: 1.6rem; font-weight: 800; }
+.sheet p { margin: 0; color: var(--ink-soft); max-width: 65ch; }
+.notice { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border-radius: 16px; background: var(--bg); border: 2px dashed var(--line); font-size: 1rem; color: var(--ink-soft); }
+.feats { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.feat { display: flex; gap: 14px; align-items: flex-start; border: 3px solid var(--line); border-radius: 20px; padding: 14px; cursor: pointer; background: var(--surface); }
+.feat.on { border-color: var(--ink); }
+.feat.dis { border-style: dashed; color: var(--ink-soft); cursor: not-allowed; }
+.feat input { width: 1.9rem; height: 1.9rem; margin: 2px 0 0; flex: none; accent-color: var(--ink); }
+.feat strong { display: block; font-family: var(--font-display); font-size: 1.25rem; color: var(--ink); }
+.feat span span { font-size: .98rem; color: var(--ink-soft); }
+.presets { display: flex; flex-wrap: wrap; gap: 10px; }
+.account { display: grid; gap: 12px; padding-top: 14px; border-top: 3px dashed var(--line); }
+.display { text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 3.6rem; line-height: 1.1; padding: 10px; border: 3px solid var(--ink); border-radius: 22px; min-height: 5.4rem; overflow-wrap: anywhere; }
+.display.empty { color: var(--ink-soft); }
+.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.keys .btn { justify-content: center; font-size: 1.9rem; min-height: 4.6rem; padding: 0; text-align: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chipx { display: inline-flex; align-items: center; gap: 2px; border: 2px solid var(--line); border-radius: 99px; padding: 0 4px 0 14px; font-weight: 700; font-size: 1.1rem; }
+.xbtn { min-width: 2.5rem; min-height: 2.5rem; border: 0; background: none; font-weight: 800; font-size: 1.3rem; }
+.hint { font-size: .92rem; color: var(--ink-soft); min-height: 1.2em; }
+.to { font-size: 1rem; color: var(--ink-soft); margin-top: 6px; }
+.to b { color: var(--ink); }
+.bankico { display: grid; place-items: center; background: var(--bg); }
+.prow .ava.bankico svg { width: 1.9rem; height: 1.9rem; }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.field { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.field label, .field .lbl { font-weight: 700; font-size: 1.05rem; }
+.field .hint { font-size: .92rem; color: var(--ink-soft); }
+input[type="text"], input[type="tel"], input[type="number"], input[type="date"], select {
+  width: 100%; min-height: 3.5rem; border-radius: 14px; border: 3px solid var(--line); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 1.15rem; padding: 0 14px;
+}
+input:focus-visible, select:focus-visible { border-color: var(--focus); outline-offset: 2px; }
+.check { display: flex; gap: 12px; align-items: flex-start; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+.check input { width: 1.9rem; height: 1.9rem; margin: 0; flex: none; accent-color: var(--ink); }
+.check small { display: block; font-weight: 400; font-size: .92rem; color: var(--ink-soft); }
+.span { grid-column: 1 / -1; }
+.preview { display: grid; gap: 10px; }
+.preview .tiles { grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)); }
+.preview .tile { min-height: 3.6rem; font-size: 1.2rem; }
+
+.plist { display: grid; gap: 10px; }
+.prow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px; border: 2px solid var(--line); border-radius: 18px; }
+.prow .ava { width: 3.8rem; height: 3.8rem; border-radius: 14px; overflow: hidden; flex: none; border: 2px solid var(--line); }
+.prow .ava svg { width: 100%; height: 100%; }
+.prow .info { flex: 1; min-width: 9rem; display: grid; gap: 2px; }
+.prow .info strong { font-size: 1.15rem; overflow-wrap: anywhere; }
+.prow .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border-radius: 99px; font-size: .88rem; font-weight: 700; border: 2px solid var(--line); color: var(--ink-soft); width: fit-content; }
+.pill.ok { border-color: var(--paid); color: var(--paid); }
+.pill .ico { width: .9rem; height: .9rem; }
+.editor { border: 3px solid var(--ink); border-radius: 22px; padding: 16px; display: grid; gap: 16px; background: var(--surface); }
+.editor h3 { font-size: 1.4rem; font-weight: 800; }
+.photoblock { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.photoblock .ava { width: 6.5rem; height: 6.5rem; border-radius: 22px; overflow: hidden; border: 3px solid var(--line); flex: none; }
+.photoblock .ava svg { width: 100%; height: 100%; }
+.filebtn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; min-height: 3.25rem; padding: 0 16px; border-radius: 16px; border: 2px solid var(--ink); font-weight: 700; font-size: 1.05rem; cursor: pointer; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.filebtn:focus-within { outline: 4px solid var(--focus); outline-offset: 3px; }
+.consent { border: 3px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 12px; }
+.consent.on { border-color: var(--paid); }
+.payer { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; padding: 12px; border: 2px solid var(--line); border-radius: 16px; }
+.err { color: var(--danger); font-weight: 700; font-size: 1rem; margin: 0; }
+.err ul { margin: 6px 0 0; padding-left: 1.2rem; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* identity sheet */
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.state { border-radius: 18px; padding: 14px; display: grid; gap: 6px; min-height: 8rem; align-content: space-between; font-weight: 800; font-size: 1.4rem; }
+.state small { font-weight: 400; font-size: .95rem; }
+.state .ico { width: 2.2rem; height: 2.2rem; }
+.state.s-paid { background: var(--paid); color: var(--on-paid); }
+.state.s-wait { background: var(--wait); color: var(--on-wait); }
+.state.s-due { background: linear-gradient(90deg, hsl(225 62% var(--ml)), hsl(285 62% var(--ml)), hsl(195 62% var(--ml)), hsl(12 62% var(--ml))); color: #fff; }
+.months { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 8px; }
+.months .tile { min-height: 4rem; font-size: 1.2rem; }
+.iconrow { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+.iconrow figure { margin: 0; display: grid; gap: 6px; justify-items: center; font-size: .9rem; color: var(--ink-soft); }
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.spec > div { display: grid; gap: 4px; align-content: start; }
+.sample-display { font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; line-height: 1; letter-spacing: -0.01em; }
+.sample-ui { font-weight: 700; font-size: 1.5rem; }
+ul.plain { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; color: var(--ink-soft); max-width: 65ch; }
+
+@media (max-width: 520px) {
+  .phone { border-radius: 24px; }
+  .q { font-size: 1.9rem; }
+}
+
+/* ---- Advanced layer (caregivers): same screens as before, only on demand ---- */
+@supports (font: -apple-system-body) { html { font: -apple-system-body; } }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.panes { flex: 1; display: flex; flex-direction: column; }
+.pane.sheet { max-width: none; margin: 0; padding: 12px 16px 24px; align-content: start; }
+.advwrap { flex: 1; display: flex; flex-direction: column; }
+.advbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: grid; gap: 12px; padding: 14px 16px; background: var(--surface); border-bottom: 3px solid var(--edge); }
+.advbar p { margin: 0; font-size: 1.1rem; color: var(--ink-soft); }
+.advtabs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.advtabs button { min-height: 3.5rem; border: 3px solid var(--edge); border-radius: 16px; background: var(--surface); font-weight: 700; font-size: 1.25rem; }
+.advtabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.dot.months { background: conic-gradient(hsl(225 62% var(--ml)), hsl(12 62% var(--ml)), hsl(285 62% var(--ml)), hsl(195 62% var(--ml)), hsl(320 62% var(--ml)), hsl(225 62% var(--ml))); }
+input[type="text"], input[type="tel"], input[type="number"], input[type="date"], select { border-color: var(--edge); }
+.btn.quiet, .iconbtn, .feat, .chipx { border-color: var(--edge); }
+.field .hint, .hint, .label, .qrnote, .check small, .feat span span, .tile small, .pill, .sum, .ledger, .pane.sheet p { font-size: 1.1rem; }
+.tiles, .keys, .quick, .chips, .presets, .btnrow { gap: 12px; }
+.tiles { grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); }
+.xbtn { min-width: 2.75rem; min-height: 2.75rem; }
+.btn, .tile, .iconbtn, .feat, .filebtn, .advtabs button { transition: transform .08s ease; }
+.btn:active, .tile:active, .iconbtn:active, .feat:active, .filebtn:active, .advtabs button:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) { .btn, .tile, .iconbtn, .feat, .filebtn, .advtabs button { transition: none; } .btn:active, .tile:active, .iconbtn:active, .feat:active, .filebtn:active, .advtabs button:active { transform: none; } }
+
+/* ==SIMPLE-START== Simple mode. Rule for this block: text >= 1.25rem, tappable >= 3rem, no opacity tricks. */
+html[data-text="xl"] { --fs: 1.25; }
+body { line-height: 1.5; }
+.pane.simple { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.stephead { display: grid; gap: 8px; padding: 12px 16px 4px; }
+.grp { margin: 0; font-weight: 700; font-size: calc(1.25rem * var(--fs)); color: var(--ink-soft); overflow-wrap: anywhere; }
+.steptext { margin: 0; font-weight: 800; font-size: calc(1.375rem * var(--fs)); }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 8px; }
+.steps li { flex: none; width: calc(2.75rem * var(--fs)); height: calc(2.75rem * var(--fs)); border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: calc(1.375rem * var(--fs)); border: 3px solid var(--edge); background: var(--surface); color: var(--ink); }
+.steps li.done { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.steps li.now { background: var(--ink); color: var(--bg); border-color: var(--ink); box-shadow: 0 0 0 4px var(--surface), 0 0 0 7px var(--ink); }
+.steps li .ico { width: 1.5rem; height: 1.5rem; }
+.steps li.sep { flex: 1; width: auto; height: 4px; min-width: 6px; border: 0; border-radius: 2px; background: var(--edge); box-shadow: none; }
+.screen { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 4px 16px 20px; }
+h1.q { font-family: var(--font-ui); font-weight: 800; font-size: calc(2rem * var(--fs)); line-height: 1.25; letter-spacing: 0; }
+.txt { margin: 0; font-size: calc(1.375rem * var(--fs)); line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+.txt.soft { color: var(--ink-soft); }
+.idcharge { display: flex; align-items: center; gap: 14px; }
+.idcharge .ava { width: 4rem; height: 4rem; flex: none; border-radius: 16px; overflow: hidden; border: 3px solid var(--edge); }
+.idcharge .ava svg { width: 100%; height: 100%; }
+.idcharge .ct { display: grid; gap: 4px; min-width: 0; }
+.idcharge strong { font-size: calc(1.625rem * var(--fs)); line-height: 1.3; overflow-wrap: anywhere; }
+.idcharge .bigamt { font-size: calc(2rem * var(--fs)); }
+.idstrip { display: flex; align-items: center; gap: 14px; }
+.idstrip .ava { width: 4.5rem; height: 4.5rem; flex: none; border-radius: 18px; overflow: hidden; border: 3px solid var(--edge); }
+.idstrip .ava svg { width: 100%; height: 100%; }
+.idstrip strong { display: block; font-size: calc(1.625rem * var(--fs)); line-height: 1.25; overflow-wrap: anywhere; }
+
+.cbtn { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 5rem; padding: 12px 18px; border: 3px solid var(--edge); border-radius: 20px; background: var(--surface); color: var(--ink); text-align: left; font-size: calc(1.5rem * var(--fs)); font-weight: 800; line-height: 1.3; }
+.cbtn .ico { width: 2rem; height: 2rem; }
+.cbtn .ct { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.cbtn .cl { overflow-wrap: anywhere; }
+.cbtn small { font-weight: 400; font-size: calc(1.25rem * var(--fs)); color: var(--ink-soft); }
+.cbtn.primary { min-height: 5.5rem; background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.cbtn.primary small { color: inherit; }
+.cbtn.danger { border-color: var(--danger); color: var(--danger); }
+.cbtn.compact { min-height: 4.5rem; }
+.cbtn.small { min-height: 3.5rem; padding: 6px 18px; font-size: calc(1.25rem * var(--fs)); }
+.cbtn.sw { flex-wrap: wrap; }
+.cbtn.sw .ct { flex: 1 1 9rem; }
+.cbtn.sw .stt { margin-left: auto; }
+.cbtn.pager { min-height: 4rem; border-style: dashed; justify-content: center; text-align: center; }
+.cbtn .mk { width: 1.25rem; align-self: stretch; flex: none; border-radius: 8px; background: hsl(var(--h) 62% var(--ml)); border: 2px solid var(--chip-edge); }
+.cbtn:active, .pickrow:active, .barbtn:active { transform: scale(.98); box-shadow: inset 0 0 0 4px var(--focus); }
+.cbtn:focus-visible, .pickrow:focus-visible, .barbtn:focus-visible { outline: 5px solid var(--focus); outline-offset: 3px; }
+
+.pickrow { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 5.75rem; padding: 8px 14px 8px 8px; border: 3px solid var(--edge); border-radius: 22px; background: var(--surface); color: var(--ink); text-align: left; }
+.pickrow .ava { width: 5rem; height: 5rem; flex: none; border-radius: 16px; overflow: hidden; border: 3px solid var(--edge); }
+.pickrow .ava svg { width: 100%; height: 100%; }
+.pickrow .ct { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.pickrow strong { font-size: calc(1.625rem * var(--fs)); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+.pickrow .sub { font-size: calc(1.25rem * var(--fs)); color: var(--ink-soft); }
+
+/* status = icon + words + border/pattern, never colour alone */
+.stt { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 8px; padding: 3px 12px 3px 12px; border-radius: 12px; border: 3px solid var(--ink); font-weight: 800; font-size: calc(1.25rem * var(--fs)); line-height: 1.3; }
+.stt .ico { width: 1.5rem; height: 1.5rem; }
+.stt-paid { background: var(--paid); color: var(--on-paid); border: 3px solid var(--paid); }
+.stt-wait { background: var(--wait); color: var(--on-wait); border: 3px dashed var(--on-wait); padding-left: 26px; }
+.stt-wait::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 12px; background: repeating-linear-gradient(135deg, var(--on-wait) 0 3px, transparent 3px 7px); }
+.stt-due { background: var(--surface); color: var(--ink); border: 3px dotted var(--ink); }
+
+.statcard { display: grid; gap: 8px; padding: 14px 16px; border: 3px solid var(--edge); border-radius: 20px; background: var(--surface); }
+.meter { display: flex; height: 1.5rem; border: 3px solid var(--ink); border-radius: 99px; overflow: hidden; background: var(--surface); }
+.meter i { display: block; height: 100%; }
+.meter .p { background: var(--paid); }
+.meter .w { background: repeating-linear-gradient(135deg, var(--wait) 0 6px, var(--on-wait) 6px 9px); }
+.notice2 { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 3px solid var(--paid); border-radius: 16px; font-weight: 800; font-size: calc(1.375rem * var(--fs)); background: var(--surface); }
+.notice2 .ico { width: 2rem; height: 2rem; flex: none; }
+.alertbox { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 3px solid var(--danger); border-radius: 16px; background: var(--surface); color: var(--danger); font-weight: 800; font-size: calc(1.375rem * var(--fs)); line-height: 1.4; }
+.alertbox .ico { width: 2.25rem; height: 2.25rem; flex: none; }
+.errbig { display: grid; justify-items: center; gap: 14px; text-align: center; padding-top: 8px; }
+.errbig .badge2 { width: 7rem; height: 7rem; border-radius: 50%; border: 6px solid var(--danger); color: var(--danger); display: grid; place-items: center; }
+.errbig .badge2 .ico { width: 4rem; height: 4rem; }
+.amtfield { display: flex; align-items: center; gap: 10px; min-height: 6rem; padding: 0 18px; border: 4px solid var(--ink); border-radius: 22px; background: var(--surface); }
+.amtfield .cur { font-weight: 800; font-size: calc(2.75rem * var(--fs)); }
+.amtfield input[type="text"] { flex: 1; min-width: 0; width: 100%; min-height: 5rem; border: 0; background: transparent; color: var(--ink); font-family: var(--font-ui); font-weight: 800; font-size: calc(2.75rem * var(--fs)); padding: 0; }
+.amtfield:focus-within { outline: 5px solid var(--focus); outline-offset: 3px; }
+.amtfield input[type="text"]:focus-visible { outline: none; }
+.fld2 { display: grid; gap: 8px; }
+.fld2 label { font-weight: 800; font-size: calc(1.375rem * var(--fs)); }
+.fld2 input[type="text"] { min-height: 4rem; font-size: calc(1.375rem * var(--fs)); border-width: 3px; }
+.chargeline { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.mchip { display: inline-block; padding: 4px 16px; border-radius: 99px; background: hsl(var(--h, 225) 62% var(--ml)); color: #fff; font-weight: 800; font-size: calc(1.375rem * var(--fs)); border: 2px solid var(--chip-edge); }
+.mchip.annualchip { background: var(--annual); color: var(--on-annual); border-color: var(--edge); }
+.bigamt { font-weight: 800; font-size: calc(2.75rem * var(--fs)); line-height: 1.25; }
+.to2 { margin: 0; font-size: calc(1.25rem * var(--fs)); color: var(--ink-soft); }
+.to2 b { color: var(--ink); }
+.screen .qrbox { width: min(100%, 176px); margin: 0 auto; }
+.screen .qrnote { font-size: calc(1.25rem * var(--fs)); }
+.waitbox { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px; border-radius: 18px; text-align: center; }
+.screen .receipt { border: 3px solid var(--ink); border-radius: 22px; padding: 14px; display: grid; gap: 10px; }
+.screen .receipt dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: calc(1.25rem * var(--fs)); }
+.screen .receipt dt { color: var(--ink-soft); }
+.screen .receipt dd { margin: 0; font-weight: 800; text-align: right; overflow-wrap: anywhere; }
+.donehead { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.donehead .bigcheck { width: 4rem; height: 4rem; flex: none; }
+.donehead .bigcheck .ico { width: 2.5rem; height: 2.5rem; }
+html[data-text="xl"] .screen .receipt dl { grid-template-columns: 1fr; }
+html[data-text="xl"] .screen .receipt dd { text-align: left; }
+.donehead h1.q { font-size: calc(2.25rem * var(--fs)); }
+.empty2 { display: grid; gap: 14px; }
+
+.bar { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-top: 3px solid var(--edge); }
+.barbtn { min-height: 4rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 2px; border: 3px solid var(--edge); border-radius: 18px; background: var(--surface); color: var(--ink); font-weight: 800; font-size: calc(1.25rem * min(var(--fs), 1.05)); line-height: 1.3; }
+.barbtn .ico { width: 1.75rem; height: 1.75rem; }
+.barbtn[aria-hidden="true"] { visibility: hidden; }
+/* ==SIMPLE-END== */
+@media (prefers-reduced-motion: reduce) { .cbtn:active, .pickrow:active, .barbtn:active { transform: none; } }
+html[data-contrast="high"] .cbtn, html[data-contrast="high"] .pickrow, html[data-contrast="high"] .barbtn { border-width: 4px; }
+@media (max-width: 520px) { .phone { border-radius: 24px; } }
+
+h1.q:focus { outline: none; }
+/* v7: receipt, registration and report (outside the simple-mode block; sizes stay >= 1.1rem) */
+.screen .rcpt { border: 3px solid var(--ink); border-radius: 22px; overflow: hidden; background: #fff; }
+.screen .rcpt svg { display: block; width: 100%; height: auto; }
+.screen .check { display: flex; align-items: flex-start; gap: 12px; font-size: calc(1.25rem * var(--fs)); font-weight: 700; }
+.screen .check { min-height: 3rem; }
+.screen .check input { width: 3rem; height: 3rem; flex: none; margin: 0; }
+.repsum { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; padding: 14px 16px; border: 3px solid var(--edge); border-radius: 16px; background: var(--surface); font-size: 1.15rem; }
+.repsum dt { color: var(--ink-soft); }
+.repsum dd { margin: 0; font-weight: 800; text-align: right; }
+.repwrap { overflow-x: auto; }
+table.rep { border-collapse: collapse; width: 100%; font-size: 1.1rem; }
+table.rep th, table.rep td { padding: 8px 10px; border-bottom: 2px solid var(--line); text-align: left; vertical-align: middle; }
+table.rep thead th { border-bottom: 3px solid var(--ink); }
+#rep-nav { align-items: center; justify-content: space-between; }
+#rep-nav[hidden] { display: none; }
+#pane-reporte, #pane-reporte section { min-width: 0; max-width: 100%; }
+#pane-reporte .btnrow { display: flex; flex-wrap: wrap; gap: 12px; }
+#pane-reporte .btnrow .btn { flex: 1 1 auto; justify-content: center; }
+.repsum { grid-template-columns: 1fr auto; }
+.repwrap { max-width: 100%; }
+#pane-reporte section { grid-template-columns: minmax(0, 1fr); }
+#pane-reporte section > * { min-width: 0; }
+</style>
+
+<header class="top">
+  <div class="brand" aria-label="Cuentas conmigo">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="#18213B"/><circle cx="23" cy="22" r="13" fill="#fff"/><circle cx="23" cy="20" r="5" fill="#18213B"/><path d="M13 33c2-6 6-8 10-8s8 2 10 8c-3 3-6 4-10 4s-7-1-10-4z" fill="#18213B"/><circle cx="36" cy="36" r="8" fill="#1B7F3B" stroke="#18213B" stroke-width="2.5"/><path d="M32.3 36.2l2.6 2.6 4.4-5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Cuentas conmigo</span>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Vistas">
+    <button role="tab" aria-selected="true" data-view="prototipo">Prototipo</button>
+    <button role="tab" aria-selected="false" data-view="identidad">Identidad</button>
+  </div>
+</header>
+
+<main>
+<!-- ============ PROTOTIPO ============ -->
+<div id="v-prototipo" class="stage">
+  <div class="phone" id="phone" aria-label="Pantalla de la app">
+    <div id="pane-cobrar" class="pane simple">
+      <header class="stephead" id="stephead"></header>
+      <div id="screen" class="screen"></div>
+      <nav class="bar" id="bar" aria-label="Controles de la pantalla">
+        <button class="barbtn" id="bar-back" data-act="back" aria-label="Atrás"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>Atrás</span></button>
+        <button class="barbtn" id="bar-listen" data-act="listen" aria-label="Escuchar esta pantalla"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h4l5 4v-13l-5 4z" fill="currentColor"/><path d="M16.5 9a4 4 0 010 6M18.8 6.5a7.5 7.5 0 010 11"/></svg><span>Escuchar</span></button>
+        <button class="barbtn" id="bar-cancel" data-act="cancel" aria-label="Cancelar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Cancelar</span></button>
+      </nav>
+    </div>
+
+    <div id="advwrap" class="advwrap" hidden>
+      <header class="advbar">
+        <button class="btn" data-goto="cobrar" id="adv-exit"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>Volver al modo sencillo</button>
+        <p>Modo avanzado: para quien ayuda con la app.</p>
+        <div class="advtabs" id="advtabs" role="tablist" aria-label="Secciones avanzadas">
+          <button role="tab" data-tab="personas" aria-selected="false">Personas</button>
+          <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
+          <button role="tab" data-tab="reporte" aria-selected="false">Reporte</button>
+        </div>
+      </header>
+      <div id="pane-personas" class="pane sheet" hidden>
+<section aria-labelledby="h-personas">
+    <h2 id="h-personas">¿A quién le cobras?</h2>
+    <p>Agrega a cada persona con su foto y su permiso. Sin permiso, la app no muestra la foto: usa un dibujo con su inicial.</p>
+    <div class="plist" id="cfg-people"></div>
+    <div id="cfg-editor"></div>
+    <div><button class="btn small" id="addperson">Agregar persona</button></div>
+  </section>
+      </div>
+      <div id="pane-ajustes" class="pane sheet" hidden>
+<div class="notice"><span id="nt-ico"></span><span>En este prototipo los cambios se quedan solo mientras tienes la página abierta y las fotos que elijas no salen de tu teléfono. En la app real se guardan en tu cuenta.</span></div>
+
+  <section aria-labelledby="h-tipo">
+    <h2 id="h-tipo">1. ¿Qué necesitas en tu cobro?</h2>
+    <p>Es una sola app. Activa las funciones que uses y puedes combinarlas; las demás desaparecen de la pantalla.</p>
+    <div class="feats" id="cfg-feats"></div>
+    <div class="label">O empieza con un ejemplo</div>
+    <div class="presets" id="cfg-presets"></div>
+    <p>Un ejemplo solo enciende funciones y carga personas de prueba. Después cambias lo que quieras.</p>
+  </section>
+
+  <section aria-labelledby="h-cuanto">
+    <h2 id="h-cuanto">2. Montos, fechas y cuentas</h2>
+    <div class="form" id="cfg-form"></div>
+    <div class="preview" id="cfg-preview"></div>
+  </section>
+
+  <section aria-labelledby="h-recibe">
+    <h2 id="h-recibe">3. ¿Quién recibe el dinero?</h2>
+    <p>Es la cuenta bancaria a la que llega cada pago hecho por CoDi. Puedes tener varias, por ejemplo una para el taller y otra para el DIF, y elegir a cuál va cada cobro. Los pagos en efectivo quedan registrados, pero el dinero lo guardas tú.</p>
+    <div class="plist" id="cfg-recv"></div>
+    <div id="cfg-recv-editor"></div>
+    <div><button class="btn small" id="addrecv">Agregar cuenta</button></div>
+    <div class="form" id="cfg-dest"></div>
+  </section>
+        <button class="btn primary" data-goto="cobrar" style="justify-content:center">Volver al modo sencillo</button>
+      </div>
+      <div id="pane-reporte" class="pane sheet" hidden>
+  <section aria-labelledby="h-rep">
+    <h2 id="h-rep">Reporte de pagos</h2>
+    <p>Para llevar el control del mes: cuánto se esperaba, cuánto llegó y quién falta. El dinero de CoDi y el efectivo se muestran por separado.</p>
+    <div class="btnrow" id="rep-nav">
+      <button class="btn small" id="rep-prev" type="button">Mes anterior</button>
+      <strong id="rep-title" aria-live="polite"></strong>
+      <button class="btn small" id="rep-next" type="button">Mes siguiente</button>
+    </div>
+    <div id="rep-body"></div>
+    <div class="btnrow">
+      <button class="btn small" id="rep-copy" type="button">Copiar resumen</button>
+      <button class="btn small" id="rep-csv" type="button">Descargar archivo (CSV)</button>
+    </div>
+    <p id="rep-status" role="status"></p>
+  </section>
+      </div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="card">
+      <h2>Este proyecto de cobro</h2>
+      <dl class="cfg" id="cfgsum"></dl>
+      <button class="btn small" data-goto="ajustes" style="width:100%;justify-content:center">Cambiar en modo avanzado</button>
+      <p>El modo sencillo es lo que ve quien cobra. Todo lo que muestra sale de Personas y Ajustes, en el modo avanzado.</p>
+    </div>
+    <div class="card">
+      <h2>Lo que dice la voz</h2>
+      <p id="voicecap" aria-live="polite">Toca cualquier botón para oír la voz.</p>
+      <p>En iPhone la voz empieza después del primer toque. El botón Escuchar la repite.</p>
+    </div>
+    <div class="card">
+      <h2>Inscripción por QR</h2>
+      <p id="regcardtxt">Quien se inscribe ve otra pantalla, sin cobros. Mírala aquí.</p>
+      <button class="btn small" id="regswitch" data-goto="inscripcion" style="width:100%;justify-content:center">Ver como quien se inscribe</button>
+      <p>En la app real el código abre una página pública y quien cobra recibe el aviso en su celular.</p>
+    </div>
+    <div class="card">
+      <h2>Probar un error</h2>
+      <label class="check" for="simfail"><input id="simfail" type="checkbox"><span>La próxima vez falla la conexión<small>Solo para el prototipo. Sirve para ver la pantalla de error.</small></span></label>
+    </div>
+    <div class="card">
+      <h2>Qué significan los estados</h2>
+      <div class="stack" id="legend" style="justify-items:start"></div>
+      <p>Cada estado tiene ícono, palabras y un borde distinto. El color solo refuerza.</p>
+    </div>
+    <div class="card">
+      <h2>Datos de ejemplo</h2>
+      <p>Las personas, fotos y teléfonos que vienen cargados son inventados. Este prototipo no genera cobros reales y el QR no es un código CoDi. En la app real el pago se marca solo cuando llega; aquí el botón "Ya pagó" lo simula.</p>
+    </div>
+  </aside>
+</div>
+
+<!-- ============ IDENTIDAD ============ -->
+<div id="v-identidad" class="sheet" hidden>
+  <section>
+    <h2>Nombre y personalidad</h2>
+    <div class="brand" style="font-size:2.4rem"><svg viewBox="0 0 48 48" aria-hidden="true" style="width:3.6rem;height:3.6rem"><rect width="48" height="48" rx="12" fill="#18213B"/><circle cx="23" cy="22" r="13" fill="#fff"/><circle cx="23" cy="20" r="5" fill="#18213B"/><path d="M13 33c2-6 6-8 10-8s8 2 10 8c-3 3-6 4-10 4s-7-1-10-4z" fill="#18213B"/><circle cx="36" cy="36" r="8" fill="#0F5F28" stroke="#18213B" stroke-width="2.5"/><path d="M32.3 36.2l2.6 2.6 4.4-5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Cuentas conmigo</span></div>
+    <p>Tono de trabajo: claro, cercano y sin prisa. Frases cortas, un verbo por botón y ninguna palabra de banco. La cara de cada persona es lo más grande de la pantalla. Todo lo demás se queda quieto: tinta azul marino, mucho espacio y color solo donde significa algo.</p>
+  </section>
+
+  <section>
+    <h2>Dos capas</h2>
+    <ul class="plain">
+      <li><b>Modo sencillo (el de siempre).</b> Cuatro pasos, una sola acción por pantalla, letra grande y botón principal único. Es lo que ve quien cobra.</li>
+      <li><b>Modo avanzado (bajo demanda).</b> Personas y Ajustes, con formularios. Se abre con "Ayuda de un familiar" y siempre tiene un botón grande para volver al modo sencillo.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Estados: ícono, palabras y forma</h2>
+    <p>Verde y amarillo solo existen para "pagado" y "pendiente". Aun así, ningún estado depende del color: en alto contraste el verde y el amarillo casi se confunden por brillo (1.12 a 1), así que cada uno lleva ícono, palabras y un borde distinto.</p>
+    <div class="states">
+      <div class="state" style="padding:14px"><span class="stt stt-paid"><span class="ico" id="id-check"></span><span>Ya pagó</span></span><small>Palomita, borde sólido</small></div>
+      <div class="state" style="padding:14px"><span class="stt stt-wait"><span class="ico" id="id-clock"></span><span>Esperando pago</span></span><small>Reloj, borde punteado y franjas</small></div>
+      <div class="state" style="padding:14px"><span class="stt stt-due"><span class="ico" id="id-ring"></span><span>Falta pagar</span></span><small>Círculo vacío, borde de puntos</small></div>
+    </div>
+    <div class="label">Un color por periodo, sin verdes ni amarillos</div>
+    <div class="months" id="monthswatches"></div>
+    <p>Los meses llevan texto blanco sobre un fondo más oscuro (7.29 a 1 como mínimo) y la palabra del mes siempre está escrita.</p>
+  </section>
+
+  <section>
+    <h2>Contraste calculado</h2>
+    <p>Cifras sacadas con la fórmula WCAG a partir de los colores exactos. La meta del modo sencillo es 7 a 1 para todo texto.</p>
+    <ul class="plain">
+      <li><b>Claro.</b> Tinta sobre blanco 15.9. Texto secundario 9.4. "Ya pagó" 7.8. "Esperando pago" 8.6. Rojo de error 8.1. Meses 7.3. Bordes de controles 4.7 (meta 3).</li>
+      <li><b>Oscuro.</b> Tinta 14.2. Texto secundario 7.3. "Ya pagó" 7.7. "Esperando pago" 9.7. Rojo de error 7.0. Bordes 5.6.</li>
+      <li><b>Alto contraste (fondo negro, se activa en "Ver mejor" o con el ajuste del iPhone).</b> Blanco sobre negro 21. "Ya pagó" 11.8. "Esperando pago" 13.2. Rojo de error 9.2. Foco amarillo 17.2.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Tipografía y tamaños</h2>
+    <div class="spec">
+      <div><div class="sample-ui" style="font-size:2rem;font-weight:800">¿Quién paga?</div><span class="label">Atkinson Hyperlegible 800 · títulos de 32 px</span></div>
+      <div><div class="sample-ui">Toca la foto de quien paga</div><span class="label">Atkinson Hyperlegible 400 y 700 · texto de 22 px</span></div>
+    </div>
+    <p>Atkinson Hyperlegible se diseñó para baja visión: distingue letras y números parecidos. Se usa una sola familia en todo el modo sencillo. Texto de 22 px, botones de 24 px, títulos de 32 px, interlineado de 1.5. Todo lo tocable mide al menos 56 px de alto, el botón principal 88 px y entre botones hay 12 px. Las medidas siguen el tamaño de letra del iPhone y hay un ajuste "Letra extra grande" (25 % más).</p>
+  </section>
+
+  <section>
+    <h2>Ícono de la app</h2>
+    <div class="iconrow">
+      <figure><svg id="appicon" viewBox="0 0 180 180" width="180" height="180" aria-label="Ícono de la app"></svg>180 × 180</figure>
+      <figure><svg id="appicon2" viewBox="0 0 180 180" width="90" height="90" aria-hidden="true"></svg>90</figure>
+      <figure><svg id="appicon3" viewBox="0 0 180 180" width="44" height="44" aria-hidden="true"></svg>44</figure>
+    </div>
+    <p>Una foto enmarcada con una palomita verde. Para instalarla en iPhone se necesita la versión de 180 × 180 como apple-touch-icon.</p>
+  </section>
+
+  <section>
+    <h2>Reglas del modo sencillo</h2>
+    <ul class="plain">
+      <li><b>Cuatro pasos siempre.</b> "Paso 1 de 4" con círculos numerados. El total nunca cambia a mitad del camino.</li>
+      <li><b>Una acción por pantalla.</b> Un solo botón principal y, como máximo, cuatro opciones. Si hay más personas o meses, se muestran de tres en tres con "Ver más".</li>
+      <li><b>Cómo se cuentan las opciones.</b> Se cuentan las opciones de la pantalla. La barra de abajo (Atrás, Escuchar, Cancelar) es fija y no se cuenta. Es una interpretación de la regla de 3 o 4 elementos.</li>
+      <li><b>Sin gestos ni menús escondidos.</b> Todo se toca. No hay menú de hamburguesa, pestañas ni deslizar.</li>
+      <li><b>Atrás y Cancelar siempre a la vista.</b> Cancelar ofrece guardar y seguir después: la pantalla de inicio lo recuerda con "Continuar".</li>
+      <li><b>Confirmación en pantalla.</b> Palomita grande y la palabra PAGADO, con sonido y vibración si el teléfono los permite. La pantalla se entiende sola, sin sonido.</li>
+      <li><b>Errores.</b> Ícono grande, una frase y dos botones: "Intentar de nuevo" y "Volver".</li>
+      <li><b>Montos libres.</b> En fiado se escribe cualquier cantidad. Los montos rápidos son opcionales y nunca son un límite.</li>
+      <li><b>Voz.</b> Se lee cada pantalla y el botón Escuchar la repite con las opciones.</li>
+      <li><b>Fotos.</b> Solo se muestra la foto si hay permiso. Si no, un dibujo con la inicial.</li>
+      <li>Nunca usar logotipos del DIF, de Pey ni de CoDi en la marca.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Lista de revisión por pantalla</h2>
+    <p>Qué se comprobó y qué falta. Lo automático lo hizo un recorrido que abre cada pantalla en cinco configuraciones distintas.</p>
+    <ul class="plain">
+      <li><b>Una acción principal por pantalla.</b> Comprobado en el recorrido automático.</li>
+      <li><b>Texto de 20 px o más y 7 a 1 de contraste.</b> Tamaños revisados en el CSS. Contraste calculado, no medido en pantalla real.</li>
+      <li><b>Botones de 48 dp o más y separados.</b> Definidos en el CSS (56 px mínimo, 12 px de separación). No medidos en un iPhone.</li>
+      <li><b>Información que no depende del color.</b> Comprobado: cada estado tiene ícono y palabras.</li>
+      <li><b>Sin gestos ni menús escondidos.</b> Comprobado: no hay manejadores de gestos.</li>
+      <li><b>Atrás y Cancelar fáciles.</b> Comprobado en cada pantalla donde aplican.</li>
+      <li><b>Cabe en dos renglones por bloque.</b> Solo se revisó el largo de las frases. Falta verlo en un teléfono.</li>
+      <li><b>Letra del sistema, sonido y voz en iPhone.</b> Sin probar. En iPhone la vibración del navegador no está disponible, así que la confirmación visual es la que cuenta.</li>
+      <li><b>Se entiende en menos de 5 segundos.</b> Sin probar con personas.</li>
+      <li><b>Prueba con adultos mayores o con simuladores de baja visión y daltonismo.</b> No se ha hecho. Es lo siguiente.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Por decidir</h2>
+    <ul class="plain">
+      <li><b>Nombre.</b> El proyecto se llama «Cuentas conmigo». La foto sirve para reconocer a la persona en la lista, no para reconocer su cara de forma automática.</li>
+      <li><b>Tanda.</b> Falta confirmar si quien recibe la bolsa también aporta esa ronda, cada cuánto es y cómo se registra la entrega, porque Pey solo recibe dinero.</li>
+      <li><b>Escribir montos.</b> En fiado se usa el teclado numérico del iPhone en un solo campo. Si en la prueba con personas resulta pequeño, se cambia por un teclado propio.</li>
+      <li><b>Permiso de foto.</b> Redactar el texto del permiso en lenguaje simple y decidir si se imprime para firmar.</li>
+      <li><b>Cuenta de una institución.</b> Puede quedar por confirmar. El prototipo usa datos de ejemplo.</li>
+    </ul>
+  </section>
+</div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= helpers ================= */
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const money = n => { n = Number(n) || 0; return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); };
+  const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const MON3 = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  const HUES = [225, 355, 285, 195, 320, 255, 12, 210, 300, 340, 240, 270]; /* no greens or yellows */
+  const RELS = ['Hija','Hijo','Nieta','Nieto','Esposa','Esposo','Hermana','Hermano','Vecina o vecino','Otra persona'];
+  const BYS = ['La propia persona','Su familiar','Otra persona de confianza'];
+  const TODAY = new Date();
+  const longDate = d => { try { return new Intl.DateTimeFormat('es-MX', { dateStyle: 'long' }).format(d); } catch (e) { return d.toDateString(); } };
+  const shortDate = d => d.getDate() + ' ' + MON3[d.getMonth()].toLowerCase();
+  const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const dim = (y, m) => new Date(y, m + 1, 0).getDate();
+  const maskTel = t => '•••• ' + String(t || '').slice(-4);
+  const maskClabe = c => (c ? 'CLABE •••• ' + String(c).slice(-4) : '');
+  const KINDS = { yo: 'Yo', persona: 'Otra persona', institucion: 'Institución o negocio' };
+  /* CLABE: 18 digits, the last one is a check digit (weights 3, 7, 1) */
+  function clabeDigit(b17) { const w = [3, 7, 1]; let sum = 0; for (let i = 0; i < 17; i++) sum += (parseInt(b17[i], 10) * w[i % 3]) % 10; return (10 - sum % 10) % 10; }
+  function withCheck(b17) { return b17 + clabeDigit(b17); }
+  function clabeOk(c) { return /^[0-9]{18}$/.test(c) && clabeDigit(c.slice(0, 17)) === parseInt(c[17], 10); }
+
+  /* ================= icons ================= */
+  const I = (p) => '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+  const ICON = {
+    check: I('<path d="M4.5 12.5l5 5L19.5 7"/>'),
+    clock: I('<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.5l3.5 2"/>'),
+    back: I('<path d="M15 5l-7 7 7 7"/>'),
+    speaker: I('<path d="M4 9.5v5h4l5 4v-13l-5 4z" fill="currentColor"/><path d="M16.5 9a4 4 0 010 6M18.8 6.5a7.5 7.5 0 010 11"/>'),
+    mute: I('<path d="M4 9.5v5h4l5 4v-13l-5 4z" fill="currentColor"/><path d="M17 9.5l5 5M22 9.5l-5 5"/>'),
+    star: I('<path d="M12 3.5l2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.9 6.7 19.8l1.1-5.9L3.4 9.8l6-.8z" fill="currentColor" stroke-width="1.5"/>'),
+    qr: I('<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18z"/>'),
+    people: I('<circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.6 3-5.4 6-5.4s5.4 1.8 6 5.4"/><circle cx="17.5" cy="9" r="2.4"/><path d="M17.5 13.6c2.2.2 3.6 1.8 4 4.4"/>'),
+    cash: I('<rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.8"/>'),
+    info: I('<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/>'),
+    ring: I('<circle cx="12" cy="12" r="8.5"/>'),
+    alert: I('<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.3v.2"/>'),
+    save: I('<path d="M5 4.5h11l3 3v12H5z"/><path d="M8 4.5v5h7v-5M8 19.5v-6h8v6"/>'),
+    eye: I('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
+    plus: I('<path d="M12 5v14M5 12h14"/>'),
+    x: I('<path d="M6 6l12 12M18 6L6 18"/>'),
+    send: I('<path d="M4 12l16-8-6 16-3-7z"/>')
+  };
+
+  /* ================= sample faces (invented) ================= */
+  const FACES = [
+    { n: 'Rosa',     bg: '#D9E2F7', skin: '#E8B896', hair: '#C9CCD6', cloth: '#7B5EA7', style: 'bun',   gl: 1, payer: ['Ana', 'Hija', '5555504821'] },
+    { n: 'Lupita',   bg: '#F5D9E4', skin: '#B97A57', hair: '#E6E8EE', cloth: '#2F6F9F', style: 'short',        payer: ['Luis', 'Nieto', '5555501307'] },
+    { n: 'Chela',    bg: '#DDE6F0', skin: '#F1C9A5', hair: '#9A9DAA', cloth: '#B04A5A', style: 'curly', gl: 1, payer: ['Marta', 'Hija', '5555509942'] },
+    { n: 'Mary',     bg: '#E4DAF3', skin: '#D9A47C', hair: '#4A3A34', cloth: '#3F6FB0', style: 'long',         payer: null },
+    { n: 'Toña',     bg: '#F2DDE3', skin: '#8D5A3C', hair: '#6C6F7C', cloth: '#8A4F9E', style: 'curly',        payer: ['Raúl', 'Hijo', '5555505530'] },
+    { n: 'Meche',    bg: '#D8E7F2', skin: '#E8B896', hair: '#E6E8EE', cloth: '#C25B6E', style: 'bun',          payer: ['Dany', 'Nieta', '5555507716'] },
+    { n: 'Conchita', bg: '#E9E0F5', skin: '#D9A47C', hair: '#B9BCC6', cloth: '#35709E', style: 'short', gl: 1, payer: ['Pablo', 'Hijo', '5555502284'] },
+    { n: 'Paty',     bg: '#F6DCE6', skin: '#F1C9A5', hair: '#7A3E4E', cloth: '#5A5FA8', style: 'long',         payer: ['Sofi', 'Hija', '5555506049'] },
+    { n: 'Ofelia',   bg: '#DAE4F4', skin: '#B97A57', hair: '#C9CCD6', cloth: '#A8445B', style: 'bun',   gl: 1, payer: ['Iván', 'Nieto', '5555503391'] },
+    { n: 'Nena',     bg: '#E6DDF4', skin: '#E8B896', hair: '#E6E8EE', cloth: '#6A4FA0', style: 'curly',        payer: null },
+    { n: 'Juanita',  bg: '#F3D9E0', skin: '#8D5A3C', hair: '#9A9DAA', cloth: '#2C6C99', style: 'short',        payer: ['Karen', 'Hija', '5555508105'] },
+    { n: 'Tere',     bg: '#D7E3F5', skin: '#D9A47C', hair: '#B9BCC6', cloth: '#B65A66', style: 'long',  gl: 1, payer: ['Beto', 'Hijo', '5555504468'] }
+  ];
+  function face(p, label) {
+    const hr = p.hair; let back = '', front = '';
+    if (p.style === 'long') back = '<path d="M28 44c-2-22 8-32 22-32s24 10 22 32l2 30H26z" fill="' + hr + '"/>';
+    if (p.style === 'curly') {
+      front = [[33,24,9],[42,17,9],[50,14,9],[58,17,9],[67,24,9],[29,36,7],[71,36,7]].map(c => '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="' + c[2] + '" fill="' + hr + '"/>').join('');
+    } else {
+      front = '<path d="M31 42c-3-19 7-28 19-28s22 9 19 28c-3-9-9-14-19-14s-16 5-19 14z" fill="' + hr + '"/>';
+      if (p.style === 'bun') front += '<circle cx="50" cy="12" r="8" fill="' + hr + '"/>';
+    }
+    const gl = p.gl ? '<g fill="none" stroke="#2A2A33" stroke-width="1.6"><circle cx="43" cy="43" r="5.4"/><circle cx="57" cy="43" r="5.4"/><path d="M48.4 43h3.2"/></g>' : '';
+    return '<svg viewBox="0 0 100 100" role="img" aria-label="Foto de ejemplo de ' + esc(label) + '" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="' + p.bg + '"/>' + back +
+      '<path d="M6 100c2-22 20-30 44-30s42 8 44 30z" fill="' + p.cloth + '"/>' +
+      '<rect x="42" y="56" width="16" height="18" rx="6" fill="' + p.skin + '"/><rect x="42" y="56" width="16" height="18" rx="6" fill="#000" opacity=".08"/>' +
+      '<ellipse cx="50" cy="42" rx="19" ry="22" fill="' + p.skin + '"/>' + front +
+      '<circle cx="43" cy="43" r="1.9" fill="#2A2A33"/><circle cx="57" cy="43" r="1.9" fill="#2A2A33"/>' + gl +
+      '<circle cx="38" cy="50" r="3" fill="#D86A6A" opacity=".22"/><circle cx="62" cy="50" r="3" fill="#D86A6A" opacity=".22"/>' +
+      '<path d="M43 52q7 6 14 0" fill="none" stroke="#2A2A33" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  }
+  const SIL_BG = ['#D9E2F7', '#F5D9E4', '#E4DAF3', '#DDE6F0', '#F2DDE3', '#D8E7F2'];
+  function silhouette(p) {
+    const ini = (p.n || '?').trim().charAt(0).toUpperCase() || '?';
+    return '<svg viewBox="0 0 100 100" role="img" aria-label="Sin foto de ' + esc(p.n || 'persona') + '"><rect width="100" height="100" fill="' + SIL_BG[p.id % SIL_BG.length] + '"/>' +
+      '<circle cx="50" cy="36" r="18" fill="#18213B" opacity=".2"/><path d="M12 100c2-24 18-34 38-34s36 10 38 34z" fill="#18213B" opacity=".2"/>' +
+      '<text x="50" y="53" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-weight="800" font-size="36" fill="#18213B">' + esc(ini) + '</text></svg>';
+  }
+  /* a photo is shown only when the person gave permission */
+  function avatar(p) {
+    if (p.consent.ok && p.photo) return '<svg viewBox="0 0 100 100" role="img" aria-label="Foto de ' + esc(p.n) + '" preserveAspectRatio="xMidYMid slice"><image href="' + p.photo + '" width="100" height="100" preserveAspectRatio="xMidYMid slice"/></svg>';
+    if (p.consent.ok && p.sample != null) return face(FACES[p.sample], p.n);
+    return silhouette(p);
+  }
+
+  /* ================= project model ================= */
+  let uid = 0;
+  function mkPerson(base) {
+    return Object.assign({ id: ++uid, n: '', tel: '', note: '', sample: null, photo: null,
+      consent: { ok: false, date: null, by: BYS[0] }, payers: [], from: 0, pay: [], extra: null, bal: 0, ledger: [], pend: null, last: null }, base);
+  }
+  function rng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  /* One single template: these switches decide what the app shows. */
+  const FEATS = [
+    { k: 'periodic', name: 'Cobros con calendario', desc: 'Mensualidades, cuotas o aportaciones que se repiten en fechas fijas.' },
+    { k: 'extra',    name: 'Cobro aparte',          desc: 'Una cuota distinta que nunca se mezcla con las demás, como una cuota anual.' },
+    { k: 'turns',    name: 'Turnos',                desc: 'Cada ronda le toca a una persona, como en una tanda. Necesita cobros con calendario.' },
+    { k: 'ledger',   name: 'Fiado',                 desc: 'Cada persona tiene su cuenta. Tú escribes el monto de lo que se lleva y de lo que abona.' }
+  ];
+  const PRESETS = [
+    { id: 'taller', name: 'Taller o clase' }, { id: 'tanda', name: 'Tanda' },
+    { id: 'tienda', name: 'Tienda con fiado' }, { id: 'vacio', name: 'Empezar desde cero' }
+  ];
+  let PRJ = null;
+
+  function viaPick(r, f) { const x = r(); if (x < .25) return 'qr'; if (x < .7 && f.payer) return 'fam'; return 'cash'; }
+  function sampleOf(i, r, withHistory, cur, count, extraOn) {
+    const f = FACES[i];
+    const P = mkPerson({ n: f.n, sample: i, consent: { ok: true, date: 'Ejemplo', by: BYS[0] }, note: 'Persona de ejemplo',
+      payers: f.payer ? [{ name: f.payer[0], rel: f.payer[1], tel: f.payer[2], primary: true }] : [] });
+    if (withHistory) {
+      for (let p = 0; p < count; p++) {
+        let v = null;
+        if (p < cur) { if (r() < .93) v = { s: 'paid', via: viaPick(r, f), payer: 0, date: null }; }
+        else if (p === cur) { const x = r(); if (x < .55) v = { s: 'paid', via: viaPick(r, f), payer: 0, date: null }; else if (x < .7 && f.payer) v = { s: 'wait', via: 'fam', payer: 0 }; }
+        P.pay[p] = v;
+      }
+      if (extraOn && r() < .65) P.extra = { s: 'paid', via: viaPick(r, f), payer: 0, date: null };
+    }
+    return P;
+  }
+  /* A preset only switches features on and loads sample people. It is the same template underneath. */
+  function preset(id) {
+    const y = TODAY.getFullYear(), r = rng(id === 'tanda' ? 11 : 7);
+    const base = {
+      preset: id, name: 'Mi proyecto de cobro', shortcuts: [], payout: {},
+      on: { periodic: true, extra: false, turns: false, ledger: false },
+      main: { name: 'Cobro', amount: 100, freq: 'monthly', start: iso(new Date(y, TODAY.getMonth(), 1)), count: 6 },
+      extra: { name: 'Cobro aparte', amount: 40 }, people: [],
+      receivers: [{ id: 'r1', name: 'Mi cuenta', kind: 'yo', clabe: '', pending: true }],
+      dest: { main: 'r1', extra: 'r1', ledger: 'r1' }
+    };
+    if (id === 'taller') {
+      base.name = 'Taller de ejemplo';
+      base.main = { name: 'Mensualidad del taller', amount: 130, freq: 'monthly', start: iso(new Date(y, 0, 1)), count: 12 };
+      base.extra = { name: 'Pago anual DIF', amount: 40 }; base.on.extra = true;
+      base.receivers = [{ id: 'r1', name: 'Cuenta de prueba del taller', kind: 'yo', clabe: withCheck('01218000123456789'), pending: false }, { id: 'r2', name: 'DIF (cuenta por confirmar)', kind: 'institucion', clabe: '', pending: true }];
+      base.dest = { main: 'r1', extra: 'r2', ledger: 'r1' };
+      const c = curOf(base); base.people = FACES.map((f, i) => sampleOf(i, r, true, c, 12, true));
+    } else if (id === 'tanda') {
+      base.name = 'Tanda de ejemplo'; base.on.turns = true;
+      base.receivers = [{ id: 'r1', name: 'Cuenta de la organizadora', kind: 'persona', clabe: withCheck('01218000987654321'), pending: false }];
+      base.main = { name: 'Aportación de la tanda', amount: 200, freq: 'biweekly', start: iso(new Date(y, TODAY.getMonth(), TODAY.getDate() - 4 * 15)), count: 12 };
+      const c = curOf(base); base.people = FACES.map((f, i) => sampleOf(i, r, true, c, 12, false));
+    } else if (id === 'tienda') {
+      base.name = 'Tiendita de ejemplo'; base.on.periodic = false; base.on.ledger = true;
+      base.receivers = [{ id: 'r1', name: 'Cuenta de la tienda', kind: 'yo', clabe: withCheck('01218000555666777'), pending: false }];
+      const bals = [85, 0, 240, 35, 0, 120.5], notes = ['Tortillas y leche', '', 'Despensa de la semana', 'Refresco y pan', '', 'Frijol y arroz'];
+      base.people = [0, 2, 4, 6, 8, 10].map((fi, k) => {
+        const P = sampleOf(fi, r, false, 0, 0, false); P.bal = bals[k];
+        if (bals[k] > 0) P.ledger = [{ t: 'cargo', a: bals[k], d: shortDate(new Date(y, TODAY.getMonth(), Math.max(1, TODAY.getDate() - 2 - k))), note: notes[k] }];
+        return P;
+      });
+    }
+    return base;
+  }
+
+  /* ---- periods derived from the schedule ---- */
+  function periods() {
+    if (!PRJ.on.periodic) return [];
+    const m = PRJ.main, out = [], s = new Date(m.start + 'T12:00:00');
+    const cnt = m.freq === 'once' ? 1 : Math.max(1, Math.min(24, m.count | 0));
+    const sy = s.getFullYear(), sm = s.getMonth(), sd = s.getDate();
+    for (let k = 0; k < cnt; k++) {
+      let d;
+      if (m.freq === 'monthly') d = new Date(sy, sm + k, Math.min(sd, dim(sy, sm + k)));
+      else if (m.freq === 'yearly') d = new Date(sy + k, sm, sd);
+      else if (m.freq === 'weekly') d = new Date(sy, sm, sd + 7 * k);
+      else if (m.freq === 'biweekly') d = new Date(sy, sm, sd + 15 * k);
+      else d = new Date(sy, sm, sd);
+      const mo = d.getMonth(), day = d.getDate(), yr = d.getFullYear();
+      let label, sub = '', title, speak;
+      if (m.freq === 'monthly') { label = MON3[mo]; title = cap(MONTHS[mo]); speak = MONTHS[mo]; if (cnt > 12) { sub = String(yr); title += ' ' + yr; } }
+      else if (m.freq === 'yearly') { label = String(yr); title = 'Año ' + yr; speak = 'el año ' + yr; }
+      else if (m.freq === 'once') { label = 'ÚNICO'; title = 'Pago único'; speak = 'el pago único'; }
+      else { label = String(day); sub = MON3[mo].toLowerCase(); title = day + ' de ' + MONTHS[mo]; speak = 'el cobro del ' + day + ' de ' + MONTHS[mo]; }
+      if (PRJ.on.turns) { sub = 'ronda ' + (k + 1); title = 'Ronda ' + (k + 1) + ' (' + day + ' de ' + MONTHS[mo] + ')'; speak = 'la ronda ' + (k + 1); label = String(k + 1); }
+      out.push({ date: d, label: label, sub: sub, title: title, speak: speak });
+    }
+    return out;
+  }
+  function curOf(prj) {
+    const keep = PRJ; PRJ = prj; const per = periods(); PRJ = keep;
+    const end = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate(), 23, 59);
+    let c = 0; per.forEach((p, i) => { if (p.date <= end) c = i; }); return c;
+  }
+  const cur = () => curOf(PRJ);
+  const freqText = f => ({ weekly: 'cada semana', biweekly: 'cada quincena', monthly: 'cada mes', yearly: 'cada año', once: 'una sola vez' }[f]);
+
+  /* ---- records ---- */
+  const byId = id => PRJ.people.find(p => p.id === id);
+  const getRec = (P, k) => (k === 'x' ? P.extra : k === 'f' ? P.pend : (P.pay[k] || null));
+  const putRec = (P, k, v) => { if (k === 'x') P.extra = v; else if (k === 'f') P.pend = v; else P.pay[k] = v; };
+  const recvOf = key => PRJ.receivers.find(r => r.id === PRJ.dest[key]) || PRJ.receivers[0] || null;
+  function charge(P, k) {
+    if (k === 'x') return { amount: PRJ.extra.amount, title: PRJ.extra.name, concept: PRJ.extra.name, h: null, speak: PRJ.extra.name, to: recvOf('extra') };
+    if (k === 'f') { const r = P.pend; return { amount: r ? r.amount : (S.flow === 'abono' ? amtVal() : 0), title: 'Abono', concept: 'Abono de ' + PRJ.name, h: null, speak: 'el abono', to: recvOf('ledger') }; }
+    const pp = periods()[k] || { title: '', speak: '' };
+    return { amount: PRJ.main.amount, title: pp.title, concept: PRJ.main.name + (PRJ.main.freq === 'once' ? '' : ' - ' + pp.title.toLowerCase()), h: HUES[k % 12], speak: pp.speak, to: recvOf('main') };
+  }
+  const toLine = c => (c.to ? '<div class="to">El dinero llega a <b>' + esc(c.to.name) + '</b>' + (c.to.pending ? ' <span class="pill">Cuenta por confirmar</span>' : '') + '</div>' : '');
+    function viaText(via, payerIdx, P) {
+    if (via === 'fam') { const q = P.payers[payerIdx || 0]; return q ? 'Familiar: ' + q.name + ' (' + q.rel + ')' : 'Familiar a distancia'; }
+    return via === 'qr' ? 'QR con su celular' : 'Efectivo en el salón';
+  }
+  function markPaid(P, k, via, payer) {
+    S.undo = via === 'cash' ? { pid: P.id, k: k, prev: JSON.parse(JSON.stringify(getRec(P, k) || null)), bal: P.bal, ledger: P.ledger.slice(), last: P.last, pend: P.pend ? JSON.parse(JSON.stringify(P.pend)) : null } : null;
+    if (k === 'f') {
+      const c = charge(P, k); P.bal = Math.max(0, Math.round((P.bal - c.amount) * 100) / 100);
+      P.ledger.unshift({ t: 'abono', a: c.amount, d: shortDate(TODAY) });
+      P.last = { amount: c.amount, via: via, payer: payer, bal: P.bal }; P.pend = null;
+    } else putRec(P, k, { s: 'paid', via: via, payer: payer, date: null });
+  }
+
+  /* ================= app state, settings, voice, sound ================= */
+  const S = {
+    tab: 'cobrar', view: 'home', hist: [], page: 0, person: null, period: null, flow: null,
+    amt: { mode: 'cargo', buf: '', note: '' }, rg: null, regCount: 0, repK: null, sent: {}, rnote: '', undo: null, saved: null, notice: '', err: null, fail: false, say: '', doneInfo: null,
+    set: { voice: true, sound: true, hc: false, xl: false }
+  };
+  const r2 = n => Math.round(n * 100) / 100;
+  function loadSet() {
+    try {
+      const j = JSON.parse(localStorage.getItem('pcf-settings') || 'null');
+      if (j && typeof j === 'object') Object.assign(S.set, j);
+      else if (window.matchMedia && window.matchMedia('(prefers-contrast: more)').matches) S.set.hc = true;
+    } catch (e) { /* storage can be blocked; defaults are fine */ }
+  }
+  function saveSet() { try { localStorage.setItem('pcf-settings', JSON.stringify(S.set)); } catch (e) { /* optional */ } }
+  function applySet() {
+    const r = document.documentElement;
+    r.setAttribute('data-contrast', S.set.hc ? 'high' : 'normal');
+    if (S.set.xl) r.setAttribute('data-text', 'xl'); else r.removeAttribute('data-text');
+  }
+  function speak(text) {
+    try {
+      if (!text || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text); u.lang = 'es-MX'; u.rate = 0.9;
+      const vs = window.speechSynthesis.getVoices() || [];
+      const v = vs.find(x => x.lang.replace('_', '-').toLowerCase() === 'es-mx') || vs.find(x => x.lang.toLowerCase().indexOf('es') === 0);
+      if (v) u.voice = v;
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* voice is optional */ }
+  }
+  function say(text) {
+    const c = $('#voicecap'); if (c && text) c.innerHTML = '<b>«' + esc(text) + '»</b>';
+    if (S.set.voice && text) speak(text);
+  }
+  /* Sound and vibration are extras: the visual confirmation must stand alone (the iPhone ringer switch can mute sound, and Safari on iPhone has no vibrate). */
+  let actx = null;
+  function feedback(kind) {
+    if (!S.set.sound) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) {
+        actx = actx || new AC(); if (actx.state === 'suspended') actx.resume();
+        const seq = kind === 'ok' ? [[660, 0, .12], [880, .14, .22]] : [[220, 0, .3]];
+        seq.forEach(n => { const o = actx.createOscillator(), g = actx.createGain(); o.type = kind === 'ok' ? 'sine' : 'square'; o.frequency.value = n[0]; g.gain.value = .12; o.connect(g); g.connect(actx.destination); o.start(actx.currentTime + n[1]); o.stop(actx.currentTime + n[1] + n[2]); });
+      }
+    } catch (e) { /* optional */ }
+    try { if (navigator.vibrate) navigator.vibrate(kind === 'ok' ? [80, 50, 80] : [250]); } catch (e) { /* optional */ }
+  }
+
+  function fakeQR(seedN) {
+    const n = 25, r = rng(seedN * 97 + 13); let out = '';
+    const finder = (x, y) => '<rect x="' + x + '" y="' + y + '" width="7" height="7" fill="#000"/><rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="5" height="5" fill="#fff"/><rect x="' + (x + 2) + '" y="' + (y + 2) + '" width="3" height="3" fill="#000"/>';
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      if ((x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9)) continue;
+      if (r() < .48) out += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="#000"/>';
+    }
+    return '<svg viewBox="0 0 25 25" role="img" aria-label="QR de ejemplo" shape-rendering="crispEdges"><rect width="25" height="25" fill="#fff"/>' + out + finder(0, 0) + finder(n - 7, 0) + finder(0, n - 7) + '</svg>';
+  }
+
+  /* ================= SIMPLE MODE: small building blocks ================= */
+  const attrs = d => Object.keys(d || {}).map(k => ' data-' + k + '="' + esc(d[k]) + '"').join('');
+  function choice(o) {
+    return '<button class="cbtn' + (o.primary ? ' primary' : '') + (o.cls ? ' ' + o.cls : '') + '" data-act="' + o.act + '"' + attrs(o.data) +
+      (o.role ? ' role="' + o.role + '" aria-checked="' + o.checked + '"' : '') + '>' +
+      (o.mk != null ? '<span class="mk" style="--h:' + o.mk + '" aria-hidden="true"></span>' : '') + (o.icon || '') +
+      '<span class="ct"><span class="cl">' + esc(o.label) + '</span>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span>' + (o.right || '') + '</button>';
+  }
+  const stt = (st, text) => '<span class="stt stt-' + st + '" data-state="' + st + '">' + (st === 'paid' ? ICON.check : st === 'wait' ? ICON.clock : ICON.ring) + '<span>' + esc(text) + '</span></span>';
+  const idstrip = (P, extra) => '<div class="idstrip"><div class="ava">' + avatar(P) + '</div><div><strong>' + esc(P.n) + '</strong>' + (extra ? '<div class="txt soft say">' + esc(extra) + '</div>' : '') + '</div></div>';
+  const alertBox = msg => '<div class="alertbox">' + ICON.alert + '<span>' + esc(msg) + '</span></div>';
+  /* More than 4 options: show 3 plus a "see more" button, so a screen never holds more than 4 choices. */
+  function paged(items, label) {
+    if (items.length <= 4) return { rows: items, pager: '' };
+    const n = Math.ceil(items.length / 3), pg = S.page % n, last = pg === n - 1;
+    return { rows: items.slice(pg * 3, pg * 3 + 3), pager: '<button class="cbtn pager" data-act="more"><span class="ct"><span class="cl">' + (last ? 'Volver a las primeras' : label) + '</span><small>Hoja ' + (pg + 1) + ' de ' + n + '</small></span></button>' };
+  }
+  const amtVal = () => parseAmt(S.amt.buf);
+  /* Accepts "12.5", "12,5" and "1,250". A comma followed by exactly 3 digits is a thousands separator. */
+  function parseAmt(raw) {
+    let s = String(raw || '').replace(/[^0-9.,]/g, '');
+    if (!s) return 0;
+    if (s.indexOf('.') >= 0) s = s.replace(/,/g, '');
+    else if (s.indexOf(',') >= 0) { if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, ''); else if (/^\d+,\d{1,2}$/.test(s)) s = s.replace(',', '.'); else s = s.replace(/,/g, ''); }
+    const v = parseFloat(s); return isFinite(v) ? Math.min(9999999.99, r2(v)) : 0;
+  }
+  const trimAmt = n => { const s = (Math.round(n * 100) / 100).toFixed(2); return s.replace(/\.00$/, ''); };
+  const shortNote = s => (s.length > 24 ? s.slice(0, 23) + '…' : s);
+
+  function personState(P, c) {
+    const on = PRJ.on;
+    if (on.periodic) { const v = getRec(P, c); if (v && v.s === 'paid') return { st: 'paid', text: 'Ya pagó' }; if (v && v.s === 'wait') return { st: 'wait', text: 'Esperando pago' }; return { st: 'due', text: 'Falta pagar' }; }
+    if (on.ledger) return P.bal > 0 ? { st: 'due', text: 'Debe ' + money(P.bal) } : { st: 'paid', text: 'No debe nada' };
+    const v = P.extra; return v && v.s === 'paid' ? { st: 'paid', text: 'Ya pagó' } : v ? { st: 'wait', text: 'Esperando pago' } : { st: 'due', text: 'Falta pagar' };
+  }
+  function openPeriods(P) { const out = []; periods().forEach((pp, k) => { if (k < P.from) return; const v = getRec(P, k); if (!v || v.s !== 'paid') out.push(k); }); return out; }
+  function nextOpen(P) { const all = openPeriods(P), c = cur(), upto = all.filter(k => k <= c); return upto.length ? upto[0] : (all.length ? all[0] : null); }
+  const stWord = (P, k) => { const v = getRec(P, k); return v && v.s === 'wait' ? 'esperando pago' : k > cur() ? 'se puede adelantar' : 'falta'; };
+  const toLine2 = c => (c.to ? '<p class="to2 say">El dinero llega a <b>' + esc(c.to.name) + '</b>' + (c.to.pending && !/confirmar/i.test(c.to.name) ? ' (por confirmar)' : '') + '</p>' : '');
+  const idcharge = (P, c) => '<div class="idcharge"><div class="ava">' + avatar(P) + '</div><div class="ct"><strong>' + esc(P.n) + '</strong>' + chargeLine(c) + '</div></div>';
+  function chargeLine(c) {
+    return '<div class="chargeline"><span class="mchip' + (c.h === null ? ' annualchip' : '') + '" style="--h:' + (c.h === null ? 225 : c.h) + '">' + esc(c.title) + '</span><span class="bigamt">' + money(c.amount) + '</span></div>';
+  }
+
+  /* ================= SIMPLE MODE: views (each returns {html, say}) ================= */
+  function homeStatus() {
+    const on = PRJ.on, L = roster(), c = cur(); let h = '';
+    if (on.periodic && placesOn()) h += placesCard();
+    else if (on.periodic) {
+      let paid = 0, wait = 0, due = 0; L.forEach(p => { if (p.from > c) return; const v = getRec(p, c); if (v && v.s === 'paid') paid++; else if (v && v.s === 'wait') wait++; else due++; });
+      const tot = Math.max(1, paid + wait + due), per = periods()[c] || { title: '' }, head = on.turns ? 'Ronda ' + (c + 1) : per.title;
+      h += '<div class="statcard"><p class="txt say"><b>' + esc(head) + ':</b> ' + paid + ' de ' + (paid + wait + due) + ' ya pagaron</p>' +
+        '<div class="meter" role="img" aria-label="' + paid + ' pagaron, ' + wait + ' esperando pago, ' + due + ' faltan"><i class="p" style="width:' + (paid / tot * 100) + '%"></i><i class="w" style="width:' + (wait / tot * 100) + '%"></i></div>' +
+        '<p class="txt soft say">' + (on.turns ? 'Le toca a ' + esc(L[c % L.length].n) + (PRJ.payout[c] ? '. Ya la recibió.' : '.') : due + wait ? 'Faltan ' + (due + wait) : 'Todos pagaron') + '</p>';
+      h += '</div>';
+    }
+    h += reviewCard() + recvCard();
+    if (on.ledger) { const owing = L.filter(p => p.bal > 0), total = owing.reduce((a, p) => a + p.bal, 0); h += '<div class="statcard"><p class="txt say"><b>Te deben ' + money(total) + '</b></p><p class="txt soft say">' + owing.length + ' de ' + L.length + ' personas</p></div>'; }
+    return h;
+  }
+  function savedDesc() {
+    const v = S.saved, P = v && byId(v.person); if (!P) return '';
+    let d = ''; try { d = v.flow === 'cargo' ? 'fiado' : v.flow === 'abono' ? 'abono' : charge(P, v.period).title; } catch (e) { d = ''; }
+    return P.n + (d ? ' · ' + d : '');
+  }
+  function viewHome() {
+    const on = PRJ.on, L = roster(), hasWork = on.periodic || on.extra || on.ledger, items = [];
+    const notice = S.notice ? '<div class="notice2" role="status">' + ICON.save + '<span>' + esc(S.notice) + '</span></div>' : '';
+    const access = { act: 'access', icon: ICON.eye, label: 'Ver mejor', cls: 'compact' };
+    let q, intro = '', status = '';
+    if (!hasWork) {
+      q = 'Falta preparar la app'; intro = '<p class="txt say">Un familiar puede elegir qué se cobra.</p>';
+      items.push({ act: 'adv', data: { tab: 'ajustes' }, primary: true, icon: ICON.people, label: 'Ayuda de un familiar', sub: 'Elegir qué cobrar' }, access);
+    } else if (!L.length) {
+      q = 'Aún no hay personas'; intro = '<p class="txt say">Un familiar puede agregarlas con su foto.</p>' + reviewCard();
+      items.push({ act: 'adv', data: { tab: 'personas' }, primary: true, icon: ICON.people, label: 'Agregar personas', sub: 'Con ayuda de un familiar' });
+      if (reviewList().length) items.push({ act: 'regs', icon: ICON.qr, label: 'Inscripciones', sub: reviewList().length + ' por revisar' });
+      items.push(access);
+    } else {
+      q = '¿Qué quieres hacer?'; status = homeStatus();
+      if (S.saved && byId(S.saved.person)) items.push({ act: 'continue', primary: true, icon: ICON.save, label: 'Continuar', sub: savedDesc() });
+      items.push({ act: 'start', primary: !(S.saved && byId(S.saved.person)), icon: ICON.cash, label: on.periodic || on.extra ? 'Cobrar' : 'Fiado', sub: on.periodic || on.extra ? 'Elegir a quién' : 'Anotar o abonar' });
+      if (on.turns && on.periodic && !PRJ.payout[cur()]) { const h = L[cur() % L.length]; items.push({ act: 'payout-ask', icon: ICON.star, label: 'Entregar la bolsa', sub: h.n + ' · ' + money(PRJ.main.amount * L.length) }); }
+      { const nrev = reviewList().length; items.push({ act: 'regs', icon: ICON.qr, label: 'Inscripciones', sub: nrev ? nrev + ' por revisar' : 'Código para inscribirse' }); }
+      items.push(access, { act: 'adv', data: { tab: 'personas' }, icon: ICON.people, label: 'Ayuda de un familiar', cls: 'compact' });
+    }
+    const pg = paged(items, 'Más opciones');
+    return { html: notice + '<h1 class="q">' + q + '</h1>' + intro + status + '<div class="stack">' + pg.rows.map(choice).join('') + pg.pager + '</div>', say: q };
+  }
+
+  function pickrow(o) {
+    const P = o.p, s = o.s, sub = PRJ.on.periodic && PRJ.on.ledger && P.bal > 0 ? 'Debe ' + money(P.bal) : '';
+    return '<button class="pickrow" data-act="pick" data-id="' + P.id + '" aria-label="' + esc(P.n + ', ' + s.text.toLowerCase() + (sub ? ', ' + sub.toLowerCase() : '')) + '"><span class="ava">' + avatar(P) + '</span><span class="ct"><strong>' + esc(P.n) + '</strong>' + stt(s.st, s.text) + (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') + '</span></button>';
+  }
+  function viewWho() {
+    const c = cur(), rank = { due: 0, wait: 1, paid: 2 };
+    const list = roster().map((p, i) => ({ p: p, i: i, s: personState(p, c) })).sort((a, b) => rank[a.s.st] - rank[b.s.st] || a.i - b.i);
+    const pg = paged(list, 'Ver más personas'), q = PRJ.on.periodic || PRJ.on.extra ? '¿Quién paga?' : '¿Quién es?';
+    return { html: '<h1 class="q">' + q + '</h1><div class="stack">' + pg.rows.map(pickrow).join('') + pg.pager + '</div>', say: q + ' Toca la foto.' };
+  }
+
+  function menuItems(P) {
+    const on = PRJ.on, items = [], k = on.periodic ? nextOpen(P) : null;
+    if (k != null) items.push({ act: 'period', data: { p: k }, primary: true, mk: HUES[k % 12], label: periods()[k].title, sub: money(PRJ.main.amount) + ' · ' + stWord(P, k) });
+    if (on.extra && !(P.extra && P.extra.s === 'paid')) items.push({ act: 'period', data: { p: 'x' }, icon: ICON.cash, label: PRJ.extra.name, sub: money(PRJ.extra.amount) + (P.extra ? ' · esperando pago' : '') });
+    if (on.ledger) items.push({ act: 'ledger-open', icon: ICON.cash, label: 'Fiado', sub: P.bal > 0 ? 'Debe ' + money(P.bal) : 'No debe nada' });
+    if (on.periodic) { const more = openPeriods(P).filter(x => x !== k); if (more.length) items.push({ act: 'months', icon: ICON.clock, label: PRJ.main.freq === 'monthly' ? 'Otro mes' : 'Otro cobro', sub: more.length + (more.length === 1 ? ' pendiente' : ' pendientes') }); }
+    if (items.length && !items.some(i => i.primary)) items[0].primary = true;
+    return items;
+  }
+  function viewMenu() {
+    const P = byId(S.person), items = menuItems(P), pg = paged(items, 'Más opciones'), q = '¿Qué paga ' + P.n + '?';
+    const body = items.length ? pg.rows.map(choice).join('') + pg.pager : '<p class="txt say">' + esc(P.n) + ' no debe nada ahora.</p>';
+    return { html: idstrip(P) + '<h1 class="q">' + esc(q) + '</h1><div class="stack">' + body + '</div>', say: q };
+  }
+  function viewMonths() {
+    const P = byId(S.person);
+    const items = openPeriods(P).map(k => ({ act: 'period', data: { p: k }, mk: HUES[k % 12], label: periods()[k].title, sub: money(PRJ.main.amount) + ' · ' + stWord(P, k) }));
+    const pg = paged(items, 'Ver más meses'), q = PRJ.main.freq === 'monthly' ? '¿Qué mes paga?' : '¿Cuál cobro paga?';
+    return { html: idstrip(P) + '<h1 class="q">' + q + '</h1><div class="stack">' + pg.rows.map(choice).join('') + pg.pager + '</div>', say: q };
+  }
+  function viewLedger() {
+    const P = byId(S.person), items = [];
+    if (P.pend) items.push({ act: 'period', data: { p: 'f' }, primary: true, icon: ICON.clock, label: 'Seguir con el cobro', sub: money(P.pend.amount) + ' · esperando pago' });
+    if (P.bal > 0) items.push({ act: 'ledger-do', data: { m: 'abono' }, primary: !P.pend, icon: ICON.cash, label: 'Abonar', sub: 'Debe ' + money(P.bal) });
+    items.push({ act: 'ledger-do', data: { m: 'cargo' }, primary: P.bal <= 0 && !P.pend, icon: ICON.plus, label: 'Anotar fiado', sub: 'Se lleva algo' });
+    const q = '¿Qué hace ' + P.n + '?', l = P.ledger[0];
+    const last = l ? '<p class="txt soft say">Último: ' + (l.t === 'abono' ? 'abono' : 'fiado') + ' de ' + money(l.a) + (l.note ? ' · ' + esc(shortNote(l.note)) : '') + '</p>' : '';
+    return { html: idstrip(P, P.bal > 0 ? 'Debe ' + money(P.bal) : 'No debe nada') + '<h1 class="q">' + esc(q) + '</h1>' + last + '<div class="stack">' + items.map(choice).join('') + '</div>', say: q + (P.bal > 0 ? ' Debe ' + P.bal + ' pesos.' : '') };
+  }
+  /* Amount: ONE field (the iPhone numeric keyboard) and ONE primary button. Free amount, never fixed. */
+  function viewAmount() {
+    const P = byId(S.person), a = S.amt, cargo = a.mode === 'cargo', sc = cargo ? PRJ.shortcuts.filter(x => x > 0).slice(0, 2) : [];
+    const q = cargo ? '¿Cuánto se lleva?' : '¿Cuánto abona?';
+    return { html: idstrip(P, cargo ? '' : 'Debe ' + money(P.bal)) + '<h1 class="q">' + q + '</h1>' +
+      '<div class="amtfield"><span class="cur" aria-hidden="true">$</span><input id="amt" type="text" inputmode="decimal" autocomplete="off" maxlength="12" aria-label="' + q + ' Monto en pesos" value="' + esc(a.buf) + '"></div>' +
+      (sc.length ? '<div class="stack">' + sc.map(x => choice({ act: 'amt-chip', data: { a: x }, label: money(x), sub: 'Tu monto rápido' })).join('') + '</div>' : '') +
+      '<div id="amt-alert" role="alert"></div>' + choice({ act: 'amt-next', primary: true, icon: ICON.check, label: 'Seguir' }), say: q };
+  }
+  function amtCheck() {
+    const v = amtVal(), P = byId(S.person);
+    if (!(v > 0)) return 'Escribe cuánto es.';
+    if (S.amt.mode === 'abono' && v > P.bal + 0.001) return 'Debe solo ' + money(P.bal) + '. Escribe menos.';
+    return '';
+  }
+  function viewConfirm() {
+    const P = byId(S.person), v = amtVal(), q = '¿Anotar ' + money(v) + ' a ' + P.n + '?';
+    return { html: idstrip(P) + '<h1 class="q">' + esc(q) + '</h1><p class="txt say">Ahora debe ' + money(r2(P.bal + v)) + '.</p>' +
+      '<div class="fld2"><label for="amt-note">¿Qué se llevó? (opcional)</label><input id="amt-note" type="text" maxlength="40" autocomplete="off" value="' + esc(S.amt.note) + '"></div>' +
+      choice({ act: 'cargo-ok', primary: true, icon: ICON.check, label: 'Anotar fiado' }), say: q + ' Ahora debe ' + r2(P.bal + v) + ' pesos.' };
+  }
+  const curCharge = P => charge(P, S.period);
+  function viewHow() {
+    const P = byId(S.person), c = curCharge(P), q = '¿Cómo paga?', blocked = !!(c.to && !recvOk(c.to)), items = blocked ? [] : [{ act: 'via', data: { v: 'qr' }, icon: ICON.qr, label: 'Con su celular', sub: 'Le muestras un código QR' }];
+    if (P.payers.length && !blocked) items.push({ act: 'via', data: { v: 'fam' }, icon: ICON.people, label: 'Que pague su familiar', sub: P.payers.length === 1 ? P.payers[0].name + ' · ' + P.payers[0].rel.toLowerCase() : P.payers.length + ' familiares' });
+    items.push({ act: 'via', data: { v: 'cash' }, icon: ICON.cash, label: 'En efectivo', sub: 'Tú recibes el dinero' });
+    return { html: idcharge(P, c) + '<h1 class="q">' + q + '</h1>' + (blocked ? alertBox('Esa cuenta aún no está lista.') + '<p class="txt say">' + esc(clip(c.to.name, 28)) + ': solo efectivo.</p>' : '') + '<div class="stack">' + items.map(choice).join('') + '</div>', say: q + (blocked ? ' Esa cuenta aún no está lista. Solo efectivo.' : '') };
+  }
+  function viewWhich() {
+    const P = byId(S.person), q = '¿Cuál familiar?';
+    const items = P.payers.map((y, k) => ({ act: 'via', data: { v: 'fam', k: k }, icon: ICON.people, label: y.name, sub: y.rel + ' · cel. ' + maskTel(y.tel) }));
+    return { html: idstrip(P) + '<h1 class="q">' + q + '</h1><div class="stack">' + items.map(choice).join('') + '</div>', say: q };
+  }
+  const waitBox = t => '<div class="stt stt-wait waitbox" role="status">' + ICON.clock + '<span>' + esc(t) + '</span></div>';
+  function viewPay() {
+    const P = byId(S.person), c = curCharge(P), r = getRec(P, S.period) || { via: 'qr', payer: 0 }, via = r.via, head = idcharge(P, c);
+    if (via === 'fam') {
+      const y = P.payers[r.payer || 0] || { name: '', rel: '', tel: '' }, q = 'Pedimos el pago a ' + y.name;
+      return { html: head + '<h1 class="q">' + esc(q) + '</h1><p class="txt say">' + esc(y.rel) + ' · cel. ' + maskTel(y.tel) + '</p>' + toLine2(c) + waitBox('Esperando que lo autorice') + choice({ act: 'sim', primary: true, icon: ICON.check, label: 'Ya pagó' }), say: q };
+    }
+    if (via === 'cash') {
+      const q = '¿Recibiste ' + money(c.amount) + '?';
+      return { html: head + '<h1 class="q">' + esc(q) + '</h1><p class="txt say">Cuéntalos antes de confirmar.</p>' + choice({ act: 'cash-ok', primary: true, icon: ICON.check, label: 'Sí, recibí el dinero' }), say: q };
+    }
+    const q = 'Muestra el QR';
+    return { html: head + '<h1 class="q">' + q + '</h1><div class="qrbox">' + fakeQR(P.id * 20 + (typeof S.period === 'number' ? S.period : 19)) + '</div>' + toLine2(c) + waitBox('Esperando el pago') + choice({ act: 'sim', primary: true, icon: ICON.check, label: 'Ya pagó' }), say: q };
+  }
+  function viewDone() {
+    const info = S.doneInfo || { kind: 'paid' }, P = byId(S.person);
+    if (info.kind === 'payout') {
+      const h = info.who || '';
+      return { html: '<div class="donehead"><div class="bigcheck">' + ICON.check + '</div><h1 class="q">ENTREGA REGISTRADA</h1></div><p class="txt say" style="text-align:center">' + esc(h) + ' ya recibió la bolsa.</p>' + choice({ act: 'home', primary: true, icon: ICON.people, label: 'Ir al inicio' }), say: 'Entrega registrada' };
+    }
+    if (info.kind === 'cargo') {
+      return { html: '<div class="donehead"><div class="bigcheck">' + ICON.check + '</div><h1 class="q">FIADO ANOTADO</h1></div><p class="txt say" style="text-align:center"><b>' + esc(P.n) + '</b> se llevó <b>' + money(info.amount) + '</b></p>' +
+        '<div class="receipt"><dl>' + (info.note ? '<dt>Se llevó</dt><dd>' + esc(shortNote(info.note)) + '</dd>' : '') + '<dt>Ahora debe</dt><dd>' + money(P.bal) + '</dd></dl></div>' +
+        choice({ act: 'next', primary: true, icon: ICON.people, label: 'Siguiente persona' }) + choice({ act: 'home', label: 'Ir al inicio' }), say: 'Listo. Fiado anotado.' };
+    }
+    const k = S.period, c = charge(P, k), r = k === 'f' ? Object.assign({}, P.last) : (getRec(P, k) || { via: 'qr' }), amount = k === 'f' ? (P.last ? P.last.amount : c.amount) : c.amount, cash = r.via === 'cash';
+    const undo = S.undo && S.undo.pid === P.id && S.undo.k === k && cash ? choice({ act: 'undo', cls: 'danger small', label: 'Me equivoqué, deshacer' }) : '';
+    const folio = 'EJ-' + String((P.id * 37 + (typeof k === 'number' ? k : 99)) % 10000).padStart(4, '0');
+    return { html: '<div class="donehead"><div class="bigcheck">' + ICON.check + '</div><h1 class="q">PAGADO</h1></div><p class="txt say" style="text-align:center"><b>' + esc(P.n) + '</b> pagó <b>' + money(amount) + '</b></p>' +
+      '<div class="receipt"><dl><dt>Concepto</dt><dd>' + esc(c.concept) + '</dd>' +
+      '<dt>Recibe</dt><dd>' + esc(cash ? 'Efectivo, tú lo guardas' : (c.to ? c.to.name : '')) + '</dd>' + (k === 'f' ? '<dt>Ahora debe</dt><dd>' + money(P.bal) + '</dd>' : '') + '<dt>Folio</dt><dd>' + folio + ' (ejemplo)</dd></dl></div>' +
+      choice({ act: 'receipt', primary: true, icon: ICON.send, label: 'Enviar comprobante', sub: 'Por WhatsApp' }) + choice({ act: 'next', icon: ICON.people, label: 'Siguiente persona' }) + choice({ act: 'home', label: 'Ir al inicio' }) + undo, say: 'Listo, pagado.' };
+  }
+  function viewExit() {
+    const q = '¿Quieres salir?';
+    return { html: '<h1 class="q">' + q + '</h1><p class="txt say">Puedes guardar y seguir después.</p><div class="stack">' + choice({ act: 'exit-save', primary: true, icon: ICON.save, label: 'Guardar y seguir después', sub: 'Continuarás desde aquí' }) + choice({ act: 'exit-del', cls: 'danger', icon: ICON.x, label: 'Borrar este cobro', sub: 'Se pierde lo que llevas' }) + '</div>', say: q + ' Puedes guardar y seguir después.' };
+  }
+  function viewAccess() {
+    const sw = (k, label) => choice({ act: 'set', data: { k: k }, role: 'switch', cls: 'sw', checked: S.set[k] ? 'true' : 'false', label: label, right: stt(S.set[k] ? 'paid' : 'due', S.set[k] ? 'Activado' : 'Apagado') });
+    return { html: '<h1 class="q">Ver mejor</h1><div class="stack">' + sw('hc', 'Colores fuertes') + sw('xl', 'Letra extra grande') + sw('voice', 'Voz que lee') + sw('sound', 'Sonido y vibración') + '</div>', say: 'Ver mejor. Toca para activar o apagar.' };
+  }
+  function viewError() {
+    const e = S.err || { title: 'No se pudo completar' };
+    return { html: '<div class="errbig"><div class="badge2">' + ICON.alert + '</div><h1 class="q">' + esc(e.title) + '</h1><p class="txt say">Revisa tu conexión e inténtalo de nuevo.</p></div>' + choice({ act: 'retry', primary: true, icon: ICON.check, label: 'Intentar de nuevo' }) + choice({ act: 'err-back', label: 'Volver' }), say: e.title + '. Revisa tu conexión e inténtalo de nuevo.' };
+  }
+  function viewPayout() {
+    const L = roster(), c = cur(), h = L[c % L.length], q = '¿Ya recibió la bolsa?';
+    return { html: idstrip(h, 'Ronda ' + (c + 1)) + '<h1 class="q">' + q + '</h1><p class="txt say">Bolsa de ' + money(PRJ.main.amount * L.length) + '.</p>' + choice({ act: 'payout-ok', primary: true, icon: ICON.check, label: 'Sí, ya la recibió' }), say: q };
+  }
+
+  const VIEWS = { home: viewHome, who: viewWho, menu: viewMenu, months: viewMonths, ledger: viewLedger, amount: viewAmount, confirm: viewConfirm, how: viewHow, which: viewWhich, pay: viewPay, done: viewDone, exit: viewExit, access: viewAccess, error: viewError, payout: viewPayout };
+  const NEEDS_PERSON = { menu: 1, months: 1, ledger: 1, amount: 1, confirm: 1, how: 1, which: 1, pay: 1 };
+  /* "Paso X de 4": the total is always 4, in every combination of features. */
+  const STEPS = 4;
+  function stepNo() {
+    const v = S.view;
+    if (v === 'who' || v === 'r1') return 1;
+    if (v === 'r2') return 2;
+    if (v === 'r3') return 3;
+    if (v === 'r4') return 4;
+    if (v === 'menu' || v === 'months' || v === 'ledger') return 2;
+    if (v === 'amount') return 3;
+    if (v === 'how' || v === 'which') return S.flow === 'abono' ? 4 : 3;
+    if (v === 'pay' || v === 'confirm') return 4;
+    return 0;
+  }
+  /* [Atrás visible, Cancelar visible]; Escuchar is always there */
+  const BAR = { home: [0, 0], who: [1, 0], menu: [1, 1], months: [1, 1], ledger: [1, 1], amount: [1, 1], confirm: [1, 1], how: [1, 1], which: [1, 1], pay: [1, 1], payout: [1, 0], done: [0, 0], exit: [1, 0], access: [1, 0], error: [0, 0] };
+  function paintHead() {
+    const n = stepNo();
+    if (!n) { $('#stephead').innerHTML = '<p class="grp">' + esc(PRJ.name || 'Mi proyecto') + '</p>'; return; }
+    let ol = '';
+    for (let i = 1; i <= STEPS; i++) {
+      if (i > 1) ol += '<li class="sep" aria-hidden="true"></li>';
+      ol += '<li class="' + (i < n ? 'done' : i === n ? 'now' : '') + '"' + (i === n ? ' aria-current="step"' : '') + ' aria-label="Paso ' + i + (i < n ? ', hecho' : i === n ? ', este paso' : ', falta') + '">' + (i < n ? ICON.check : i) + '</li>';
+    }
+    $('#stephead').innerHTML = '<p class="steptext" id="steptext">Paso ' + n + ' de ' + STEPS + '</p><ol class="steps" aria-label="Pasos">' + ol + '</ol>';
+  }
+  function paintBar() {
+    const b = BAR[S.view] || [0, 0];
+    [['#bar-back', b[0]], ['#bar-cancel', b[1]]].forEach(x => { const el = $(x[0]); el.setAttribute('aria-hidden', x[1] ? 'false' : 'true'); el.tabIndex = x[1] ? 0 : -1; });
+  }
+  function render() {
+    if (NEEDS_PERSON[S.view] && !byId(S.person)) { S.view = 'who'; S.hist = [{ view: 'home', page: 0 }]; }
+    const r = (VIEWS[S.view] || viewHome)();
+    $('#screen').innerHTML = r.html; $('#screen').setAttribute('data-view', S.view); S.say = r.say;
+    paintHead(); paintBar(); paintSummary();
+  }
+  function paintSummary() {
+    const on = PRJ.on, m = PRJ.main, ok = PRJ.people.filter(p => p.consent.ok).length, rows = [];
+    if (on.periodic) rows.push(['Cobros con calendario', money(m.amount) + ' ' + freqText(m.freq) + (m.freq === 'once' ? '' : ', ' + periods().length + ' veces')]);
+    if (on.extra) rows.push(['Cobro aparte', PRJ.extra.name + ', ' + money(PRJ.extra.amount)]);
+    if (placesOn()) rows.push(['Lugares', capacity() + ', se apartan ' + ((PRJ.reg.holdDays | 0) || 5) + ' días']);
+    if (on.turns) rows.push(['Turnos', 'Sí']);
+    if (on.ledger) rows.push(['Fiado', 'Sí, con el monto que escribas']);
+    if (!rows.length) rows.push(['Funciones', 'Ninguna activa']);
+    rows.push(['Recibe', PRJ.receivers.map(r => r.name).join(', ')]);
+    rows.push(['Personas', String(PRJ.people.length)], ['Con foto autorizada', ok + ' de ' + PRJ.people.length]);
+    $('#cfgsum').innerHTML = rows.map(r => '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>').join('');
+  }
+
+  /* ================= SIMPLE MODE: navigation and actions ================= */
+  function paint(silent) {
+    render();
+    const f = S.view === 'amount' ? $('#amt') : $('#screen h1');
+    if (f) { if (f.tagName === 'H1') f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (e) { /* optional */ } }
+    if (!silent) say(S.say);
+    const ph = $('#phone').getBoundingClientRect();
+    if (ph.top < 0 && !$('#v-prototipo').hidden) $('#phone').scrollIntoView({ block: 'start' });
+  }
+  function nav(view) { S.hist.push({ view: S.view, page: S.page }); S.view = view; S.page = 0; S.notice = ''; paint(); }
+  function popQuiet() { const h = S.hist.pop(); if (h) { S.view = h.view; S.page = h.page; } else { S.view = 'home'; S.page = 0; } }
+  function back() { popQuiet(); paint(); }
+  function toHome() { S.hist = []; S.view = 'home'; S.page = 0; S.flow = null; S.doneInfo = null; S.notice = ''; paint(); }
+  function listenText() {
+    const s = $('#screen'), parts = [], h = s.querySelector('h1'); if (h) parts.push(h.textContent.trim());
+    s.querySelectorAll('.say').forEach(n => parts.push(n.textContent.replace(/\s+/g, ' ').trim()));
+    s.querySelectorAll('.cbtn, .pickrow').forEach(n => parts.push((n.getAttribute('aria-label') || n.textContent).replace(/\s+/g, ' ').trim()));
+    return parts.join('. ');
+  }
+  /* Anything that talks to Pey or saves data can fail: show the standard error screen with a retry. */
+  function attempt(title, fn) {
+    if (S.fail) {
+      S.fail = false; const cb = $('#simfail'); if (cb) cb.checked = false;
+      S.err = { title: title, retry: fn }; feedback('error'); nav('error'); return;
+    }
+    fn();
+  }
+  function saveFlow() {
+    const top = S.hist[S.hist.length - 1];
+    if (!top || !S.person) { toHome(); return; }
+    S.saved = { view: top.view, page: top.page, hist: S.hist.slice(0, -1), person: S.person, period: S.period, flow: S.flow, amt: Object.assign({}, S.amt) };
+    S.hist = []; S.view = 'home'; S.page = 0; S.flow = null; S.notice = 'Guardado. Continuarás desde aquí.'; paint();
+  }
+  function resume() {
+    const v = S.saved; if (!v || !byId(v.person)) { S.saved = null; toHome(); return; }
+    S.person = v.person; S.period = v.period; S.flow = v.flow; S.amt = v.amt; S.hist = v.hist.slice(); S.view = v.view; S.page = v.page; S.saved = null; S.notice = ''; paint();
+  }
+  function dropFlow() {
+    const P = byId(S.person);
+    if (P && (S.flow === 'charge' || S.flow === 'abono') && S.period !== null) { const r = getRec(P, S.period); if (r && r.s !== 'paid') putRec(P, S.period, null); }
+    S.saved = null; toHome();
+  }
+  function onAct(e) {
+    const el = e.target.closest('[data-act]'); if (!el) return;
+    const a = el.dataset.act, d = el.dataset, P = byId(S.person);
+    if (/^rg-/.test(a)) { onRgAct(a); return; }
+    if (onCollectorAct(a, d, P) || onReceiptAct(a, d, P)) return;
+    switch (a) {
+      case 'pick': S.person = +d.id; S.flow = null; S.period = null; nav(PRJ.on.periodic || PRJ.on.extra ? 'menu' : 'ledger'); break;
+      case 'more': S.page++; paint(); break;
+      case 'back': back(); break;
+      case 'cancel': if (RG_VIEWS[S.view]) { rgReset(); S.hist = []; S.view = 'r1'; paint(); } else if (S.view === 'who') toHome(); else nav('exit'); break;
+      case 'listen': speak(listenText()); { const c = $('#voicecap'); if (c) c.innerHTML = '<b>«' + esc(listenText()) + '»</b>'; } break;
+      case 'start': S.flow = null; nav('who'); break;
+      case 'continue': resume(); break;
+      case 'access': nav('access'); break;
+      case 'adv': location.hash = d.tab; break;
+      case 'set': {
+        const k = d.k; S.set[k] = !S.set[k]; saveSet(); applySet(); render();
+        const again = $('#screen [data-k="' + k + '"]'); if (again) again.focus();
+        if (k === 'voice') { if (S.set.voice) say('Voz activada'); else { try { window.speechSynthesis.cancel(); } catch (x) { /* optional */ } } }
+        if (k === 'sound' && S.set.sound) feedback('ok');
+        break; }
+      case 'period': {
+        S.period = d.p === 'x' ? 'x' : d.p === 'f' ? 'f' : +d.p; S.flow = S.period === 'f' ? 'abono' : 'charge';
+        const r = getRec(P, S.period);
+        if (r && r.s === 'paid') { S.doneInfo = { kind: 'paid' }; nav('done'); } else if (r && r.s === 'wait') nav('pay'); else nav('how');
+        break; }
+      case 'months': nav('months'); break;
+      case 'ledger-open': nav('ledger'); break;
+      case 'ledger-do': S.flow = d.m; S.period = d.m === 'abono' ? 'f' : null; S.amt = { mode: d.m, buf: d.m === 'abono' ? trimAmt(P.bal) : '', note: '' }; nav('amount'); break;
+      case 'amt-chip': { S.amt.buf = trimAmt(+d.a); const i = $('#amt'); if (i) i.value = S.amt.buf; break; }
+      case 'amt-next': {
+        const msg = amtCheck();
+        if (msg) { $('#amt-alert').innerHTML = alertBox(msg); feedback('error'); $('#amt').focus(); break; }
+        if (S.amt.mode === 'cargo') nav('confirm'); else nav('how');
+        break; }
+      case 'cargo-ok': attempt('No se pudo anotar el fiado', function () {
+        const v = amtVal(), note = (S.amt.note || '').trim();
+        P.bal = r2(P.bal + v); P.ledger.unshift({ t: 'cargo', a: v, d: shortDate(TODAY), note: note });
+        S.undo = null; S.doneInfo = { kind: 'cargo', amount: v, note: note }; feedback('ok'); nav('done');
+      }); break;
+      case 'via': {
+        const v = d.v;
+        if (v === 'fam' && P.payers.length > 1 && d.k == null) { nav('which'); break; }
+        const k = +(d.k || 0), run = function () {
+          const old = getRec(P, S.period) || {}, base = S.period === 'f' && !P.pend ? { amount: amtVal() } : {};
+          putRec(P, S.period, Object.assign({}, old, base, { s: 'wait', via: v, payer: v === 'fam' ? k : 0 })); nav('pay');
+        };
+        if (v === 'cash') run(); else attempt('No se pudo enviar el cobro', run);
+        break; }
+      case 'sim': case 'cash-ok': attempt('No se pudo guardar el pago', function () {
+        const r = getRec(P, S.period) || {};
+        markPaid(P, S.period, a === 'cash-ok' ? 'cash' : (r.via || 'qr'), r.payer || 0);
+        S.doneInfo = { kind: 'paid' }; feedback('ok'); nav('done');
+      }); break;
+      case 'undo': {
+        const u = S.undo;
+        if (u && P && u.pid === P.id) {
+          if (S.period === 'f') { P.bal = u.bal; P.ledger = u.ledger; P.last = u.last; P.pend = u.pend; } else putRec(P, S.period, u.prev);
+          S.undo = null; S.doneInfo = null; back();
+        }
+        break; }
+      case 'next': S.hist = []; S.view = 'home'; S.flow = null; S.doneInfo = null; S.person = null; S.period = null; nav('who'); break;
+      case 'home': toHome(); break;
+      case 'exit-save': saveFlow(); break;
+      case 'exit-del': dropFlow(); break;
+      case 'retry': { const er = S.err; popQuiet(); if (er && er.retry) er.retry(); else paint(); break; }
+      case 'err-back': back(); break;
+      case 'payout-ask': nav('payout'); break;
+      case 'payout-ok': attempt('No se pudo guardar la entrega', function () {
+        const L = roster(), c = cur(); PRJ.payout[c] = true;
+        S.doneInfo = { kind: 'payout', who: L[c % L.length].n }; feedback('ok'); nav('done');
+      }); break;
+    }
+  }
+  function onInput(e) {
+    const t = e.target;
+    if (t.id === 'amt') { const v = t.value.replace(/[^0-9.,]/g, '').slice(0, 12); if (v !== t.value) t.value = v; S.amt.buf = v; const al = $('#amt-alert'); if (al) al.innerHTML = ''; }
+    else if (t.id === 'amt-note') S.amt.note = t.value;
+    else if (t.id === 'rg-n') S.rg.name = t.value;
+    else if (t.id === 'rg-t' || t.id === 'rg-h') { const v = t.value.replace(/[^0-9+\-\s]/g, '').slice(0, 16); if (v !== t.value) t.value = v; if (t.id === 'rg-t') S.rg.tel = v; else S.rg.cur = v; const al = $('#rg-alert'); if (al) al.innerHTML = ''; }
+    else if (t.id === 'rg-ok') S.rg.ok = t.checked;
+  }
+  function onKey(e) {
+    if (e.key !== 'Enter') return;
+    if (e.target.id === 'amt') { e.preventDefault(); const b = $('[data-act="amt-next"]'); if (b) b.click(); }
+    else if (e.target.id === 'amt-note') { e.preventDefault(); const b = $('[data-act="cargo-ok"]'); if (b) b.click(); }
+    else if (/^rg-[nth]$/.test(e.target.id)) { e.preventDefault(); const b = $('[data-act="rg-next"]'); if (b) b.click(); }
+  }
+
+
+
+  /* ================= CONFIGURATION ================= */
+  const EDIT = { draft: null, isNew: false, errors: [], confirmRemove: null };
+  const REDIT = { draft: null, isNew: false, errors: [], confirmRemove: null };
+  let ridn = 10;
+  const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+  function setPath(o, p, v) { const ks = p.split('.'), last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
+
+  function renderFeats() {
+    $('#cfg-feats').innerHTML = FEATS.map(f => {
+      const dis = (f.k === 'turns' || f.k === 'places') && !PRJ.on.periodic, on = PRJ.on[f.k];
+      return '<label class="feat ' + (on ? 'on' : '') + (dis ? ' dis' : '') + '" for="ft-' + f.k + '"><input id="ft-' + f.k + '" type="checkbox" data-path="on.' + f.k + '" data-rerender="1"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '><span><strong>' + f.name + '</strong><span>' + f.desc + '</span></span></label>';
+    }).join('');
+  }
+  function renderPresets() {
+    $('#cfg-presets').innerHTML = PRESETS.map(p => '<button class="btn small" data-preset="' + p.id + '">' + p.name + '</button>').join('');
+  }
+  function fld(id, label, inner, hint, cls) { return '<div class="field ' + (cls || '') + '"><label for="' + id + '">' + label + '</label>' + inner + (hint ? '<div class="hint">' + hint + '</div>' : '') + '</div>'; }
+  function renderForm() {
+    const on = PRJ.on, m = PRJ.main; let h = '';
+    h += fld('f-name', 'Nombre de tu grupo', '<input id="f-name" type="text" data-path="name" value="' + esc(PRJ.name) + '" maxlength="40">', 'Aparece arriba en la app.', 'span');
+    if (on.periodic) {
+      h += fld('f-mname', '¿Qué cobras?', '<input id="f-mname" type="text" data-path="main.name" value="' + esc(m.name) + '" maxlength="40">', 'Por ejemplo: Mensualidad, Aportación, Cuota.');
+      h += fld('f-amount', 'Monto en pesos', '<input id="f-amount" type="number" inputmode="decimal" min="1" step="any" data-path="main.amount" data-num="1" value="' + m.amount + '">');
+      h += fld('f-freq', 'Cada cuánto', '<select id="f-freq" data-path="main.freq" data-rerender="1">' + [['weekly', 'Cada semana'], ['biweekly', 'Cada quincena'], ['monthly', 'Cada mes'], ['yearly', 'Cada año'], ['once', 'Una sola vez']].map(o => '<option value="' + o[0] + '"' + (m.freq === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>');
+      h += fld('f-start', m.freq === 'once' ? 'Fecha de cobro' : 'Primer cobro', '<input id="f-start" type="date" data-path="main.start" value="' + esc(m.start) + '">', 'Desde esta fecha se calculan los demás.');
+      if (m.freq !== 'once') h += fld('f-count', 'Cuántos cobros', '<input id="f-count" type="number" inputmode="numeric" min="1" max="24" step="1" data-path="main.count" data-num="1" value="' + m.count + '">', 'Entre 1 y 24.');
+    }
+    if (on.extra) {
+      h += fld('f-ename', 'Nombre del cobro aparte', '<input id="f-ename" type="text" data-path="extra.name" value="' + esc(PRJ.extra.name) + '" maxlength="40">');
+      h += fld('f-eamount', 'Monto del cobro aparte', '<input id="f-eamount" type="number" inputmode="decimal" min="1" step="any" data-path="extra.amount" data-num="1" value="' + PRJ.extra.amount + '">', 'Se cobra una vez por persona.');
+    }
+    if (on.ledger) {
+      h += '<div class="field span"><span class="lbl">Montos de acceso rápido (opcional)</span><div class="chips">' +
+        PRJ.shortcuts.map((x, i) => '<span class="chipx">' + money(x) + '<button class="xbtn" data-pact="sc-rm" data-i="' + i + '" aria-label="Quitar ' + money(x) + '">×</button></span>').join('') + '</div>' +
+        '<div class="btnrow"><input id="f-sc" type="number" inputmode="decimal" min="0.5" step="any" placeholder="Monto" aria-label="Nuevo monto rápido" style="max-width:10rem">' + (PRJ.shortcuts.length < 6 ? '<button class="btn small" data-pact="sc-add">Agregar</button>' : '') + '</div>' +
+        '<div class="hint">No son límites ni precios. Al anotar o abonar siempre escribes el monto que quieras; estos botones solo ahorran toques.</div></div>';
+    }
+    $('#cfg-form').innerHTML = h;
+  }
+  function renderPreview() {
+    const on = PRJ.on; let h = '';
+    if (on.periodic) {
+      const per = periods(), m = PRJ.main;
+      const sentence = m.freq === 'once' ? 'Cobrarás ' + money(m.amount) + ' el ' + longDate(per[0].date) + '.' : 'Cobrarás ' + money(m.amount) + ' ' + freqText(m.freq) + ', ' + per.length + ' veces, del ' + longDate(per[0].date) + ' al ' + longDate(per[per.length - 1].date) + '.';
+      h += '<div class="label">Cobros con calendario</div><div class="tiles">' + per.slice(0, 12).map((p, k) => '<div class="tile" style="--h:' + HUES[k % 12] + '"><span>' + esc(p.label) + '</span>' + (p.sub ? '<small>' + esc(p.sub) + '</small>' : '') + '</div>').join('') + '</div><p>' + sentence + (on.extra ? ' Aparte: ' + esc(PRJ.extra.name) + ', ' + money(PRJ.extra.amount) + '.' : '') + '</p>';
+    } else if (on.extra) {
+      h += '<div class="label">Cobro aparte</div><p>' + esc(PRJ.extra.name) + ', ' + money(PRJ.extra.amount) + ' por persona.</p>';
+    }
+    if (on.ledger) {
+      const sc = PRJ.shortcuts.filter(x => x > 0);
+      h += '<div class="label">Fiado</div><p>Cada persona tiene su cuenta. Al anotar o abonar, escribes el monto con un teclado grande' + (sc.length ? ' o tocas uno de tus montos rápidos (' + sc.map(money).join(', ') + ').' : '.') + '</p>';
+    }
+    $('#cfg-preview').innerHTML = h || '<p>Activa al menos una función para ver cómo se verá.</p>';
+  }
+  function renderReceivers() {
+    const L = PRJ.receivers;
+    $('#cfg-recv').innerHTML = L.map(r => {
+      const rm = REDIT.confirmRemove === r.id;
+      return '<div class="prow"><div class="ava bankico">' + ICON.cash + '</div><div class="info"><strong>' + esc(r.name || 'Sin nombre') + '</strong>' +
+        '<span class="pill">' + KINDS[r.kind] + '</span>' +
+        (r.pending ? '<span class="pill" style="border-color:var(--wait);color:var(--ink)">' + ICON.clock + 'Cuenta por confirmar</span>' : '<span class="pill ok">' + ICON.check + maskClabe(r.clabe) + '</span>') + '</div>' +
+        '<div class="acts">' + (rm ? '<button class="btn small danger" data-ract="remove-yes" data-id="' + r.id + '">Sí, quitar</button><button class="btn small" data-ract="remove-no">No</button>' : '<button class="btn small" data-ract="edit" data-id="' + r.id + '">Editar</button>' + (L.length > 1 ? '<button class="btn small danger" data-ract="remove" data-id="' + r.id + '">Quitar</button>' : '')) + '</div></div>';
+    }).join('') + (L.length === 1 ? '<p>Siempre debe quedar al menos una cuenta.</p>' : '');
+  }
+  function renderDest() {
+    const on = PRJ.on, items = [];
+    if (on.periodic) items.push(['main', 'Cobros con calendario (' + PRJ.main.name + ')']);
+    if (on.extra) items.push(['extra', 'Cobro aparte (' + PRJ.extra.name + ')']);
+    if (on.ledger) items.push(['ledger', 'Abonos del fiado']);
+    $('#cfg-dest').innerHTML = items.length ? '<div class="field span"><span class="lbl">¿A qué cuenta llega cada cobro?</span></div>' + items.map(it =>
+      fld('d-' + it[0], esc(it[1]), '<select id="d-' + it[0] + '" data-path="dest.' + it[0] + '">' + PRJ.receivers.map(r => '<option value="' + r.id + '"' + (PRJ.dest[it[0]] === r.id ? ' selected' : '') + '>' + esc(r.name) + '</option>').join('') + '</select>')).join('') : '';
+  }
+  function renderRecEditor() {
+    const d = REDIT.draft, box = $('#cfg-recv-editor');
+    $('#addrecv').hidden = !!d;
+    if (!d) { box.innerHTML = ''; return; }
+    let h = '<div class="editor" role="group" aria-label="Datos de la cuenta"><h3>' + (REDIT.isNew ? 'Nueva cuenta de cobro' : 'Editar cuenta de cobro') + '</h3><div class="form">';
+    h += fld('rc-n', 'Nombre de quien recibe', '<input id="rc-n" type="text" data-rd="name" value="' + esc(d.name) + '" maxlength="50" autocomplete="off">', 'Como se lo dirías a quien paga. Por ejemplo: Taller de Rosa, DIF Centro, Tienda La Esquina.');
+    h += fld('rc-k', 'Es', '<select id="rc-k" data-rd="kind">' + Object.keys(KINDS).map(k => '<option value="' + k + '"' + (d.kind === k ? ' selected' : '') + '>' + KINDS[k] + '</option>').join('') + '</select>');
+    h += fld('rc-c', 'CLABE de la cuenta', '<input id="rc-c" type="tel" inputmode="numeric" data-rd="clabe" value="' + esc(d.clabe) + '" maxlength="18" autocomplete="off"' + (d.pending ? ' disabled' : '') + '>', '18 dígitos, sin espacios. Cópiala de la app o del estado de cuenta del banco.', 'span');
+    h += '<div class="field span"><label class="check" for="rc-p"><input id="rc-p" type="checkbox" data-ract="pending"' + (d.pending ? ' checked' : '') + '><span>Todavía no tengo los datos de esta cuenta<small>Puedes dejarla anotada y completarla después. La app te avisará que está por confirmar.</small></span></label></div>';
+    h += '</div>';
+    if (REDIT.errors.length) h += '<div class="err" role="alert">Revisa esto antes de guardar:<ul>' + REDIT.errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>';
+    h += '<div class="btnrow"><button class="btn primary" style="width:auto;min-height:3.75rem" data-ract="save">Guardar cuenta</button><button class="btn" style="width:auto;min-height:3.75rem" data-ract="cancel">Cancelar</button></div></div>';
+    box.innerHTML = h;
+  }
+  function openRecEditor(r) {
+    REDIT.draft = r ? JSON.parse(JSON.stringify(r)) : { id: '', name: '', kind: 'yo', clabe: '', pending: false };
+    REDIT.isNew = !r; REDIT.errors = []; renderRecEditor();
+    const f = $('#rc-n'); if (f) { f.focus(); f.scrollIntoView({ block: 'center' }); }
+  }
+  function validateRec(d) {
+    const e = [];
+    if (!d.name.trim()) e.push('Escribe el nombre de quien recibe.');
+    if (!d.pending) {
+      if (!/^[0-9]{18}$/.test(d.clabe)) e.push('La CLABE debe tener 18 dígitos, sin espacios.');
+      else if (!clabeOk(d.clabe)) e.push('El último dígito de la CLABE no coincide. Revisa que esté bien copiada.');
+    }
+    return e;
+  }
+  function saveRec() {
+    const d = REDIT.draft; REDIT.errors = validateRec(d);
+    if (REDIT.errors.length) { renderRecEditor(); return; }
+    d.name = d.name.trim(); if (d.pending) d.clabe = '';
+    if (REDIT.isNew) { d.id = 'r' + (++ridn); PRJ.receivers.push(d); }
+    else { const r = PRJ.receivers.find(x => x.id === d.id); if (r) Object.assign(r, { name: d.name, kind: d.kind, clabe: d.clabe, pending: d.pending }); }
+    REDIT.draft = null; REDIT.errors = []; renderRecEditor(); renderReceivers(); renderDest(); afterChange();
+  }
+  function onRecClick(b) {
+    const a = b.dataset.ract, d = REDIT.draft;
+    if (a === 'edit') openRecEditor(PRJ.receivers.find(r => r.id === b.dataset.id));
+    else if (a === 'remove') { REDIT.confirmRemove = b.dataset.id; renderReceivers(); }
+    else if (a === 'remove-no') { REDIT.confirmRemove = null; renderReceivers(); }
+    else if (a === 'remove-yes') {
+      if (PRJ.receivers.length > 1) {
+        PRJ.receivers = PRJ.receivers.filter(r => r.id !== b.dataset.id);
+        ['main', 'extra', 'ledger'].forEach(k => { if (PRJ.dest[k] === b.dataset.id) PRJ.dest[k] = PRJ.receivers[0].id; });
+      }
+      REDIT.confirmRemove = null; renderReceivers(); renderDest(); afterChange();
+    }
+    else if (a === 'cancel') { REDIT.draft = null; REDIT.errors = []; renderRecEditor(); }
+    else if (a === 'save') saveRec();
+    else if (a === 'pending') { d.pending = b.checked; renderRecEditor(); const c = $('#rc-p'); if (c) c.focus(); }
+  }
+  function renderPeople() {
+    const L = PRJ.people;
+    $('#cfg-people').innerHTML = L.length ? L.map(p => {
+      const rm = EDIT.confirmRemove === p.id;
+      return '<div class="prow"><div class="ava">' + avatar(p) + '</div><div class="info"><strong>' + esc(p.n || 'Sin nombre') + '</strong>' +
+        '<span class="pill ' + (p.consent.ok ? 'ok' : '') + '">' + (p.consent.ok ? ICON.check + 'Foto autorizada' : 'Sin permiso de foto') + '</span>' +
+        '<span style="font-size:.95rem;color:var(--ink-soft)">' + (p.payers.length ? p.payers.length + (p.payers.length === 1 ? ' familiar que paga' : ' familiares que pagan') : 'Sin familiar registrado') + '</span></div>' +
+        '<div class="acts">' + (rm ? '<button class="btn small danger" data-pact="remove-yes" data-id="' + p.id + '">Sí, quitar</button><button class="btn small" data-pact="remove-no">No</button>' : '<button class="btn small" data-pact="edit" data-id="' + p.id + '">Editar</button><button class="btn small danger" data-pact="remove" data-id="' + p.id + '">Quitar</button>') + '</div></div>';
+    }).join('') : '<p>Todavía no hay personas. Agrega la primera con el botón de abajo.</p>';
+  }
+  function renderEditor() {
+    const d = EDIT.draft, box = $('#cfg-editor');
+    $('#addperson').hidden = !!d;
+    if (!d) { box.innerHTML = ''; return; }
+    const prev = avatar(d);
+    let h = '<div class="editor" role="group" aria-label="Datos de la persona"><h3>' + (EDIT.isNew ? 'Nueva persona' : 'Editar a ' + esc(d.n || 'persona')) + '</h3><div class="form">';
+    h += fld('e-n', 'Nombre', '<input id="e-n" type="text" data-d="n" value="' + esc(d.n) + '" maxlength="40" autocomplete="off">', 'Solo se usa para la voz y el comprobante.');
+    h += fld('e-tel', 'Su celular (opcional)', '<input id="e-tel" type="tel" inputmode="numeric" data-d="tel" value="' + esc(d.tel) + '" maxlength="10" autocomplete="off">', '10 dígitos, sin espacios.');
+    h += fld('e-note', 'Notas (opcional)', '<input id="e-note" type="text" data-d="note" value="' + esc(d.note) + '" maxlength="80" autocomplete="off">', 'Por ejemplo: vive en la calle Hidalgo.', 'span');
+    h += '</div>';
+    h += '<div class="field"><span class="lbl">Foto</span><div class="photoblock"><div class="ava">' + prev + '</div><div class="stack"><label class="filebtn"><span>' + (d.photo ? 'Cambiar foto' : 'Elegir o tomar foto') + '</span><input id="e-photo" type="file" accept="image/*" aria-label="Elegir o tomar foto"></label>' + (d.photo ? '<button class="btn small" data-pact="photo-rm">Quitar foto</button>' : '') + '</div></div><div class="hint">La foto se guarda reducida y solo se muestra si hay permiso.</div></div>';
+    h += '<div class="consent ' + (d.consent.ok ? 'on' : '') + '"><label class="check" for="e-consent"><input id="e-consent" type="checkbox" data-pact="consent"' + (d.consent.ok ? ' checked' : '') + '><span>Aceptó que se use su foto en esta app<small>Sin este permiso se muestra un dibujo con su inicial.</small></span></label>';
+    h += fld('e-by', '¿Quién dio el permiso?', '<select id="e-by" data-d="consent.by">' + BYS.map(b => '<option' + (d.consent.by === b ? ' selected' : '') + '>' + b + '</option>').join('') + '</select>', d.consent.ok ? (d.consent.date && d.consent.date !== 'Ejemplo' ? 'Anotado el ' + esc(d.consent.date) + '.' : 'Quedará anotado con la fecha de hoy.') : '');
+    h += '</div>';
+    h += '<div class="field"><span class="lbl">Quién paga a distancia</span><div class="hint">Un familiar que recibe la solicitud de cobro en su celular y la autoriza desde su banco.</div></div>';
+    h += d.payers.map((q, i) => '<div class="payer">' + fld('q-n' + i, 'Nombre', '<input id="q-n' + i + '" type="text" data-d="payers.' + i + '.name" value="' + esc(q.name) + '" maxlength="40" autocomplete="off">') +
+      fld('q-t' + i, 'Celular (10 dígitos)', '<input id="q-t' + i + '" type="tel" inputmode="numeric" data-d="payers.' + i + '.tel" value="' + esc(q.tel) + '" maxlength="10" autocomplete="off">') +
+      fld('q-r' + i, 'Relación', '<select id="q-r' + i + '" data-d="payers.' + i + '.rel">' + RELS.map(r => '<option' + (q.rel === r ? ' selected' : '') + '>' + r + '</option>').join('') + '</select>') +
+      '<div class="btnrow"><label class="check" style="font-size:1rem"><input type="radio" name="primary" data-pact="primary" data-i="' + i + '"' + (q.primary ? ' checked' : '') + ' aria-label="Es el principal"><span>Principal</span></label><button class="btn small danger" data-pact="payer-rm" data-i="' + i + '">Quitar</button></div></div>').join('');
+    if (d.payers.length < 3) h += '<div><button class="btn small" data-pact="payer-add">Agregar familiar</button></div>';
+    if (EDIT.errors.length) h += '<div class="err" role="alert">Revisa esto antes de guardar:<ul>' + EDIT.errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>';
+    h += '<div class="btnrow"><button class="btn primary" style="width:auto;min-height:3.75rem" data-pact="save">Guardar persona</button><button class="btn" style="width:auto;min-height:3.75rem" data-pact="cancel">Cancelar</button></div></div>';
+    box.innerHTML = h;
+  }
+  function openEditor(P) {
+    if (P) { EDIT.draft = JSON.parse(JSON.stringify({ id: P.id, n: P.n, tel: P.tel, note: P.note, sample: P.sample, photo: P.photo, consent: P.consent, payers: P.payers })); EDIT.isNew = false; }
+    else { EDIT.draft = { id: 0, n: '', tel: '', note: '', sample: null, photo: null, consent: { ok: false, date: null, by: BYS[0] }, payers: [] }; EDIT.isNew = true; }
+    EDIT.errors = []; renderEditor();
+    const f = $('#e-n'); if (f) { f.focus(); f.scrollIntoView({ block: 'center' }); }
+  }
+  function validate(d) {
+    const e = [];
+    if (!d.n.trim()) e.push('Escribe el nombre de la persona.');
+    if (d.tel && !/^[0-9]{10}$/.test(d.tel)) e.push('El celular de la persona debe tener 10 dígitos.');
+    d.payers.forEach((q, i) => {
+      if (!q.name.trim()) e.push('Escribe el nombre del familiar ' + (i + 1) + ' o quítalo.');
+      if (!/^[0-9]{10}$/.test(q.tel)) e.push('El celular de ' + (q.name.trim() || 'familiar ' + (i + 1)) + ' debe tener 10 dígitos, sin espacios ni guiones.');
+    });
+    return e;
+  }
+  function saveEditor() {
+    const d = EDIT.draft; EDIT.errors = validate(d);
+    if (EDIT.errors.length) { renderEditor(); return; }
+    d.n = d.n.trim(); d.payers.forEach(q => { q.name = q.name.trim(); });
+    if (d.payers.length && !d.payers.some(q => q.primary)) d.payers[0].primary = true;
+    d.payers.sort((a, b) => (b.primary ? 1 : 0) - (a.primary ? 1 : 0));
+    if (d.consent.ok && !d.consent.date) d.consent.date = longDate(TODAY);
+    if (!d.consent.ok) d.consent.date = null;
+    if (EDIT.isNew) { const P = mkPerson(d); delete P.id; P.id = ++uid; P.from = cur(); PRJ.people.push(P); }
+    else { const P = byId(d.id); if (P) Object.assign(P, { n: d.n, tel: d.tel, note: d.note, photo: d.photo, consent: d.consent, payers: d.payers }); }
+    EDIT.draft = null; EDIT.errors = []; renderEditor(); renderPeople(); afterChange();
+  }
+  function readPhoto(file, cb) {
+    const fr = new FileReader();
+    fr.onload = function () {
+      const img = new Image();
+      img.onload = function () { try { const s = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 320; c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 320, 320); cb(c.toDataURL('image/jpeg', .85)); } catch (e) { cb(null); } };
+      img.onerror = () => cb(null); img.src = fr.result;
+    };
+    fr.onerror = () => cb(null); fr.readAsDataURL(file);
+  }
+  function afterChange() { S.view = 'home'; S.hist = []; S.flow = null; S.saved = null; S.page = 0; S.person = null; renderPreview(); render(); }
+
+  function onCfgInput(e) {
+    const t = e.target;
+    if (t.dataset.rd) {
+      let v = t.value; if (t.dataset.rd === 'clabe') { v = v.replace(/[^0-9]/g, '').slice(0, 18); if (v !== t.value) t.value = v; }
+      setPath(REDIT.draft, t.dataset.rd, v); return;
+    }
+    if (t.dataset.d) {
+      let v = t.value; if (/\.tel$|^tel$/.test(t.dataset.d)) { v = v.replace(/[^0-9]/g, '').slice(0, 10); if (v !== t.value) t.value = v; }
+      setPath(EDIT.draft, t.dataset.d, v); return;
+    }
+    const p = t.dataset.path; if (!p) return;
+    if (p === 'main.start' && !t.value) return;
+    if (t.type === 'checkbox') { setPath(PRJ, p, t.checked); if (p === 'on.periodic' && !t.checked) { PRJ.on.turns = false; PRJ.on.places = false; } }
+    else if (t.dataset.num) { let n = parseFloat(t.value); if (!(n >= 0)) n = 0; if (p === 'main.count') n = Math.max(1, Math.min(24, Math.round(n))); setPath(PRJ, p, n); }
+    else setPath(PRJ, p, t.value);
+    if (e.type === 'change' && t.dataset.rerender) {
+      if (p === 'main.freq' && t.value === 'once') PRJ.main.count = 1;
+      const id = t.id; renderFeats(); renderForm(); renderDest();
+      const n = id && $('#' + id); if (n) n.focus();
+    }
+    if (e.type === 'change' && /name$/.test(p)) renderDest();
+    afterChange();
+  }
+  function onCfgClick(e) {
+    const pr = e.target.closest('[data-preset]');
+    if (pr) { PRJ = preset(pr.dataset.preset); S.view = 'home'; S.hist = []; S.flow = null; S.saved = null; S.person = null; EDIT.draft = null; EDIT.confirmRemove = null; REDIT.draft = null; REDIT.confirmRemove = null; renderAll(); return; }
+    if (e.target.closest('#addperson')) { openEditor(null); return; }
+    if (e.target.closest('#addrecv')) { openRecEditor(null); return; }
+    const rb = e.target.closest('[data-ract]'); if (rb) { onRecClick(rb); return; }
+    const b = e.target.closest('[data-pact]'); if (!b) return;
+    const a = b.dataset.pact, d = EDIT.draft;
+    if (a === 'sc-add') {
+      const v = Math.round(parseFloat($('#f-sc').value) * 100) / 100;
+      if (v > 0 && PRJ.shortcuts.indexOf(v) < 0 && PRJ.shortcuts.length < 6) { PRJ.shortcuts.push(v); PRJ.shortcuts.sort((x, y) => x - y); renderForm(); renderPreview(); const n = $('#f-sc'); if (n) n.focus(); }
+    }
+    else if (a === 'sc-rm') { PRJ.shortcuts.splice(+b.dataset.i, 1); renderForm(); renderPreview(); }
+    else if (a === 'edit') openEditor(byId(+b.dataset.id));
+    else if (a === 'remove') { EDIT.confirmRemove = +b.dataset.id; renderPeople(); }
+    else if (a === 'remove-no') { EDIT.confirmRemove = null; renderPeople(); }
+    else if (a === 'remove-yes') { PRJ.people = PRJ.people.filter(p => p.id !== +b.dataset.id); EDIT.confirmRemove = null; renderPeople(); afterChange(); }
+    else if (a === 'cancel') { EDIT.draft = null; EDIT.errors = []; renderEditor(); }
+    else if (a === 'save') saveEditor();
+    else if (a === 'photo-rm') { d.photo = null; renderEditor(); }
+    else if (a === 'consent') { d.consent.ok = b.checked; if (b.checked && !d.consent.date) d.consent.date = longDate(TODAY); renderEditor(); const c = $('#e-consent'); if (c) c.focus(); }
+    else if (a === 'payer-add') { d.payers.push({ name: '', rel: RELS[0], tel: '', primary: !d.payers.length }); renderEditor(); const f = $('#q-n' + (d.payers.length - 1)); if (f) f.focus(); }
+    else if (a === 'payer-rm') { d.payers.splice(+b.dataset.i, 1); if (d.payers.length && !d.payers.some(q => q.primary)) d.payers[0].primary = true; renderEditor(); }
+    else if (a === 'primary') { d.payers.forEach((q, i) => { q.primary = i === +b.dataset.i; }); }
+  }
+  function onCfgFile(e) {
+    const t = e.target; if (t.id !== 'e-photo' || !t.files || !t.files[0]) return;
+    readPhoto(t.files[0], function (url) {
+      if (!url) { EDIT.errors = ['No se pudo leer esa foto. Prueba con otra.']; renderEditor(); return; }
+      EDIT.draft.photo = url; EDIT.errors = []; renderEditor();
+    });
+  }
+
+  function renderAll() { renderFeats(); renderPresets(); renderForm(); renderPreview(); renderReceivers(); renderRecEditor(); renderDest(); renderPeople(); renderEditor(); render(); }
+
+  /* ================= v7: places (cupos), QR registration, receipt (WhatsApp), monthly report ================= */
+  /* Everything here is simulated in the prototype: the real QR page, the notifications, the WhatsApp link and the report data come from the backend. */
+  FEATS.push({ k: 'places', name: 'Lugares (cupo)', desc: 'El grupo tiene un número de lugares. Pagar la cuota principal confirma el lugar. Necesita cobros con calendario.' });
+
+  /* New fields on every person; a preset adds the registration settings. Rebinding a function declaration keeps every old caller working. */
+  const mkPerson0 = mkPerson;
+  mkPerson = function (base) {
+    const P = mkPerson0(base);
+    if (!P.status) P.status = 'enrolled';           /* pending (por aprobar) | enrolled | waitlist | released */
+    if (P.heldOn === undefined) P.heldOn = null;    /* ISO date the place was approved or kept; used to expire unpaid places */
+    if (!P.via) P.via = 'manual';                   /* 'qr' when the person registered through the QR page */
+    return P;
+  };
+  const preset0 = preset;
+  preset = function (id) {
+    const p = preset0(id);
+    p.on.places = id === 'taller';
+    p.reg = { open: true, token: 'ej-' + id.slice(0, 3) + '4k2', capacity: 12, holdDays: 5 };
+    if (id === 'taller') p.people = p.people.slice(0, 10);   /* 10 of 12 places taken, so the demo can fill up */
+    return p;
+  };
+
+  const roster = () => PRJ.people.filter(p => p.status === 'enrolled');
+  const placesOn = () => !!(PRJ.on.places && PRJ.on.periodic);
+  const occupied = () => PRJ.people.filter(p => p.status === 'enrolled' || p.status === 'pending').length;
+  const capacity = () => Math.max(1, ((PRJ.reg && PRJ.reg.capacity) | 0) || 1);
+  const isFull = () => placesOn() && occupied() >= capacity();
+  const freeSpots = () => Math.max(0, capacity() - occupied());
+  const confirmedCount = k => roster().filter(p => { const v = getRec(p, k); return !!(v && v.s === 'paid'); }).length;
+  const daysSince = s => (s ? Math.floor((TODAY - new Date(s + 'T12:00:00')) / 864e5) : 0);
+  /* Rule: only a place held by a NEW person expires: approved (heldOn set) and still without a first payment after holdDays. Anyone who has paid once, and anyone added by hand, never expires here. */
+  const everPaid = P => P.pay.some(v => v && v.s === 'paid') || !!(P.extra && P.extra.s === 'paid');
+  function isOverdue(P) {
+    if (!placesOn() || P.status !== 'enrolled' || !P.heldOn || everPaid(P)) return false;
+    return daysSince(P.heldOn) > ((PRJ.reg.holdDays | 0) || 5);
+  }
+  /* Place state: icon + words + border (never colour alone), through the same stt() as payments. */
+  function placeState(P) {
+    if (P.status === 'waitlist') return { st: 'due', text: 'En lista de espera', kind: 'waitlist' };
+    if (P.status === 'pending') return { st: 'wait', text: 'Por aprobar', kind: 'pending' };
+    const v = placesOn() ? getRec(P, cur()) : null;
+    if (v && v.s === 'paid') return { st: 'paid', text: 'Lugar confirmado', kind: 'confirmed' };
+    if (isOverdue(P)) return { st: 'due', text: 'Apartado vencido', kind: 'overdue' };
+    return { st: 'wait', text: 'Lugar apartado', kind: 'held' };
+  }
+  const reviewList = () => {
+    const rank = { pending: 0, overdue: 1, waitlist: 2 };
+    return PRJ.people.filter(p => p.status === 'pending' || p.status === 'waitlist' || isOverdue(p))
+      .sort((a, b) => rank[placeState(a).kind] - rank[placeState(b).kind] || a.id - b.id);
+  };
+  const regPlaces = () => (!placesOn() ? '' : isFull() ? 'Ya no hay lugares. Quedarás en lista de espera.' : 'Quedan ' + freeSpots() + (freeSpots() === 1 ? ' lugar' : ' lugares') + ' de ' + capacity() + '.');
+  const fmtTel = t => (t && t.length === 10 ? t.slice(0, 2) + ' ' + t.slice(2, 6) + ' ' + t.slice(6) : (t || ''));
+  /* 10 digits as Pey asks; accepts spaces, dashes, +52 and 521 */
+  function tel10(raw) {
+    let d = String(raw || '').replace(/\D/g, '');
+    if (d.length === 13 && d.indexOf('521') === 0) d = d.slice(3); else if (d.length === 12 && d.indexOf('52') === 0) d = d.slice(2);
+    return /^\d{10}$/.test(d) ? d : '';
+  }
+  const viaName = v => (v === 'cash' ? 'Efectivo' : v === 'fam' ? 'Solicitud CoDi' : 'CoDi con QR');
+  const homeWith = msg => { S.hist = []; S.view = 'home'; S.page = 0; S.flow = null; S.doneInfo = null; S.person = null; S.notice = msg; paint(); };
+
+  /* ---------- places card on the home screen ---------- */
+  function placesCard() {
+    const k = cur(), conf = confirmedCount(k), cap = capacity(), held = Math.max(0, occupied() - conf), per = periods()[k] || { title: '' };
+    return '<div class="statcard"><p class="txt say"><b>' + esc(per.title) + ':</b> ' + conf + ' de ' + cap + ' lugares confirmados</p>' +
+      '<div class="meter" role="img" aria-label="' + conf + ' confirmados, ' + held + ' apartados, ' + freeSpots() + ' libres de ' + cap + '"><i class="p" style="width:' + (conf / cap * 100) + '%"></i><i class="w" style="width:' + (held / cap * 100) + '%"></i></div>' +
+      '<p class="txt soft say">' + held + (held === 1 ? ' apartado' : ' apartados') + ' · ' + freeSpots() + (freeSpots() === 1 ? ' libre' : ' libres') + '</p></div>' +
+      (isFull() ? alertBox('Taller lleno. Hay lista de espera.') : '');
+  }
+  function reviewCard() {
+    const n = reviewList().length; if (!n) return '';
+    return '<div class="statcard"><p class="txt say"><b>Inscripciones nuevas</b></p>' + stt('wait', n + (n === 1 ? ' por revisar' : ' por revisar')) + '</div>';
+  }
+
+  /* ================= REGISTRATION (the page a person opens from the QR) ================= */
+  function rgReset() { S.rg = { name: '', tel: '', ayuda: [], cur: '', ok: false, result: '' }; }
+  const RG_VIEWS = { r1: 1, r2: 1, r3: 1, r4: 1, rdone: 1, rclosed: 1, rlimit: 1 };
+  const rgAlert = '<div id="rg-alert" role="alert"></div>';
+  function rgField(id, label, val, mode) {
+    return '<div class="fld2"><label for="' + id + '">' + esc(label) + '</label><input id="' + id + '" type="text" inputmode="' + (mode || 'text') + '" maxlength="' + (mode === 'tel' ? 16 : 40) + '" autocomplete="off" value="' + esc(val) + '"></div>';
+  }
+  function viewR1() {
+    if (!PRJ.reg.open) return viewRClosed();
+    const q = '¿Cómo se llama?', pl = regPlaces();
+    return { html: '<h1 class="q">' + q + '</h1><p class="txt soft say">' + esc(PRJ.name || 'Mi proyecto') + '</p>' + (pl ? '<p class="txt say">' + esc(pl) + '</p>' : '') +
+      rgField('rg-n', 'Nombre de quien se inscribe', S.rg.name) + rgAlert + choice({ act: 'rg-next', primary: true, icon: ICON.check, label: 'Seguir' }), say: q + ' ' + pl };
+  }
+  function viewR2() {
+    const q = '¿Cuál es su WhatsApp?';
+    return { html: '<h1 class="q">' + q + '</h1><p class="txt say">Son 10 números. Ejemplo: 55 1234 5678.</p>' + rgField('rg-t', 'WhatsApp', S.rg.tel, 'tel') + rgAlert +
+      choice({ act: 'rg-next', primary: true, icon: ICON.check, label: 'Seguir' }) + choice({ act: 'rg-notel', label: 'No tiene WhatsApp' }), say: q };
+  }
+  function viewR3() {
+    const g = S.rg, q = '¿Quién le ayuda a pagar?';
+    const added = g.ayuda.length ? '<p class="txt say">Ya agregaste: ' + g.ayuda.map(maskTel).join(', ') + '</p>' : '';
+    return { html: '<h1 class="q">' + q + '</h1><p class="txt say">Su WhatsApp. Puedes poner hasta 3.</p>' + added + rgField('rg-h', 'WhatsApp de quien ayuda', g.cur, 'tel') + rgAlert +
+      choice({ act: 'rg-next', primary: true, icon: ICON.check, label: 'Seguir' }) + (g.ayuda.length < 2 ? choice({ act: 'rg-add', icon: ICON.plus, label: 'Agregar otro número' }) : ''), say: q };
+  }
+  function viewR4() {
+    const g = S.rg, q = 'Revisa y confirma';
+    return { html: '<h1 class="q">' + q + '</h1><div class="receipt"><dl><dt>Nombre</dt><dd>' + esc(g.name) + '</dd><dt>WhatsApp</dt><dd>' + esc(g.tel ? fmtTel(g.tel) : 'No tiene') + '</dd>' +
+      '' + (g.ayuda.length ? g.ayuda.map((t, i) => '<dt>Ayuda ' + (i + 1) + '</dt><dd>' + esc(fmtTel(t)) + '</dd>').join('') : '<dt>Ayuda</dt><dd>Nadie por ahora</dd>') + '</dl></div>' +
+      '<label class="check" for="rg-ok"><input id="rg-ok" type="checkbox"' + (g.ok ? ' checked' : '') + '><span>Tengo permiso de esas personas para dar su número</span></label>' + rgAlert +
+      choice({ act: 'rg-send', primary: true, icon: ICON.check, label: 'Enviar inscripción' }), say: q };
+  }
+  function viewRDone() {
+    const g = S.rg, res = g.result;
+    if (res === 'dup') return { html: '<div class="donehead"><div class="bigcheck">' + ICON.info + '</div><h1 class="q">YA ESTÁ INSCRITO</h1></div><p class="txt say" style="text-align:center">Ese WhatsApp ya tiene una inscripción.</p>' + choice({ act: 'rg-again', primary: true, icon: ICON.people, label: 'Inscribir a otra persona' }), say: 'Ya estaba inscrito.' };
+    const wl = res === 'waitlist', line = wl ? 'Quien cobra lo verá en la lista de espera.' : placesOn() ? 'Lugar apartado. Falta que quien cobra lo apruebe.' : 'Ya quedó registrado. Falta que quien cobra lo apruebe.';
+    return { html: '<div class="donehead"><div class="bigcheck">' + ICON.check + '</div><h1 class="q">ENVIADA</h1></div>' + (wl ? waitBox('Taller lleno: lista de espera') : '') +
+      '<p class="txt say" style="text-align:center"><b>' + esc(g.lastName || '') + '</b></p><p class="txt say" style="text-align:center">' + line + '</p>' +
+      choice({ act: 'rg-again', primary: true, icon: ICON.people, label: 'Inscribir a otra persona' }), say: 'Inscripción enviada. ' + line };
+  }
+  function viewRClosed() {
+    return { html: '<h1 class="q">Inscripciones cerradas</h1><p class="txt say">Pregunta a quien organiza el grupo.</p>', say: 'Inscripciones cerradas. Pregunta a quien organiza el grupo.' };
+  }
+  function viewRLimit() {
+    return { html: '<div class="errbig"><div class="badge2">' + ICON.alert + '</div><h1 class="q">Intenta más tarde</h1><p class="txt say">Hubo muchos intentos desde este teléfono.</p></div>', say: 'Intenta más tarde. Hubo muchos intentos.' };
+  }
+  const rgSet = (id, msg) => { const a = $('#rg-alert'); if (a) a.innerHTML = alertBox(msg); feedback('error'); const el = $('#' + id); if (el) el.focus(); };
+  function rgAddHelper(strict) {
+    const g = S.rg, raw = ($('#rg-h') || {}).value || '', t = tel10(raw);
+    if (!raw.trim()) return strict ? (rgSet('rg-h', 'Escribe el número.'), false) : true;
+    if (!t) { rgSet('rg-h', 'Deben ser 10 números.'); return false; }
+    if (g.ayuda.indexOf(t) >= 0) { rgSet('rg-h', 'Ese número ya está.'); return false; }
+    if (g.ayuda.length >= 3) { rgSet('rg-h', 'Son hasta 3 números.'); return false; }
+    g.ayuda.push(t); g.cur = ''; return true;
+  }
+  function rgSubmit() {
+    const g = S.rg; S.regCount = (S.regCount || 0) + 1;
+    if (S.regCount > 5) { S.view = 'rlimit'; S.hist = []; paint(); return; }   /* a public page needs a brake against spam */
+    const dup = g.tel && PRJ.people.some(p => p.tel === g.tel && p.status !== 'released');
+    g.lastName = g.name.trim();
+    if (dup) { g.result = 'dup'; nav('rdone'); return; }
+    const full = isFull();
+    PRJ.people.push(mkPerson({ n: g.lastName, tel: g.tel, via: 'qr', status: full ? 'waitlist' : 'pending', from: cur(), note: 'Se inscribió por QR',
+      payers: g.ayuda.map((t, i) => ({ name: 'Ayuda ' + (i + 1), rel: 'Otra persona', tel: t, primary: i === 0 })) }));
+    g.result = full ? 'waitlist' : 'pending'; feedback('ok'); S.hist = []; S.view = 'rdone'; paint(); renderPeople();
+  }
+  function onRgAct(a) {
+    const g = S.rg;
+    switch (a) {
+      case 'rg-next':
+        if (S.view === 'r1') { const v = (($('#rg-n') || {}).value || '').trim(); g.name = v; if (v.length < 2) { rgSet('rg-n', 'Escribe el nombre.'); break; } nav('r2'); }
+        else if (S.view === 'r2') { const raw = ($('#rg-t') || {}).value || '', t = tel10(raw); g.tel = t || g.tel; if (!raw.trim()) { rgSet('rg-t', 'Escribe el número o toca "No tiene WhatsApp".'); break; } if (!t) { rgSet('rg-t', 'Deben ser 10 números.'); break; } g.tel = t; nav('r3'); }
+        else if (S.view === 'r3') { if (rgAddHelper(false)) nav('r4'); }
+        break;
+      case 'rg-notel': g.tel = ''; nav('r3'); break;
+      case 'rg-add': if (rgAddHelper(true)) { paint(true); const i = $('#rg-h'); if (i) i.focus(); } break;
+      case 'rg-send': { const cb = $('#rg-ok'); g.ok = !!(cb && cb.checked); if (!g.ok) { rgSet('rg-ok', 'Marca la casilla para continuar.'); break; } attempt('No se pudo enviar la inscripción', rgSubmit); break; }
+      case 'rg-again': rgReset(); S.hist = []; S.view = 'r1'; paint(); break;
+    }
+  }
+
+  /* ================= COLLECTOR: reviewing registrations, QR code, places ================= */
+  function viewRegs() {
+    const L = reviewList(), q = 'Inscripciones';
+    const qr = { act: 'regqr', icon: ICON.qr, label: 'Código para inscribirse', sub: PRJ.reg.open ? 'Muéstralo para que se inscriban' : 'Está cerrado' };
+    if (!L.length) return { html: '<h1 class="q">' + q + '</h1><p class="txt say">No hay nada por revisar.</p><div class="stack">' + choice(Object.assign({ primary: true }, qr)) + '</div>', say: q + '. No hay nada por revisar.' };
+    const items = L.map(p => ({ act: 'reg-open', data: { id: p.id }, icon: ICON.people, label: p.n, sub: placeState(p).text })).concat([qr]);
+    const pg = paged(items, 'Ver más'); pg.rows.forEach((r, i) => { r.primary = i === 0; });
+    return { html: '<h1 class="q">' + q + '</h1><div class="stack">' + pg.rows.map(choice).join('') + pg.pager + '</div>', say: q + '. ' + L.length + ' por revisar.' };
+  }
+  function viewRegDetail() {
+    const P = byId(S.person), ps = placeState(P), nm = P.n.length > 20 ? P.n.slice(0, 19) + '…' : P.n, hd = (PRJ.reg.holdDays | 0) || 5;
+    let q, body = '';
+    if (ps.kind === 'pending') { q = '¿Aprobar a ' + nm + '?'; body = choice({ act: 'reg-approve', primary: true, icon: ICON.check, label: 'Aprobar', sub: placesOn() ? 'Su lugar queda apartado' : 'Podrás cobrarle' }) + choice({ act: 'reg-no', cls: 'danger', icon: ICON.x, label: 'No aprobar' }); }
+    else if (ps.kind === 'waitlist') { q = '¿Darle lugar a ' + nm + '?'; body = freeSpots() > 0 || !placesOn() ? choice({ act: 'reg-give', primary: true, icon: ICON.check, label: 'Darle lugar' }) : alertBox('No hay lugar libre. Libera uno primero.'); }
+    else if (ps.kind === 'overdue') { q = '¿Qué hacemos con el lugar?'; body = choice({ act: 'reg-extend', primary: true, icon: ICON.clock, label: 'Dejarlo ' + hd + ' días más' }) + choice({ act: 'reg-free', cls: 'danger', icon: ICON.x, label: 'Liberar el lugar' }); }
+    else { q = nm + ' ya está al día'; body = choice({ act: 'home', primary: true, icon: ICON.people, label: 'Ir al inicio' }); }
+    const dl = '<div class="receipt"><dl><dt>WhatsApp</dt><dd>' + esc(P.tel ? fmtTel(P.tel) : 'No dejó') + '</dd>' + (P.payers.length ? P.payers.map((y, i) => '<dt>Ayuda ' + (i + 1) + '</dt><dd>' + esc(fmtTel(y.tel)) + '</dd>').join('') : '<dt>Ayuda</dt><dd>Nadie por ahora</dd>') + '</dl></div>';
+    return { html: idstrip(P, ps.text) + '<h1 class="q">' + esc(q) + '</h1>' + dl + '<div class="stack">' + body + '</div>', say: q };
+  }
+  function viewRegQR() {
+    const open = PRJ.reg.open, url = 'cuentasconmigo.example/i/' + PRJ.reg.token, pl = regPlaces();
+    return { html: '<h1 class="q">Código para inscribirse</h1><div class="qrbox">' + fakeQR(77) + '</div><p class="txt say">' + esc(url) + '</p>' + (pl ? '<p class="txt say">' + esc(pl) + '</p>' : '') +
+      '<div class="stack">' + choice({ act: 'reg-toggle', role: 'switch', cls: 'sw', checked: open ? 'true' : 'false', label: 'Recibir inscripciones', right: stt(open ? 'paid' : 'due', open ? 'Activado' : 'Apagado') }) +
+      choice({ act: 'home', primary: true, icon: ICON.check, label: 'Listo' }) + '</div>', say: 'Código para inscribirse. ' + pl };
+  }
+  function onCollectorAct(a, d, P) {
+    const finish = (title, fn) => attempt(title, fn);
+    switch (a) {
+      case 'regs': nav('regs'); break;
+      case 'regqr': nav('regqr'); break;
+      case 'reg-open': S.person = +d.id; nav('regdetail'); break;
+      case 'reg-toggle': PRJ.reg.open = !PRJ.reg.open; render(); { const b = $('#screen [data-act="reg-toggle"]'); if (b) b.focus(); } break;
+      case 'reg-approve': finish('No se pudo aprobar', function () {
+        P.status = 'enrolled'; P.heldOn = iso(TODAY); S.view = 'who'; S.hist = [{ view: 'home', page: 0 }]; S.flow = null; S.period = null; feedback('ok'); renderPeople();
+        nav(PRJ.on.periodic || PRJ.on.extra ? 'menu' : 'ledger');
+      }); break;
+      case 'reg-no': finish('No se pudo guardar', function () { P.status = 'released'; renderPeople(); homeWith('Inscripción quitada.'); }); break;
+      case 'reg-give': finish('No se pudo guardar', function () { P.status = 'enrolled'; P.heldOn = iso(TODAY); renderPeople(); homeWith('Ya tiene lugar. Puedes cobrarle.'); }); break;
+      case 'reg-extend': finish('No se pudo guardar', function () { P.heldOn = iso(TODAY); homeWith('Lugar apartado ' + (PRJ.reg.holdDays | 0 || 5) + ' días más.'); }); break;
+      case 'reg-free': finish('No se pudo guardar', function () { P.status = 'released'; renderPeople(); homeWith('Lugar liberado.'); }); break;
+      default: return false;
+    }
+    return true;
+  }
+
+  /* ================= RECEIPT: one big picture, sent with a WhatsApp link (option A) ================= */
+  function receiptModel(P, k) {
+    const c = charge(P, k), r = k === 'f' ? Object.assign({}, P.last) : (getRec(P, k) || { via: 'qr', payer: 0 }), cash = r.via === 'cash';
+    const folio = 'EJ-' + String((P.id * 37 + (typeof k === 'number' ? k : 99)) % 10000).padStart(4, '0');
+    return { P: P, k: k, c: c, amount: k === 'f' ? (P.last ? P.last.amount : c.amount) : c.amount, cash: cash, via: r.via || 'qr', payer: r.via === 'fam' ? (P.payers[r.payer || 0] || null) : null, folio: folio,
+      place: placesOn() && typeof k === 'number' ? { n: confirmedCount(k), cap: capacity(), title: (periods()[k] || { title: '' }).title } : null, bal: k === 'f' ? P.bal : null, date: shortDate(TODAY) + ' ' + TODAY.getFullYear() };
+  }
+  const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+  function receiptSVG(m) {
+    const INK = '#18213B', SOFT = '#3B4560', PAID = '#0F5F28', t = (x, y, size, txt, o) => '<text x="' + x + '" y="' + y + '" font-size="' + size + '"' + (o && o.w ? ' font-weight="' + o.w + '"' : '') + (o && o.fill ? ' fill="' + o.fill + '"' : '') + (o && o.anchor ? ' text-anchor="' + o.anchor + '"' : '') + '>' + esc(txt) + '</text>';
+    let s = '<svg viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comprobante de pago de ' + esc(m.P.n) + ' por ' + esc(money(m.amount)) + '" font-family="Atkinson Hyperlegible, Arial, Helvetica, sans-serif" fill="' + INK + '">';
+    s += '<rect width="1080" height="1350" fill="#fff"/><rect width="1080" height="230" fill="' + PAID + '"/>';
+    s += '<circle cx="150" cy="115" r="64" fill="#fff"/><path d="M118 116l24 24 46-52" fill="none" stroke="' + PAID + '" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>';
+    s += t(260, 128, 100, 'PAGADO', { w: 800, fill: '#fff' }) + t(262, 196, 50, viaName(m.via), { w: 700, fill: '#fff' });
+    const av = avatar(m.P).replace('<svg ', '<svg x="60" y="270" width="230" height="230" ');
+    s += '<clipPath id="rc"><circle cx="175" cy="385" r="115"/></clipPath><g clip-path="url(#rc)">' + av + '</g><circle cx="175" cy="385" r="115" fill="none" stroke="' + INK + '" stroke-width="8"/>';
+    s += t(330, 372, 72, clip(m.P.n, 16), { w: 800 }) + t(330, 448, 56, m.c.title ? clip(m.c.title, 22) : '', { w: 700, fill: SOFT });
+    s += t(60, 640, 190, money(m.amount), { w: 800 });
+    s += '<rect x="60" y="680" width="960" height="6" fill="' + INK + '"/>';
+    const concept = typeof m.k === 'number' ? PRJ.main.name : m.c.concept, rows = [['Concepto', clip(concept, 30)], ['Recibe', m.cash ? clip('En mano · ' + (PRJ.name || ''), 30) : clip(m.c.to ? m.c.to.name : (PRJ.name || ''), 30)], ['Cómo pagó', viaName(m.via)]];
+    if (m.payer) rows.push(['Pagó', clip(m.payer.name + ' (' + m.payer.rel.toLowerCase() + ')', 30)]);
+    if (m.bal !== null) rows.push(['Ahora debe', money(m.bal)]);
+    rows.push(['Fecha', m.date], ['Folio', m.folio]);
+    rows.forEach((r, i) => { const y = 750 + i * 90; s += t(60, y, 44, r[0], { fill: SOFT }) + t(1020, y, 52, r[1], { w: 800, anchor: 'end' }); });
+    if (m.place) {
+      s += '<rect x="60" y="1190" width="960" height="96" rx="20" fill="#fff" stroke="' + PAID + '" stroke-width="8"/><path d="M96 1236l22 22 40-44" fill="none" stroke="' + PAID + '" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += t(190, 1250, 46, 'LUGAR CONFIRMADO · ' + m.place.n + ' de ' + m.place.cap, { w: 800, fill: PAID });
+    }
+    s += t(540, 1330, 38, 'Comprobante de pago · no es factura', { fill: SOFT, anchor: 'middle' });
+    return s + '</svg>';
+  }
+  function receiptDests(P) {
+    const out = [], seen = {};
+    const add = (tel, label, sub) => { if (tel && !seen[tel]) { seen[tel] = 1; out.push({ tel: tel, label: label, sub: sub }); } };
+    const pri = P.payers.slice().sort((a, b) => (b.primary ? 1 : 0) - (a.primary ? 1 : 0));
+    pri.forEach(y => add(y.tel, y.name, y.rel + ' · ' + maskTel(y.tel)));
+    add(P.tel, 'Su celular', maskTel(P.tel));
+    return out.slice(0, 4);
+  }
+  const waText = m => 'Hola. Comprobante de pago de ' + m.P.n + ': ' + money(m.amount) + ' · ' + m.c.concept + '. Folio ' + m.folio + '. Míralo aquí: https://cuentasconmigo.example/c/' + m.folio.toLowerCase();
+  const waUrl = (tel, m) => 'https://wa.me/52' + tel + '?text=' + encodeURIComponent(waText(m));
+  function viewReceipt() {
+    const P = byId(S.person), m = receiptModel(P, S.period), dests = receiptDests(P), key = P.id + '-' + S.period;
+    const items = dests.map((d, i) => ({ act: 'wa', data: { tel: d.tel }, primary: i === 0, icon: ICON.send, label: 'Enviar a ' + d.label, sub: S.sent && S.sent[key + d.tel] ? 'WhatsApp abierto. Ahí toca Enviar.' : d.sub }));
+    if (items.length < 4) items.push({ act: 'rcpt-share', primary: !items.length, icon: ICON.send, label: 'Compartir comprobante', sub: 'Tú eliges el contacto' });
+    const note = S.rnote ? '<div class="notice2" role="status">' + ICON.info + '<span>' + esc(S.rnote) + '</span></div>' : '';
+    return { html: note + '<h1 class="q">Comprobante</h1><div class="rcpt">' + receiptSVG(m) + '</div><div class="stack">' + items.map(choice).join('') + '</div>', say: 'Comprobante de ' + P.n + ', ' + money(m.amount) + '. ¿A quién se lo mandas?' };
+  }
+  function onReceiptAct(a, d, P) {
+    if (a === 'receipt') { S.rnote = ''; nav('receipt'); return true; }
+    if (a === 'wa') {
+      const m = receiptModel(P, S.period), url = waUrl(d.tel, m); S.lastWA = url; S.sent = S.sent || {}; S.sent[P.id + '-' + S.period + d.tel] = 1;
+      try { window.open(url, '_blank', 'noopener'); } catch (e) { /* optional */ }
+      render(); const b = $('#screen [data-act="wa"][data-tel="' + d.tel + '"]'); if (b) b.focus(); return true;
+    }
+    if (a === 'rcpt-share') { shareReceipt(receiptModel(P, S.period)); return true; }
+    return false;
+  }
+  /* Fallback: the iPhone share sheet with the picture. Needs a tap, https and a recent iOS; if it is not there, copy the link instead. */
+  function shareReceipt(m) {
+    const done = msg => { S.rnote = msg; render(); };
+    try {
+      const svg = receiptSVG(m).replace('<svg ', '<svg width="1080" height="1350" '), img = new Image();
+      img.onload = function () {
+        try {
+          const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; c.getContext('2d').drawImage(img, 0, 0);
+          c.toBlob(function (b) {
+            const f = new File([b], 'comprobante-' + m.folio + '.png', { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], text: waText(m) }).catch(function () { /* cancelled */ });
+            else copyLink(m, done);
+          }, 'image/png');
+        } catch (e) { copyLink(m, done); }
+      };
+      img.onerror = function () { copyLink(m, done); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    } catch (e) { copyLink(m, done); }
+  }
+  function copyLink(m, done) {
+    try { navigator.clipboard.writeText(waText(m)).then(function () { done('Copiamos el mensaje. Pégalo en WhatsApp.'); }, function () { done('No se pudo compartir. Intenta de nuevo.'); }); }
+    catch (e) { done('No se pudo compartir. Intenta de nuevo.'); }
+  }
+
+  /* ================= MONTHLY REPORT (advanced layer: "Ayuda de un familiar") ================= */
+  function repK() { const n = periods().length; if (S.repK == null || S.repK >= n) S.repK = cur(); return Math.max(0, Math.min(S.repK, Math.max(0, n - 1))); }
+  function repRows(k) {
+    return roster().filter(p => p.from <= k).map(p => {
+      const v = getRec(p, k), c = charge(p, k), s = v && v.s === 'paid' ? 'paid' : v && v.s === 'wait' ? 'wait' : 'due';
+      return { P: p, s: s, via: s === 'paid' ? v.via : null, amount: c.amount, to: s !== 'paid' ? '' : v.via === 'cash' ? 'Efectivo (lo guardas tú)' : (c.to ? c.to.name : '') };
+    });
+  }
+  function repData() {
+    const on = PRJ.on, out = { title: '', lines: [], rows: [], head: [] };
+    if (on.periodic) {
+      const k = repK(), rows = repRows(k), per = periods()[k], sum = f => rows.filter(f).reduce((a, r) => a + r.amount, 0);
+      const exp = rows.reduce((a, r) => a + r.amount, 0), got = sum(r => r.s === 'paid'), cash = sum(r => r.s === 'paid' && r.via === 'cash'), codi = got - cash;
+      out.title = per.title; out.k = k;
+      out.lines = [['Esperado', money(exp)], ['Recibido', money(got)], ['  por CoDi', money(codi)], ['  en efectivo', money(cash)], ['Pendiente', money(r2(exp - got))], ['Personas', rows.filter(r => r.s === 'paid').length + ' de ' + rows.length + ' pagaron']];
+      if (placesOn()) out.lines.push(['Lugares confirmados', confirmedCount(k) + ' de ' + capacity()]);
+      if (on.extra) { const ex = roster().filter(p => p.extra && p.extra.s === 'paid'), cr = ex.length * PRJ.extra.amount; out.lines.push([PRJ.extra.name + ' (aparte)', ex.length + ' de ' + roster().length + ' · ' + money(cr)]); }
+      out.head = ['Persona', 'Estado', 'Monto', 'Cómo', 'Recibe'];
+      out.rows = rows.map(r => ({ P: r.P, s: r.s, cells: [r.P.n, r.s === 'paid' ? 'Pagó' : r.s === 'wait' ? 'Esperando pago' : 'Falta pagar', money(r.amount), r.via ? viaName(r.via) : '', r.to] }));
+    } else if (on.ledger) {
+      const L = roster(), tot = L.reduce((a, p) => a + p.bal, 0);
+      out.title = 'Saldos de hoy'; out.lines = [['Te deben', money(r2(tot))], ['Personas con saldo', L.filter(p => p.bal > 0).length + ' de ' + L.length]];
+      out.head = ['Persona', 'Estado', 'Debe', 'Último movimiento', ''];
+      out.rows = L.map(p => { const l = p.ledger[0]; return { P: p, s: p.bal > 0 ? 'due' : 'paid', cells: [p.n, p.bal > 0 ? 'Debe' : 'No debe', money(p.bal), l ? (l.t === 'abono' ? 'Abono ' : 'Fiado ') + money(l.a) + ' · ' + l.d : '', ''] }; });
+    }
+    return out;
+  }
+  function renderReport() {
+    const R = repData(), box = $('#rep-body'); if (!box) return;
+    const nav2 = PRJ.on.periodic; $('#rep-nav').hidden = !nav2; $('#rep-title').textContent = R.title || '';
+    if (nav2) { $('#rep-prev').disabled = R.k <= 0; $('#rep-next').disabled = R.k >= periods().length - 1; }
+    if (!R.rows.length && !R.lines.length) { box.innerHTML = '<p>Activa cobros con calendario o fiado para ver el reporte.</p>'; return; }
+    const sum = '<dl class="repsum">' + R.lines.map(l => '<dt>' + esc(l[0].trim()) + '</dt><dd>' + esc(l[1]) + '</dd>').join('') + '</dl>';
+    const tbl = '<div class="repwrap"><table class="rep"><thead><tr>' + R.head.map(h => '<th scope="col">' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' +
+      R.rows.map(r => '<tr><th scope="row">' + esc(r.cells[0]) + '</th><td>' + stt(r.s, r.cells[1]) + '</td>' + r.cells.slice(2).map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+    box.innerHTML = sum + tbl;
+  }
+  const repText = () => { const R = repData(); return (PRJ.name || 'Reporte') + ' · ' + R.title + '\n' + R.lines.map(l => l[0] + ': ' + l[1]).join('\n') + '\n\n' + R.rows.map(r => r.cells.filter(Boolean).join(' · ')).join('\n'); };
+  const csvCell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  function repCSV() { const R = repData(); return '﻿' + [R.head.map(csvCell).join(',')].concat(R.rows.map(r => r.cells.map(csvCell).join(','))).join('\r\n'); }
+  function onRepClick(e) {
+    const b = e.target.closest('#rep-prev, #rep-next, #rep-copy, #rep-csv'); if (!b || b.disabled) return;
+    const st = $('#rep-status'); let msg = '';
+    if (b.id === 'rep-prev' || b.id === 'rep-next') { S.repK = repK() + (b.id === 'rep-next' ? 1 : -1); renderReport(); return; }
+    if (b.id === 'rep-copy') { try { navigator.clipboard.writeText(repText()); msg = 'Resumen copiado.'; } catch (x) { msg = 'No se pudo copiar.'; } }
+    if (b.id === 'rep-csv') {
+      try { const u = URL.createObjectURL(new Blob([repCSV()], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a'); a.href = u; a.download = 'reporte-' + (repData().title || 'pagos').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.csv'; document.body.appendChild(a); a.click(); a.remove(); msg = 'Archivo listo.'; }
+      catch (x) { msg = 'No se pudo preparar el archivo.'; }
+    }
+    if (st) st.textContent = msg;
+  }
+
+  /* ---------- Ajustes: capacity and registration switches ---------- */
+  const renderForm0 = renderForm;
+  renderForm = function () {
+    renderForm0();
+    let h = '<div class="field span"><label class="check" for="f-regopen"><input id="f-regopen" type="checkbox" data-path="reg.open"' + (PRJ.reg.open ? ' checked' : '') + '><span>Recibir inscripciones por QR<small>Quien llega al código deja su nombre y WhatsApp. Tú apruebas antes de cobrar.</small></span></label></div>';
+    if (PRJ.on.places) {
+      h += fld('f-cap', 'Cuántos lugares hay', '<input id="f-cap" type="number" inputmode="numeric" min="1" max="99" step="1" data-path="reg.capacity" data-num="1" value="' + capacity() + '">', 'Al llenarse, las inscripciones pasan a la lista de espera.');
+      h += fld('f-hold', 'Días que se aparta un lugar', '<input id="f-hold" type="number" inputmode="numeric" min="1" max="30" step="1" data-path="reg.holdDays" data-num="1" value="' + ((PRJ.reg.holdDays | 0) || 5) + '">', 'Pasado ese tiempo sin pago, tú decides si lo dejas o lo liberas.');
+    }
+    $('#cfg-form').insertAdjacentHTML('beforeend', h);
+  };
+
+  /* ================= RECEIVING ACCOUNTS: Pey registers each one with the bank, so a new account waits ================= */
+  /* Pey: POST /bank-account {alias, name (legal holder), clabe, entity}; codiStatus PENDING -> PROCESSING -> ACTIVE (up to 5 business days) | ERROR.
+     Only an ACTIVE account can be sent as bankAccountId. The CLABE below is Pey's published test account: it activates at once. */
+  const PEY_TEST_CLABE = '012180015826225713';
+  const recvState = r => (!r || r.pending ? 'nodata' : (r.status || 'active'));
+  const recvOk = r => recvState(r) === 'active';
+  const recvPill = r => {
+    const st = recvState(r);
+    if (st === 'nodata') return '<span class="pill" style="border-color:var(--wait);color:var(--ink)">' + ICON.clock + 'Cuenta por confirmar</span>';
+    if (st === 'processing') return '<span class="pill" style="border-color:var(--wait);color:var(--ink)">' + ICON.clock + 'En espera de Pey · hasta 5 días hábiles</span>';
+    if (st === 'error') return '<span class="pill" style="border-color:var(--danger);color:var(--danger)">' + ICON.alert + 'Pey no pudo registrarla</span>';
+    return '<span class="pill ok">' + ICON.check + 'Lista · ' + maskClabe(r.clabe) + '</span>';
+  };
+  renderReceivers = function () {
+    const L = PRJ.receivers;
+    $('#cfg-recv').innerHTML = L.map(r => {
+      const rm = REDIT.confirmRemove === r.id, wait = recvState(r) === 'processing';
+      return '<div class="prow"><div class="ava bankico">' + ICON.cash + '</div><div class="info"><strong>' + esc(r.name || 'Sin nombre') + '</strong>' +
+        '<span class="pill">' + KINDS[r.kind] + '</span>' + recvPill(r) + (r.holder ? '<span class="pill">Titular: ' + esc(r.holder) + '</span>' : '') + '</div>' +
+        '<div class="acts">' + (rm ? '<button class="btn small danger" data-ract="remove-yes" data-id="' + r.id + '">Sí, quitar</button><button class="btn small" data-ract="remove-no">No</button>' :
+          '<button class="btn small" data-ract="edit" data-id="' + r.id + '">Editar</button>' + (wait ? '<button class="btn small" data-ract="sim-active" data-id="' + r.id + '">Simular que Pey la activó</button>' : '') + (L.length > 1 ? '<button class="btn small danger" data-ract="remove" data-id="' + r.id + '">Quitar</button>' : '')) + '</div></div>';
+    }).join('') + (L.length === 1 ? '<p>Siempre debe quedar al menos una cuenta.</p>' : '') +
+      (L.some(r => recvState(r) === 'processing') ? '<p>Una cuenta nueva tarda hasta 5 días hábiles en quedar lista. Mientras tanto no recibe pagos CoDi: solo anotas efectivo. "Simular que Pey la activó" es solo del prototipo; en la app real Pey avisa solo.</p>' : '');
+  };
+  openRecEditor = function (r) {
+    REDIT.draft = r ? JSON.parse(JSON.stringify(r)) : { id: '', name: '', kind: 'yo', clabe: '', pending: false, holder: '' };
+    if (REDIT.draft.holder === undefined) REDIT.draft.holder = '';
+    REDIT.isNew = !r; REDIT.errors = []; renderRecEditor();
+    const f = $('#rc-n'); if (f) { f.focus(); f.scrollIntoView({ block: 'center' }); }
+  };
+  renderRecEditor = function () {
+    const d = REDIT.draft, box = $('#cfg-recv-editor');
+    $('#addrecv').hidden = !!d;
+    if (!d) { box.innerHTML = ''; return; }
+    let h = '<div class="editor" role="group" aria-label="Datos de la cuenta"><h3>' + (REDIT.isNew ? 'Nueva cuenta de cobro' : 'Editar cuenta de cobro') + '</h3><div class="form">';
+    h += fld('rc-n', 'Nombre de quien recibe', '<input id="rc-n" type="text" data-rd="name" value="' + esc(d.name) + '" maxlength="50" autocomplete="off">', 'Como se lo dirías a quien paga. Por ejemplo: Taller de Rosa, DIF Centro, Tienda La Esquina.');
+    h += fld('rc-k', 'Es', '<select id="rc-k" data-rd="kind">' + Object.keys(KINDS).map(k => '<option value="' + k + '"' + (d.kind === k ? ' selected' : '') + '>' + KINDS[k] + '</option>').join('') + '</select>');
+    h += fld('rc-h', 'Nombre completo del titular', '<input id="rc-h" type="text" data-rd="holder" value="' + esc(d.holder) + '" maxlength="80" autocomplete="off"' + (d.pending ? ' disabled' : '') + '>', 'Tal como aparece en el banco: persona o razón social. Pey lo pide para registrar la cuenta.', 'span');
+    h += fld('rc-c', 'CLABE de la cuenta', '<input id="rc-c" type="tel" inputmode="numeric" data-rd="clabe" value="' + esc(d.clabe) + '" maxlength="18" autocomplete="off"' + (d.pending ? ' disabled' : '') + '>', '18 dígitos, sin espacios. El banco debe tener CoDi. Cópiala de la app o del estado de cuenta.', 'span');
+    h += '<div class="field span"><button class="btn small" type="button" data-ract="test-clabe"' + (d.pending ? ' disabled' : '') + '>Usar la CLABE de prueba de Pey</button><div class="hint">Se activa al instante y sus pagos no se devuelven: prueba con $0.01.</div></div>';
+    h += '<div class="field span"><label class="check" for="rc-p"><input id="rc-p" type="checkbox" data-ract="pending"' + (d.pending ? ' checked' : '') + '><span>Todavía no tengo los datos de esta cuenta<small>Puedes dejarla anotada y completarla después. La app te avisará que está por confirmar.</small></span></label></div>';
+    h += '</div><div class="notice"><span>' + ICON.clock + '</span><span>Al guardar, Pey registra la cuenta con el banco. Tarda hasta 5 días hábiles. Mientras tanto esa cuenta solo puede recibir efectivo anotado, no pagos CoDi.</span></div>';
+    if (REDIT.errors.length) h += '<div class="err" role="alert">Revisa esto antes de guardar:<ul>' + REDIT.errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>';
+    h += '<div class="btnrow"><button class="btn primary" style="width:auto;min-height:3.75rem" data-ract="save">Guardar cuenta</button><button class="btn" style="width:auto;min-height:3.75rem" data-ract="cancel">Cancelar</button></div></div>';
+    box.innerHTML = h;
+  };
+  validateRec = function (d) {
+    const e = [];
+    if (!d.name.trim()) e.push('Escribe el nombre de quien recibe.');
+    if (!d.pending) {
+      if ((d.holder || '').trim().length < 3) e.push('Escribe el nombre completo del titular, como aparece en el banco.');
+      if (!/^[0-9]{18}$/.test(d.clabe)) e.push('La CLABE debe tener 18 dígitos, sin espacios.');
+      else if (!clabeOk(d.clabe)) e.push('El último dígito de la CLABE no coincide. Revisa que esté bien copiada.');
+    }
+    return e;
+  };
+  saveRec = function () {
+    const d = REDIT.draft; REDIT.errors = validateRec(d);
+    if (REDIT.errors.length) { renderRecEditor(); return; }
+    d.name = d.name.trim(); d.holder = (d.holder || '').trim(); if (d.pending) { d.clabe = ''; d.holder = ''; }
+    const old = REDIT.isNew ? null : PRJ.receivers.find(x => x.id === d.id), changed = !old || old.clabe !== d.clabe || old.holder !== d.holder || old.pending;
+    /* a new or changed CLABE is sent to Pey again and waits; Pey's test CLABE is active at once */
+    if (d.pending) d.status = undefined; else if (changed) { d.status = d.clabe === PEY_TEST_CLABE ? 'active' : 'processing'; d.sentOn = iso(TODAY); } else d.status = old.status || 'active';
+    if (REDIT.isNew) { d.id = 'r' + (++ridn); PRJ.receivers.push(d); }
+    else if (old) Object.assign(old, { name: d.name, kind: d.kind, clabe: d.clabe, pending: d.pending, holder: d.holder, status: d.status, sentOn: d.sentOn });
+    REDIT.draft = null; REDIT.errors = []; renderRecEditor(); renderReceivers(); renderDest(); afterChange();
+  };
+  const onRecClick0 = onRecClick;
+  onRecClick = function (b) {
+    const a = b.dataset.ract;
+    if (a === 'sim-active') { const r = PRJ.receivers.find(x => x.id === b.dataset.id); if (r) r.status = 'active'; renderReceivers(); afterChange(); return; }
+    if (a === 'test-clabe' && REDIT.draft && !REDIT.draft.pending) { REDIT.draft.clabe = PEY_TEST_CLABE; renderRecEditor(); const c = $('#rc-c'); if (c) c.focus(); return; }
+    onRecClick0(b);
+  };
+  /* simple mode: a receiving account that is not ready cannot take CoDi payments */
+  function recvCard() {
+    const seen = {}, bad = [];
+    [['main', PRJ.on.periodic], ['extra', PRJ.on.extra], ['ledger', PRJ.on.ledger]].forEach(k => { if (!k[1]) return; const r = recvOf(k[0]); if (r && !recvOk(r) && !seen[r.id]) { seen[r.id] = 1; bad.push(r); } });
+    return bad.map(r => '<div class="statcard"><p class="txt say"><b>' + (recvState(r) === 'processing' ? 'Cuenta en espera' : 'Cuenta por confirmar') + '</b></p>' + stt('wait', clip(r.name, 30)) + '<p class="txt soft say">Por ahora solo efectivo.</p></div>').join('');
+  }
+
+  Object.assign(VIEWS, { r1: viewR1, r2: viewR2, r3: viewR3, r4: viewR4, rdone: viewRDone, rclosed: viewRClosed, rlimit: viewRLimit, regs: viewRegs, regdetail: viewRegDetail, regqr: viewRegQR, receipt: viewReceipt });
+  Object.assign(NEEDS_PERSON, { regdetail: 1, receipt: 1 });
+  Object.assign(BAR, { r1: [0, 1], r2: [1, 1], r3: [1, 1], r4: [1, 1], rdone: [0, 0], rclosed: [0, 0], rlimit: [0, 0], regs: [1, 0], regdetail: [1, 0], regqr: [1, 0], receipt: [1, 0] });
+  /* a hook so tests (and curious people) can look at the model; it exposes nothing that is not already on screen */
+  window.PCF = { project: () => PRJ, state: () => S };
+
+  /* ================= wiring ================= */
+  function route() {
+    const h = location.hash.replace('#', '');
+    if (h === 'configurar') S.tab = 'ajustes'; else if (h === 'cobrar' || h === 'personas' || h === 'ajustes' || h === 'reporte') S.tab = h; else if (h === 'inscripcion') S.tab = 'cobrar';
+    const v = h === 'identidad' ? 'identidad' : 'prototipo', adv = S.tab !== 'cobrar';
+    /* the registration page is another screen of the same phone: the person who registers never sees the collector's screens */
+    if (h === 'inscripcion') { if (!RG_VIEWS[S.view]) { rgReset(); S.hist = []; S.view = 'r1'; S.page = 0; } }
+    else if (RG_VIEWS[S.view]) { S.hist = []; S.view = 'home'; S.page = 0; }
+    const regmode = h === 'inscripcion', sw = $('#regswitch');
+    if (sw) { sw.dataset.goto = regmode ? 'cobrar' : 'inscripcion'; sw.textContent = regmode ? 'Volver a quien cobra' : 'Ver como quien se inscribe'; }
+    const rt = $('#regcardtxt'); if (rt) rt.textContent = regmode ? 'Esta es la pantalla de quien se inscribe: no ve cobros ni personas.' : 'Quien se inscribe ve otra pantalla, sin cobros. Mírala aquí.';
+    $('#v-prototipo').hidden = v !== 'prototipo'; $('#v-identidad').hidden = v !== 'identidad';
+    $('#pane-cobrar').hidden = adv; $('#advwrap').hidden = !adv;
+    $('#pane-personas').hidden = S.tab !== 'personas'; $('#pane-ajustes').hidden = S.tab !== 'ajustes'; $('#pane-reporte').hidden = S.tab !== 'reporte';
+    if (S.tab === 'reporte') renderReport();
+    document.querySelectorAll('#advtabs [role="tab"]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab ? 'true' : 'false'));
+    document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === v ? 'true' : 'false'));
+    if (v === 'prototipo') { const wasAdv = !!S.wasAdv; S.wasAdv = adv; if (regmode !== !!S.regmode || (wasAdv && !adv)) { S.regmode = regmode; paint(true); } else render(); }  /* moving between the two phone screens moves focus to the new title */
+  }
+  function start() {
+    PRJ = preset('taller'); rgReset();
+    document.documentElement.lang = 'es-MX';
+    loadSet(); applySet();
+    $('#screen').addEventListener('click', onAct);
+    $('#bar').addEventListener('click', onAct);
+    $('#screen').addEventListener('input', onInput);
+    $('#screen').addEventListener('keydown', onKey);
+    $('#advtabs').addEventListener('click', function (e) { const b = e.target.closest('[data-tab]'); if (b) location.hash = b.dataset.tab; });
+    $('#v-prototipo').addEventListener('click', function (e) { const g = e.target.closest('[data-goto]'); if (g) location.hash = g.dataset.goto; });
+    $('#simfail').addEventListener('change', function (e) { S.fail = e.target.checked; });
+    /* configuration (advanced layer) handlers live on the advanced wrapper only */
+    const adv = $('#advwrap');
+    adv.addEventListener('input', onCfgInput);
+    adv.addEventListener('change', function (e) { if (e.target.id === 'e-photo') onCfgFile(e); else onCfgInput(e); });
+    adv.addEventListener('click', function (e) { onCfgClick(e); onRepClick(e); });
+    document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', function () { location.hash = b.dataset.view; }));
+    window.addEventListener('hashchange', route);
+
+    $('#id-check').innerHTML = ICON.check; $('#id-clock').innerHTML = ICON.clock; $('#id-ring').innerHTML = ICON.ring; $('#nt-ico').innerHTML = ICON.info;
+    $('#legend').innerHTML = stt('paid', 'Ya pagó') + stt('wait', 'Esperando pago') + stt('due', 'Falta pagar');
+    $('#monthswatches').innerHTML = MON3.map((m, k) => '<div class="tile" style="--h:' + HUES[k] + '">' + m + '</div>').join('');
+    const icon = '<rect width="180" height="180" rx="40" fill="#18213B"/><circle cx="84" cy="82" r="56" fill="#fff"/><circle cx="84" cy="74" r="20" fill="#18213B"/><path d="M42 124c8-24 24-32 42-32s34 8 42 32c-12 12-26 16-42 16s-30-4-42-16z" fill="#18213B"/><circle cx="138" cy="134" r="30" fill="#0F5F28" stroke="#18213B" stroke-width="9"/><path d="M124 135l10 10 17-19" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>';
+    ['#appicon', '#appicon2', '#appicon3'].forEach(s => { $(s).innerHTML = icon; });
+
+    renderAll(); route();
+    try { window.speechSynthesis.getVoices(); } catch (e) { /* optional */ }
+  }
+  start();
+})();
+</script>
