@@ -9,6 +9,7 @@ import { legacyPlan, parsePlans, serializePlans } from './plans';
 import { chargeKind, thisMonth } from './model';
 import { Stage } from './screens';
 import { explainProblem, type Problem, type Topic } from './problems';
+import { shareLink, shortLinksWork } from './links';
 import { Shell } from './ui';
 import outputs from '../amplify_outputs.json';
 
@@ -27,8 +28,9 @@ function mapProject(p: Project): Proj | null {
   return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays, monthlyConcept: p.monthlyConcept, monthlyAmount: p.monthlyAmount, accountId: p.accountId, plans, createdAt: p.createdAt };
 }
 
-function newToken(): string {
-  const b = crypto.getRandomValues(new Uint8Array(24));
+/** Random token, base64url. 24 bytes for a project; 16 bytes (22 characters, still 128 bits) for the short link of a picture. */
+function newToken(bytes = 24): string {
+  const b = crypto.getRandomValues(new Uint8Array(bytes));
   return btoa(String.fromCharCode(...b)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
 }
 
@@ -415,16 +417,19 @@ export default function App({ signOut }: { signOut?: () => void }) {
           }, () => land({ id: 'accounts', page: 0 }, 'Listo. La cuenta se eliminó.'));
         }}
         onShareLink={async ({ kind, title, description, image }) => {
-          if (!shareUrl) throw new Error('share');
-          // The long random token is the only secret of the link; the code to pay lasts a week, a receipt much longer.
-          const token = newToken();
+          // The random token is the only secret of the link; the code to pay lasts a week, a receipt much longer.
+          // The short link (on this app's own domain) is used when the Amplify rewrite for /p/ is set up; else the long one.
+          const token = newToken(16);
+          const short = await shortLinksWork(location.origin);
+          if (!short && !shareUrl) throw new Error('share');
           const days = kind === 'PAY' ? 7 : 180;
           const r = await client.models.Share.create({
             token, kind, title, description, image,
+            base: short ? location.origin : undefined,
             expiresAt: new Date(Date.now() + days * 86400000).toISOString(),
           });
           if (r.errors?.length) throw new Error('share');
-          return `${shareUrl}?t=${token}`;
+          return shareLink({ short, origin: location.origin, shareUrl, token });
         }}
         onToggleOpen={() => {
           if (!project) return;

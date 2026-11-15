@@ -61,6 +61,7 @@ const schema = a
       description: a.string().required(),
       image: a.string().required(), // PNG data URL, about 720x900
       expiresAt: a.string().required(),
+      base: a.string(), // the app's own address when the link is short (/p/<token>); empty for the long link
     }).secondaryIndexes((i) => [i('token')]).authorization((allow) => [allow.owner()]),
 
     // Rate limit counters for the public signup. Only the signup function can touch them.

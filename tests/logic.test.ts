@@ -8,6 +8,7 @@ import {
 import { buildReport, reportCsv } from '../src/report.ts';
 import { parseAmount, shiftMonth } from '../src/model.ts';
 import { explainProblem } from '../src/problems.ts';
+import { isProbe, parseShareRequest, shareLink, shortLinksWork, signupMessage, whatsappShareUrl } from '../src/links.ts';
 
 const proj: Proj = { id: 'j', open: true, token: 't', capacity: 3, holdDays: 5 };
 const now = new Date('2026-11-20T12:00:00Z');
@@ -222,4 +223,60 @@ test('only real connection failures talk about the connection', () => {
 test('the advice changes with the topic: accounts do not suggest the payment code', () => {
   assert.doesNotMatch(explainProblem('Pey 400: INVALID_PARAMETER: bad clabe', 'account').detail, /código/);
   assert.match(explainProblem('Pey 503: SERVICE_UNAVAILABLE: maintenance').title, /no está disponible/);
+});
+
+const TOKEN22 = 'AbCdEfGhIjKlMnOpQr-_12';
+
+test('share requests: short path, kept prefix, image and the first long link all find the token', () => {
+  assert.deepEqual(parseShareRequest('/' + TOKEN22), { token: TOKEN22, image: false });
+  assert.deepEqual(parseShareRequest('/' + TOKEN22 + '.png'), { token: TOKEN22, image: true });
+  assert.deepEqual(parseShareRequest('/p/' + TOKEN22), { token: TOKEN22, image: false });
+  assert.deepEqual(parseShareRequest('/', { t: TOKEN22 }), { token: TOKEN22, image: false });
+  assert.deepEqual(parseShareRequest('/', { t: TOKEN22, img: '1' }), { token: TOKEN22, image: true });
+});
+
+test('share requests: short, odd or empty tokens are refused', () => {
+  assert.equal(parseShareRequest('/'), null);
+  assert.equal(parseShareRequest('/abc'), null);
+  assert.equal(parseShareRequest('/' + TOKEN22 + '/otra'), null);
+  assert.equal(parseShareRequest('/<script>' + TOKEN22), null);
+  assert.equal(parseShareRequest('/', { t: 'x'.repeat(101) }), null);
+});
+
+test('the probe path is not a token', () => {
+  assert.equal(isProbe('/probe'), true);
+  assert.equal(isProbe('/p/probe/'), true);
+  assert.equal(isProbe('/' + TOKEN22), false);
+  assert.equal(parseShareRequest('/probe'), null);
+});
+
+test('the link sent is short when the rewrite works and the long one otherwise', () => {
+  const o = { origin: 'https://app.example.mx', shareUrl: 'https://abc.lambda-url.us-east-2.on.aws/', token: TOKEN22 };
+  assert.equal(shareLink({ ...o, short: true }), 'https://app.example.mx/p/' + TOKEN22);
+  assert.equal(shareLink({ ...o, short: false }), 'https://abc.lambda-url.us-east-2.on.aws/?t=' + TOKEN22);
+});
+
+test('short links are detected by the marker in the answer, never by the status', async () => {
+  const answer = (body: string, status = 200) => (async () => new Response(body, { status })) as unknown as typeof fetch;
+  assert.equal(await shortLinksWork('https://a.mx', answer('<html><head><meta name="cuentas-share" content="1"></head>ok'), true), true);
+  assert.equal(await shortLinksWork('https://a.mx', answer('<!doctype html><title>Cuentas conmigo</title>'), true), false); // the app's own page
+  assert.equal(await shortLinksWork('https://a.mx', answer('not found', 404), true), false);
+  assert.equal(await shortLinksWork('https://a.mx', (async () => { throw new TypeError('Load failed'); }) as unknown as typeof fetch, true), false);
+});
+
+test('the check is made once per visit', async () => {
+  let calls = 0;
+  const counting = (async () => { calls += 1; return new Response('cuentas-share'); }) as unknown as typeof fetch;
+  await shortLinksWork('https://a.mx', counting, true);
+  await shortLinksWork('https://a.mx', counting);
+  assert.equal(calls, 1);
+});
+
+test('signup message and WhatsApp link without a number', () => {
+  assert.match(signupMessage('Taller de pintura'), /inscribirte a Taller de pintura/);
+  assert.doesNotMatch(signupMessage(''), / a\./);
+  const u = whatsappShareUrl('Hola\n\nhttps://app.example.mx/?i=abc');
+  assert.ok(u.startsWith('https://wa.me/?text='));
+  assert.ok(!/wa\.me\/\d/.test(u));
+  assert.match(decodeURIComponent(u), /https:\/\/app\.example\.mx\/\?i=abc/);
 });

@@ -90,10 +90,28 @@ Cada cobro manda a Pey el `bankAccountId` de su cuenta, así una sola llave de P
 
 **Sobre WhatsApp:** un enlace `wa.me` abre el chat de un número aunque no esté en los contactos, pero solo puede llevar texto, nunca una imagen. Por eso el botón principal de **Mandar el código** y de **Comprobante** guarda la imagen detrás de un **enlace con una clave larga y aleatoria** (la clave es el único secreto; el código dura 7 días y el comprobante 180) y abre el chat del número elegido por la persona con el mensaje y ese enlace; WhatsApp muestra la imagen como vista previa y al tocar el enlace se ve completa. La página del enlace no muestra la cuenta que recibe. Como respaldo siguen **Compartir imagen** (menú del celular, hay que elegir el contacto) y **Guardar imagen**. Nada se envía solo: quien cobra toca Enviar en WhatsApp.
 
+**Si abren el código en el mismo celular con el que van a pagar:** un celular no puede escanear su propia pantalla. La página del enlace del código explica tres salidas, en orden: abrirla en **otra pantalla** (otro celular, tableta o computadora), **guardar la imagen en las fotos** y usarla desde la galería de la app del banco (solo si el banco lo permite; no está verificado cuáles sí), o **pedir a quien cobra la solicitud de pago al celular** (la manda quien cobra desde la app; la página pública nunca manda cobros). Los enlaces ya enviados muestran el texto nuevo sin hacer nada.
+
+### Enlace corto (con el dominio de la app)
+
+El enlace que recibe la persona nace con la dirección de la función de AWS (`...lambda-url...on.aws`), que se ve rara. Para que salga con el dominio de la app (`https://<tu dominio>/p/<clave>`, clave de 22 caracteres con 128 bits) hay que agregar **una regla** en Amplify. Las reglas no viven en el repositorio, se ponen una vez en la consola:
+
+1. Amplify → la app → **Hosting → Rewrites and redirects → Manage redirects → Open text editor**.
+2. Agregar este objeto **al principio** de la lista (las reglas se leen de arriba abajo), con la dirección de la función de compartir (sale en `amplify_outputs.json` como `custom.shareUrl`):
+
+```json
+{ "source": "/p/<*>", "target": "https://<dirección de la función>/<*>", "status": "200", "condition": null }
+```
+
+3. Probar: abrir `https://<tu dominio>/p/probe`; debe verse una página en blanco con "ok" (no la app ni un error). La app hace esa misma prueba sola al preparar un enlace: **si la regla existe usa el enlace corto; si no, sigue con el largo**, así nada se rompe mientras tanto. Un enlace corto vencido o inventado muestra "Este enlace ya no sirve".
+
+Sin verificar: que Amplify reenvíe bien la ruta y la imagen por esta regla, y la vista previa en WhatsApp con el enlace corto. Sale en la primera prueba real.
+
 ## Lugares e inscripción por QR
 
 1. En **Lugares → Ajustes** quien cobra pone el nombre del taller, cuántos lugares hay, cuántos días se aparta uno (5 por defecto) y los **cobros** del proyecto (hasta 2). El **Cobro 1** es el inicial (al pagarlo, el lugar queda confirmado) y un botón **"Añadir otro cobro"** agrega el segundo. Cada cobro lleva nombre, monto, cuenta que recibe y se marca como **una sola vez** o **cada mes**; si es mensual se indica cuántos meses dura y desde qué mes. Ejemplo del caso de estudio: **Cobro 1: Inscripción $40, una sola vez**, y **Cobro 2: Mensualidad $130, cada mes, 10 meses desde agosto** (termina en mayo, el fin del ciclo escolar).
 2. **Código para inscribir** muestra un QR que abre una página pública (sin cuenta) en 4 pasos: nombre, **imagen que la identifica**, WhatsApp propio (para todo lo del taller: avisos, cobros y comprobantes), **los costos** y **cómo va a pagar**. Antes de preguntar cómo paga, la página muestra **"Lo que se paga"** con lo configurado en el proyecto (por ejemplo Inscripción $40 una sola vez, Mensualidad $130 cada mes por 10 meses de agosto a mayo, y el total del ciclo); nunca muestra la cuenta que recibe. Las opciones son **"Yo, desde mi celular"** (con CoDi, en la app de su banco) o **"Me ayuda un familiar"**. La ayuda es opcional: solo si elige al familiar se despliegan los datos de quien ayuda (**nombre, qué es suya**, por ejemplo "mi hija", y WhatsApp; un botón permite agregar hasta 3), y revisar. En el último paso la persona **elige a quién quiere que le mandemos su código de pago y su comprobante** entre las que registró, y da su consentimiento.
+   Debajo del QR, la pantalla muestra **el mismo enlace de inscripción** como texto, con **Mandar el enlace por WhatsApp** (abre la lista de chats; quien cobra elige y toca Enviar) y **Compartir o copiar el enlace** (menú del celular: mensajes, correo u otra app). Si las inscripciones están cerradas, la pantalla lo avisa antes de compartir. **Hacer un código nuevo** invalida el QR y el enlace anteriores.
 3. **Imagen que la identifica:** un **dibujo** de un banco de 28 (con su nombre escrito, y nunca uno que ya tenga otra persona con lugar) o **su foto**, con casilla de autorización obligatoria. La foto se reduce a unos 320 px y se guarda en su registro.
 4. La inscripción **solo registra**. No se manda ningún cobro ni mensaje hasta que quien cobra **apruebe**. Si el taller está lleno, la persona queda en lista de espera.
 5. Tras aprobar, la ficha ofrece un botón por cada cobro que le toca: **"Cobrarle $40"** (la inscripción, una sola vez, y deja de ofrecerse cuando ya se cobró) y **"Cobrarle $130"** (la mensualidad, "mes 4 de 10"). Fuera del ciclo, por ejemplo antes de agosto o después de mayo, la mensualidad no se ofrece.

@@ -382,6 +382,7 @@ function SendQr({ charge, img, accounts, people, project, onShareLink, onView }:
       link={{ kind: 'PAY', title: `Código para pagar · ${card.projectName}`, description: `Para pagar ${money(card.amount)} de ${card.concept} por ${card.payerName}. Abre la app de tu banco, elige CoDi y escanea el código.`, onShareLink }}
       dests={destsFor(people, charge.tel, charge.personId)}
     >
+      <p className="hint">La liga explica qué hacer si la abre en el mismo celular con el que paga.</p>
       <Choice icon={<IcoQr />} label="Volver al código" onClick={() => onView({ id: 'qr', chargeId: charge.id, img })} />
     </PictureSend>
   );

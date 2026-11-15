@@ -302,6 +302,10 @@ a.choice { text-decoration: none; box-sizing: border-box; }
 .cost-total { margin: 0; font-size: 1.25rem; font-weight: 400; color: var(--soft); }
 .cost-note { font-size: 1.25rem; font-weight: 400; color: var(--soft); }
 
+.linkbox { display: grid; gap: 4px; padding: 12px 16px; border: 3px solid var(--edge); border-radius: 18px; background: #fff; }
+.linkbox p { margin: 0; }
+.link-text { font-size: 1.25rem; line-height: 1.5; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; color: var(--soft); }
+
 /* Picture that identifies a person. */
 .avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; display: inline-grid; place-items: center; font-size: 2rem; line-height: 1; background: #fff; border: 3px solid #4E1A6E; }
 .avatar.initial { background: #EFE8F5; color: #4E1A6E; font-size: 1.6rem; font-weight: 800; }

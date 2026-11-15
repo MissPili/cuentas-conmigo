@@ -160,7 +160,7 @@ export function payText(d: PayCardData, helperName = '') {
   const hi = helperName ? `Hola ${helperName}.` : 'Hola.';
   return (
     `${hi} Estás ayudando a ${d.payerName} a pagar ${money(d.amount)} de ${d.concept} en ${d.projectName}.\n\n` +
-    'Para pagar: abre la app de tu banco, elige CoDi y escanea el código de la imagen.\n\n' +
+    'Para pagar: abre la app de tu banco, elige CoDi y escanea el código de la imagen. Si abriste este mensaje en el mismo celular con el que pagas, en la liga hay otras opciones.\n\n' +
     `Si tienes dudas, comunícate con ${d.payerName} antes de aprobar o hacer el pago.`
   );
 }

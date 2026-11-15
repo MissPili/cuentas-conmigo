@@ -5,7 +5,8 @@ import type { StageProps } from './screens';
 import { money, monthName, pageOf, parseAmount, shiftMonth, thisMonth, ready, type Kind, type Per } from './model';
 import { emblemOf } from './emblems';
 import { MAX_PLANS, cycleEnd, cycleStart, duePlans, type Plan } from './plans';
-import { Alert, Avatar, WhoLine, Choice, Field, IcoCash, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
+import { Alert, Avatar, WhoLine, Choice, Field, IcoCash, IcoCheck, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
+import { signupMessage, whatsappShareUrl } from './links';
 import {
   confirmedCount, freeSpots, isFull, occupied, placeState, placesOn, toApprove, waitlisted, type PlaceState,
 } from './places';
@@ -172,6 +173,7 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
 export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: StageProps) {
   const [img, setImg] = useState('');
   const [failed, setFailed] = useState(false);
+  const [shared, setShared] = useState<{ ok: boolean; text: string } | null>(null);
   const link = project ? signupLink(project.token) : '';
   useEffect(() => {
     if (!link) return;
@@ -190,15 +192,44 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
       </section>
     );
   }
+  const message = signupMessage(project.name || '');
+
+  // The same page the QR opens, to send by WhatsApp or any other way. Nothing leaves the phone by itself.
+  const share = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: project.name || 'Inscripción', text: message, url: link });
+        setShared(null);
+        return;
+      }
+      await navigator.clipboard.writeText(link);
+      setShared({ ok: true, text: 'Enlace copiado. Pégalo donde quieras mandarlo.' });
+    } catch (e) {
+      // The person closing the share sheet is not an error.
+      if ((e as Error).name === 'AbortError') return;
+      setShared({ ok: false, text: 'No se pudo compartir. Mantén el dedo sobre el enlace para copiarlo.' });
+    }
+  };
+
   return (
     <section className="stack">
       <h1>Código para inscribir</h1>
       <p className="who-line">{project.name || 'Mi proyecto'}</p>
       {failed ? <Alert>No se pudo hacer el código. Intenta de nuevo.</Alert> : img ? <img className="shot" alt="Código QR para inscribirse al taller" src={img} /> : null}
       <p className="lead">Quien lo escanee se inscribe a este proyecto. Tú apruebas antes de cobrar.</p>
-      <Status kind={project.open ? 'paid' : 'due'}>{project.open ? 'Inscripciones abiertas' : 'Inscripciones cerradas'}</Status>
-      <Choice primary icon={<IcoPhone />} label={project.open ? 'Cerrar inscripciones' : 'Abrir inscripciones'} onClick={onToggleOpen} />
-      <Choice icon={<IcoQr />} label={busy ? busyLabel : 'Hacer un código nuevo'} hint="El anterior deja de servir" onClick={onRotateToken} />
+      <div className="linkbox">
+        <p><strong>O manda este enlace:</strong></p>
+        <p className="link-text">{link}</p>
+      </div>
+      {project.open ? null : <Alert>Las inscripciones están cerradas: quien abra el enlace verá que no hay lugar por ahora.</Alert>}
+      {shared?.ok ? <p className="note" role="status"><IcoCheck /><span>{shared.text}</span></p> : null}
+      {shared && !shared.ok ? <Alert>{shared.text}</Alert> : null}
+      <Choice primary icon={<IcoPhone />} label="Mandar el enlace por WhatsApp" hint="Eliges a quién; tú tocas Enviar" onClick={() => window.open(whatsappShareUrl(`${message}
+
+${link}`), '_blank', 'noopener')} />
+      <Choice icon={<IcoQr />} label="Compartir o copiar el enlace" hint="Mensajes, correo u otra app" onClick={() => { void share(); }} />
+      <Choice icon={<IcoPhone />} label={project.open ? 'Cerrar inscripciones' : 'Abrir inscripciones'} hint={project.open ? 'Ahora se puede inscribir cualquiera con el enlace' : 'Ahora nadie se puede inscribir'} onClick={onToggleOpen} />
+      <Choice icon={<IcoQr />} label={busy ? busyLabel : 'Hacer un código nuevo'} hint="El código y el enlace anteriores dejan de servir" onClick={onRotateToken} />
     </section>
   );
 }
