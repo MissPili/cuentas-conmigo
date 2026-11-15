@@ -1,12 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
+import { confirmUserAttribute, sendUserAttributeVerificationCode } from 'aws-amplify/auth';
 import type { Schema } from '../amplify/data/resource';
 import type { Acc, Chg, Per, Proj, View } from './model';
 import { freeSpots, isFull } from './places';
+import { pickEmblems } from './emblems';
+import { KEY_PARAM, codeFromAddress, newKeyCode, resolveTap } from './keyring';
+import { legacyPlan, parsePlans, serializePlans } from './plans';
 import { chargeKind, thisMonth } from './model';
 import { feedback } from './a11y';
 import { Stage } from './screens';
+import { explainProblem, type Problem, type Topic } from './problems';
+import { shareLink, shortLinksWork } from './links';
 import { Shell } from './ui';
+import outputs from '../amplify_outputs.json';
+
+const shareUrl = (outputs as { custom?: { shareUrl?: string } }).custom?.shareUrl ?? '';
 
 const client = generateClient<Schema>();
 type Account = Schema['Account']['type'];
@@ -16,11 +25,14 @@ type Project = Schema['Project']['type'];
 
 function mapProject(p: Project): Proj | null {
   if (!p.id || !p.token || p.open == null || p.capacity == null || p.holdDays == null) return null;
-  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays };
+  const saved = parsePlans(p.plansJson);
+  const plans = saved.length ? saved : legacyPlan(p.monthlyAmount, p.monthlyConcept, p.accountId, new Date());
+  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays, monthlyConcept: p.monthlyConcept, monthlyAmount: p.monthlyAmount, accountId: p.accountId, plans, createdAt: p.createdAt };
 }
 
-function newToken(): string {
-  const b = crypto.getRandomValues(new Uint8Array(24));
+/** Random token, base64url. 24 bytes for a project; 16 bytes (22 characters, still 128 bits) for the short link of a picture. */
+function newToken(bytes = 24): string {
+  const b = crypto.getRandomValues(new Uint8Array(bytes));
   return btoa(String.fromCharCode(...b)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
 }
 
@@ -49,6 +61,14 @@ function mapPerson(p: Person): Per | null {
     via: p.via,
     helpers: (p.helpers ?? []).filter((h): h is string => !!h),
     regAt: p.regAt,
+    projectId: p.projectId,
+    sendTo: p.sendTo,
+    helperInfo: (p.helpers ?? []).map((tel, i) => ({ tel: tel ?? '', name: p.helperNames?.[i] ?? '', rel: p.helperRels?.[i] ?? '' })).filter((h) => !!h.tel),
+    emblem: p.emblem,
+    photo: p.photo,
+    keyCode: p.keyCode,
+    keyOn: p.keyOn,
+    keyAt: p.keyAt,
   };
 }
 
@@ -68,21 +88,44 @@ function mapCharge(c: Charge): Chg | null {
     transactionId: c.transactionId,
     paidAt: c.paidAt,
     confirmsPlace: c.confirmsPlace,
+    projectId: c.projectId,
   };
 }
 
 export default function App({ signOut }: { signOut?: () => void }) {
   const [accounts, setAccounts] = useState<Acc[]>([]);
-  const [people, setPeople] = useState<Per[]>([]);
-  const [charges, setCharges] = useState<Chg[]>([]);
-  const [project, setProject] = useState<Proj | null>(null);
+  const [allPeople, setPeople] = useState<Per[]>([]);
+  const [allCharges, setCharges] = useState<Chg[]>([]);
+  const [projects, setProjects] = useState<Proj[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const projectsRef = useRef<Proj[]>([]);
+
+  // Everything below works on ONE project (taller). Rows saved before projects existed belong to the oldest one.
+  const project = useMemo(() => projects.find((x) => x.id === projectId) ?? null, [projects, projectId]);
+  const legacyId = useMemo(
+    () => [...projects].sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))[0]?.id ?? null,
+    [projects],
+  );
+  const mine = (pid?: string | null) => (pid ? pid === projectId : projectId === legacyId);
+  const totals = useMemo(() => {
+    const t: Record<string, number> = {};
+    for (const c of allCharges) {
+      const pid = c.projectId ?? legacyId;
+      if (pid && c.status === 'PAID' && c.month === thisMonth()) t[pid] = (t[pid] ?? 0) + c.amount;
+    }
+    return t;
+  }, [allCharges, legacyId]);
+  const people = useMemo(() => allPeople.filter((x) => mine(x.projectId)), [allPeople, projectId, legacyId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const charges = useMemo(() => allCharges.filter((x) => mine(x.projectId)), [allCharges, projectId, legacyId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [view, setView] = useState<View>({ id: 'loading' });
   const [hist, setHist] = useState<View[]>([]);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
   const [note, setNote] = useState('');
-  const [problem, setProblem] = useState<{ title: string; detail: string } | null>(null);
+  const [problem, setProblem] = useState<Problem | null>(null);
   const retryRef = useRef<(() => void) | null>(null);
+  // A screen with steps of its own (add person) takes the bar's "Atrás" first; it returns true when it went back inside itself.
+  const interceptRef = useRef<(() => boolean) | null>(null);
   const viewRef = useRef(view);
   viewRef.current = view;
 
@@ -96,22 +139,61 @@ export default function App({ signOut }: { signOut?: () => void }) {
     if (a.errors?.length || p.errors?.length || c.errors?.length || j.errors?.length) {
       throw new Error('list');
     }
+    const everyone = p.data.map(mapPerson).filter((x): x is Per => !!x);
     setAccounts(a.data.map(mapAccount).filter((x): x is Acc => !!x));
-    setPeople(p.data.map(mapPerson).filter((x): x is Per => !!x));
+    setPeople(everyone);
     setCharges(c.data.map(mapCharge).filter((x): x is Chg => !!x));
-    setProject(j.data.map(mapProject).find((x): x is Proj => !!x) ?? null);
+    const list = j.data.map(mapProject).filter((x): x is Proj => !!x);
+    projectsRef.current = list;
+    setProjects(list);
+    // With a single project there is nothing to choose: go straight in.
+    setProjectId((cur) => (cur && list.some((x) => x.id === cur) ? cur : list.length === 1 ? list[0].id : null));
+    return { people: everyone, projects: list };
   }, []);
+
+  const firstView = (): View => (projectsRef.current.length === 1 ? { id: 'home' } : { id: 'projects' });
+
+  // The NFC keychain opens the app on /?l=<code>. It is read once, here, and resolved with the people just loaded.
+  const tapCode = useRef<string | null>(codeFromAddress(location.pathname, location.search));
+
+  /** First screen after the data arrives: the person of a tapped keychain, or the usual start. */
+  function openFirst(d: { people: Per[]; projects: Proj[] }) {
+    const code = tapCode.current;
+    tapCode.current = null;
+    if (!code) { setView((v) => (v.id === 'loading' ? firstView() : v)); return; }
+    // The code does not stay in the address bar (history, screenshots, a refresh that would reopen it).
+    const clean = new URL(location.href);
+    clean.searchParams.delete(KEY_PARAM);
+    if (clean.pathname.startsWith('/llavero')) clean.pathname = '/';
+    history.replaceState(null, '', clean);
+
+    const tap = resolveTap(d.people, code);
+    setProblem(null);
+    setFormError('');
+    if (tap.kind === 'unknown') { setHist([]); setView({ id: 'key-tap', kind: 'unknown' }); return; }
+    // Rows from before projects existed belong to the oldest project.
+    const oldest = [...d.projects].sort((x, y) => (x.createdAt ?? '').localeCompare(y.createdAt ?? ''))[0]?.id ?? null;
+    const pid = tap.person.projectId ?? oldest;
+    if (pid) setProjectId(pid);
+    setHist([{ id: 'home' }]);
+    if (tap.kind === 'ok') {
+      setNote(`Llavero de ${tap.person.name.split(' ')[0]}.`);
+      setView({ id: 'person', personId: tap.person.id, page: 0 });
+    } else {
+      setView({ id: 'key-tap', kind: tap.kind, personId: tap.person.id });
+    }
+  }
 
   useEffect(() => {
     let alive = true;
     load()
-      .then(() => { if (alive) setView((v) => (v.id === 'loading' ? { id: 'home' } : v)); })
+      .then((d) => { if (alive) openFirst(d); })
       .catch(() => {
         if (!alive) return;
         retryRef.current = () => {
           setProblem(null);
           setView({ id: 'loading' });
-          load().then(() => setView({ id: 'home' })).catch(() => {
+          load().then((d) => openFirst(d)).catch(() => {
             setView({ id: 'home' });
             setProblem({ title: 'No se pudieron leer tus datos', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
           });
@@ -152,6 +234,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
 
   function back() {
     if (problem) { setProblem(null); return; }
+    if (interceptRef.current?.()) return;
     setFormError('');
     setNote('');
     setHist((h) => {
@@ -169,32 +252,28 @@ export default function App({ signOut }: { signOut?: () => void }) {
     setView(next);
   }
 
-  async function run(task: () => Promise<void>, done?: () => void) {
+  /** The error of a backend call, with the real reason when the backend gave one. */
+  const failed = (errors?: readonly { message?: string }[] | null) => new Error(errors?.[0]?.message || 'backend');
+
+  async function run(task: () => Promise<void>, done?: () => void, topic: Topic = 'charge') {
     if (busy) return;
     setBusy(true);
     setFormError('');
     try {
       await task();
       done?.();
-    } catch {
-      const again = () => { void run(task, done); };
+    } catch (e) {
+      const again = () => { void run(task, done, topic); };
       retryRef.current = again;
-      setProblem({ title: 'No se pudo completar', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
+      setProblem(explainProblem(e instanceof Error ? e.message : String(e), topic));
     } finally {
       setBusy(false);
     }
   }
 
   function openPerson(personId: string) {
-    const month = thisMonth();
-    const mine = charges.filter((c) => c.personId === personId && c.month === month);
-    if (mine.length === 0) go({ id: 'new-charge', personId });
-    else if (mine.length === 1) {
-      const c = mine[0];
-      if (chargeKind(c) === 'paid') go({ id: 'paid', chargeId: c.id });
-      else if (chargeKind(c) === 'wait') go({ id: 'wait', chargeId: c.id });
-      else go({ id: 'charge', chargeId: c.id });
-    } else go({ id: 'person', personId, page: 0 });
+    // Always show the person's page: what the project charges, an extraordinary charge, and what is waiting.
+    go({ id: 'person', personId, page: 0 });
   }
 
   return (
@@ -207,6 +286,8 @@ export default function App({ signOut }: { signOut?: () => void }) {
         people={people}
         charges={charges}
         project={project}
+        projects={projects}
+        totals={totals}
         signOut={signOut}
         problem={problem}
         onView={go}
@@ -219,11 +300,31 @@ export default function App({ signOut }: { signOut?: () => void }) {
         }}
         onOpenPerson={openPerson}
         onRetry={() => retryRef.current?.()}
-        onAddPerson={(name, tel) => {
-          const digits = tel.replace(/\D/g, '');
-          if (digits.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
+        onDismiss={() => setProblem(null)}
+        onInterceptBack={(fn) => { interceptRef.current = fn; }}
+        onAddPerson={(input) => {
+          const tel = input.tel.replace(/\D/g, '');
+          if (tel.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
           void run(async () => {
-            await client.models.Person.create({ name: name.trim(), tel: digits, via: 'MANUAL', status: 'ENROLLED', heldOn: new Date().toISOString() });
+            // A photo is only kept with permission (asked in the form); otherwise a drawing nobody else in the project has.
+            const emblem = input.photo
+              ? undefined
+              : input.emblem || pickEmblems(people.filter((x) => x.status !== 'RELEASED').map((x) => x.emblem ?? ''), 1)[0]?.id;
+            const r = await client.models.Person.create({
+              name: input.name.trim(),
+              tel,
+              via: 'MANUAL',
+              status: 'ENROLLED',
+              heldOn: new Date().toISOString(),
+              projectId: project?.id,
+              ...(input.photo ? { photo: input.photo, photoConsent: true } : { emblem }),
+              helpers: input.helpers.map((h) => h.tel),
+              helperNames: input.helpers.map((h) => h.name),
+              helperRels: input.helpers.map((h) => h.rel),
+              sendTo: input.sendTo || input.helpers[0]?.tel || tel, // with no helper, codes go to the person
+              consentShared: input.consentShared,
+            });
+            if (r.errors?.length) throw new Error('person');
             await load();
           }, () => land({ id: 'people' }, 'Persona guardada.'));
         }}
@@ -257,6 +358,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
               month: thisMonth(),
               status: 'PENDING',
               confirmsPlace,
+              projectId: project?.id,
             });
             if (created.errors?.length || !created.data?.id) throw new Error('create');
             await load();
@@ -266,14 +368,15 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onRequest={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'requestCodi', id });
-            if (r.errors?.length) throw new Error('pey');
+            if (r.errors?.length) throw failed(r.errors);
             await load();
           }, () => setView({ id: 'wait', chargeId: id }));
         }}
         onShowQr={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'requestQr', id });
-            if (r.errors?.length || !r.data) throw new Error('qr');
+            if (r.errors?.length) throw failed(r.errors);
+            if (!r.data) throw new Error('qr');
             const parsed = JSON.parse(r.data) as { qrImage?: string | null };
             if (!parsed.qrImage) throw new Error('qr');
             await load();
@@ -295,20 +398,105 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onRegister={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'registerAccount', id });
-            if (r.errors?.length) throw new Error('pey');
+            if (r.errors?.length) throw failed(r.errors);
             await load();
-          }, () => land({ id: 'account', accountId: id }, 'Listo. Ya la mandamos a revisar.'));
+          }, () => land({ id: 'account', accountId: id }, 'Listo. Ya la mandamos a revisar.'), 'account');
         }}
         onSaveProject={(input) => {
           if (!(input.capacity >= 1 && input.capacity <= 200)) { setFormError('Escribe cuántos lugares hay, de 1 a 200.'); return; }
           if (!(input.holdDays >= 1 && input.holdDays <= 60)) { setFormError('Los días de apartado van de 1 a 60.'); return; }
+          const fields = {
+            name: input.name,
+            capacity: input.capacity,
+            holdDays: input.holdDays,
+            plansJson: serializePlans(input.plans),
+            monthlyAmount: null,
+            monthlyConcept: null,
+            accountId: null,
+          };
           void run(async () => {
             const r = project
-              ? await client.models.Project.update({ id: project.id, name: input.name, capacity: input.capacity, holdDays: input.holdDays })
-              : await client.models.Project.create({ name: input.name, capacity: input.capacity, holdDays: input.holdDays, open: true, token: newToken() });
+              ? await client.models.Project.update({ id: project.id, ...fields })
+              : await client.models.Project.create({ ...fields, open: true, token: newToken() });
             if (r.errors?.length) throw new Error('project');
             await load();
           }, () => land({ id: 'places' }, 'Listo. Ya quedó guardado.'));
+        }}
+        onSendCode={async () => {
+          try {
+            await sendUserAttributeVerificationCode({ userAttributeKey: 'email' });
+            return '';
+          } catch {
+            return 'No se pudo mandar el código. Intenta de nuevo en un momento.';
+          }
+        }}
+        onWipe={async (code) => {
+          try {
+            await confirmUserAttribute({ userAttributeKey: 'email', confirmationCode: code.trim() });
+          } catch {
+            return 'El código no es correcto o ya venció.';
+          }
+          try {
+            // The code was right: delete in small groups so a long list does not flood the connection.
+            const jobs: (() => Promise<unknown>)[] = [];
+            for (const c of charges) jobs.push(() => client.models.Charge.delete({ id: c.id }));
+            for (const p of people) jobs.push(() => client.models.Person.delete({ id: p.id }));
+            for (let i = 0; i < jobs.length; i += 10) await Promise.all(jobs.slice(i, i + 10).map((j) => j()));
+            await load();
+            land({ id: 'home' }, 'Listo. Se borraron las personas y los cobros.');
+            return '';
+          } catch {
+            await load();
+            return 'No se pudo borrar todo. Intenta de nuevo.';
+          }
+        }}
+        onPickProject={(id) => {
+          setProjectId(id);
+          setProblem(null);
+          setFormError('');
+          setNote('');
+          setHist([]);
+          setView({ id: 'home' });
+        }}
+        onCreateProject={(name) => {
+          if (name.trim().length < 2) { setFormError('Escribe el nombre del taller o proyecto.'); return; }
+          void run(async () => {
+            const r = await client.models.Project.create({ name: name.trim(), capacity: 0, holdDays: 5, open: true, token: newToken() });
+            if (r.errors?.length || !r.data?.id) throw new Error('project');
+            await load();
+            setProjectId(r.data.id);
+          }, () => land({ id: 'home' }, 'Listo. Ya puedes empezar.'));
+        }}
+        onDeleteAccount={(id) => {
+          // A charge already sent to Pey and still unpaid could be paid into this account: do not lose track of it.
+          if (allCharges.some((c) => c.accountId === id && c.status !== 'PAID' && c.transactionId)) {
+            setNote('Esta cuenta tiene cobros esperando pago. Espera a que paguen y vuelve a intentarlo.');
+            return;
+          }
+          void run(async () => {
+            for (const j of projects.filter((x) => x.accountId === id)) {
+              const u = await client.models.Project.update({ id: j.id, accountId: null });
+              if (u.errors?.length) throw new Error('project');
+            }
+            const d = await client.models.Account.delete({ id });
+            if (d.errors?.length) throw new Error('account');
+            await load();
+          }, () => land({ id: 'accounts', page: 0 }, 'Listo. La cuenta se eliminó.'));
+        }}
+        onShareLink={async ({ kind, title, description, image }) => {
+          // The random token is the only secret of the link; the code to pay lasts a week, a receipt much longer.
+          // The short link (on this app's own domain) is used when the Amplify rewrite for /p/ is set up; else the long one.
+          const token = newToken(16);
+          const short = await shortLinksWork(location.origin);
+          if (!short && !shareUrl) throw new Error('share');
+          const days = kind === 'PAY' ? 7 : 180;
+          const r = await client.models.Share.create({
+            token, kind, title, description, image,
+            base: short ? location.origin : undefined,
+            expiresAt: new Date(Date.now() + days * 86400000).toISOString(),
+          });
+          if (r.errors?.length) throw new Error('share');
+          return shareLink({ short, origin: location.origin, shareUrl, token });
         }}
         onToggleOpen={() => {
           if (!project) return;
@@ -332,26 +520,86 @@ export default function App({ signOut }: { signOut?: () => void }) {
             return;
           }
           const now = new Date().toISOString();
-          const patch =
-            action === 'release' ? { status: 'RELEASED' as const }
-            : action === 'extend' ? { heldOn: now }
-            : { status: 'ENROLLED' as const, heldOn: now };
+          const patch = action === 'extend' ? { heldOn: now } : { status: 'ENROLLED' as const, heldOn: now };
           const message =
-            action === 'release' ? 'Listo. Ese lugar quedó libre.'
+            action === 'release' ? 'Listo. Quedó dado de baja y su lugar está libre.'
             : action === 'extend' ? 'Listo. Se apartó más días.'
             : 'Listo. Ya tiene lugar. Ya le puedes cobrar.';
           void run(async () => {
+            if (action === 'release') {
+              // A person with no charges just disappears. One with charges stays only as "Name (baja)" so the
+              // money records keep their meaning; everything else about them (photo, phones, notes) is erased.
+              const person = people.find((x) => x.id === personId);
+              if (!person) return;
+              const mine = charges.filter((c) => c.personId === personId);
+              if (!mine.length) {
+                const d = await client.models.Person.delete({ id: personId });
+                if (d.errors?.length) throw new Error('seat');
+              } else {
+                const label = `${person.name.trim().split(/\s+/)[0]} (baja)`;
+                for (let i = 0; i < mine.length; i += 10) {
+                  const rs = await Promise.all(mine.slice(i, i + 10).map((c) => client.models.Charge.update({ id: c.id, personName: label, tel: 'baja' })));
+                  if (rs.some((x) => x.errors?.length)) throw new Error('seat');
+                }
+                const u = await client.models.Person.update({
+                  id: personId, name: label, tel: 'baja', status: 'RELEASED', note: null, helpers: [], emblem: null, photo: null,
+                  photoConsent: false, consentShared: false, heldOn: null, regAt: null, via: null,
+                  keyCode: null, keyOn: null, keyAt: null, // a keychain of someone dada de baja must never open anything again
+                });
+                if (u.errors?.length) throw new Error('seat');
+              }
+              await load();
+              return;
+            }
             const r = await client.models.Person.update({ id: personId, ...patch });
             if (r.errors?.length) throw new Error('seat');
             await load();
-          }, () => land({ id: 'places' }, message));
+          }, () => land(action === 'release' || action === 'extend' ? { id: 'places' } : { id: 'seat', personId }, message));
+        }}
+        onKey={(personId, action) => {
+          const person = people.find((x) => x.id === personId);
+          if (!person) return;
+          void run(async () => {
+            if (action === 'emblem') {
+              const taken = people.filter((x) => x.status !== 'RELEASED').map((x) => x.emblem ?? '');
+              const pick = pickEmblems(taken, 1)[0];
+              if (!pick) throw new Error('emblem');
+              const r = await client.models.Person.update({ id: personId, emblem: pick.id });
+              if (r.errors?.length) throw failed(r.errors);
+            } else {
+              const now = new Date().toISOString();
+              // 'activate' reuses a code that already exists (never two codes for one person); 'new' always makes another.
+              const patch =
+                action === 'activate' ? { keyCode: person.keyCode || newKeyCode(), keyOn: true, keyAt: person.keyCode ? person.keyAt : now }
+                : action === 'on' ? { keyOn: true }
+                : action === 'off' ? { keyOn: false }
+                : { keyCode: newKeyCode(), keyOn: true, keyAt: now };
+              const r = await client.models.Person.update({ id: personId, ...patch });
+              if (r.errors?.length) throw failed(r.errors);
+            }
+            await load();
+          }, () => setNote(
+            action === 'emblem' ? 'Listo. Ya tiene su dibujo.'
+            : action === 'activate' ? 'Listo. Su llavero está activo.'
+            : action === 'on' ? 'Listo. Su llavero volvió a funcionar.'
+            : action === 'off' ? 'Listo. Su llavero ya no abre nada.'
+            : 'Listo. Hay un código nuevo. El llavero anterior ya no sirve.',
+          ));
+        }}
+        onCheck={(id) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'checkCharge', id });
+            if (r.errors?.length) throw failed(r.errors);
+            await load();
+            setNote(r.data === 'PAID' ? 'Sí, ya pagó.' : 'Todavía no vemos el pago. Intenta en un momento.');
+          });
         }}
         onRefresh={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'refreshAccount', id });
-            if (r.errors?.length) throw new Error('pey');
+            if (r.errors?.length) throw failed(r.errors);
             await load();
-          }, () => setNote('Ya revisamos la cuenta.'));
+          }, () => setNote('Ya revisamos la cuenta.'), 'account');
         }}
       />
     </Shell>

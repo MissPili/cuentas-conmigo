@@ -1,3 +1,5 @@
+import type { Plan } from './plans.ts';
+
 export type Acc = {
   id: string;
   alias: string;
@@ -11,6 +13,9 @@ export type Acc = {
 
 export type PersonStatus = 'PENDING' | 'ENROLLED' | 'WAITLIST' | 'RELEASED';
 
+/** Someone who helps a person pay: who they are, how they are related, and their WhatsApp. */
+export type Helper = { tel: string; name: string; rel: string };
+
 export type Per = {
   id: string;
   name: string;
@@ -20,11 +25,42 @@ export type Per = {
   heldOn?: string | null; // ISO date the place was held or last extended
   via?: 'QR' | 'MANUAL' | null;
   helpers?: string[]; // 10-digit WhatsApp numbers of the people who help pay (1 to 3)
+  helperInfo?: Helper[]; // the same people with name and relation (older rows only have the number)
+  sendTo?: string | null; // number where they asked to receive codes and receipts
+  projectId?: string | null;
   regAt?: string | null; // when they signed up through the QR
+  emblem?: string | null; // id of the picture chosen from the bank (see emblems.ts)
+  photo?: string | null; // small JPEG as a data URL, only with consent
+  keyCode?: string | null; // NFC keychain code (see keyring.ts); empty = no keychain yet
+  keyOn?: boolean | null; // false = switched off (lost)
+  keyAt?: string | null; // when the current code was made
+};
+
+/** What the collector types to add a person by hand (same data the person gives in the signup). */
+export type NewPerson = {
+  name: string;
+  tel: string; // 10 digits
+  emblem: string; // id of the drawing, or '' when a photo is used
+  photo: string; // small JPEG data URL, only taken with permission; '' when none
+  helpers: Helper[]; // 0 to 3, person 1 first
+  sendTo: string; // number that receives codes and receipts
+  consentShared: boolean; // the person agreed that the helpers' phones are kept
 };
 
 /** One row per collector: settings for places and the signup QR. */
-export type Proj = { id: string; name?: string | null; open: boolean; token: string; capacity: number; holdDays: number };
+export type Proj = {
+  id: string;
+  name?: string | null;
+  open: boolean;
+  token: string;
+  capacity: number;
+  holdDays: number;
+  monthlyConcept?: string | null;
+  monthlyAmount?: number | null;
+  accountId?: string | null;
+  plans: Plan[]; // what is charged on joining: one-time and/or monthly for a number of months
+  createdAt?: string | null; // the oldest project adopts rows created before projects existed
+};
 
 export type Chg = {
   id: string;
@@ -41,9 +77,12 @@ export type Chg = {
   paidAt?: string | null;
   /** True for the monthly fee: only that payment confirms a place. */
   confirmsPlace?: boolean | null;
+  projectId?: string | null;
 };
 
 export type View =
+  | { id: 'projects' }
+  | { id: 'new-project' }
   | { id: 'home' }
   | { id: 'who'; page: number }
   | { id: 'person'; personId: string; page: number }
@@ -59,7 +98,9 @@ export type View =
   | { id: 'accounts'; page: number }
   | { id: 'account'; accountId: string }
   | { id: 'add-account' }
-  | { id: 'more' }
+  | { id: 'more'; page?: number }
+  | { id: 'danger' }
+  | { id: 'send-qr'; chargeId: string; img: string }
   | { id: 'places' }
   | { id: 'seats'; page: number; only?: 'review' }
   | { id: 'seat'; personId: string }
@@ -67,6 +108,11 @@ export type View =
   | { id: 'places-settings' }
   | { id: 'report'; month: string }
   | { id: 'access' }
+  | { id: 'keyring-hub' }
+  | { id: 'keyrings'; page: number }
+  | { id: 'keyring'; personId: string }
+  | { id: 'keyring-help' }
+  | { id: 'key-tap'; kind: 'off' | 'unknown' | 'gone'; personId?: string }
   | { id: 'loading' };
 
 export type Kind = 'paid' | 'wait' | 'due' | 'bad';

@@ -2,6 +2,7 @@ import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
 import { pey } from '../functions/pey/resource';
 import { peyWebhook } from '../functions/pey-webhook/resource';
 import { register } from '../functions/register/resource';
+import { share } from '../functions/share/resource';
 
 const schema = a
   .schema({
@@ -26,7 +27,22 @@ const schema = a
       via: a.enum(['QR', 'MANUAL']),
       helpers: a.string().array(), // 10-digit WhatsApp numbers of whoever helps pay (1 to 3)
       regAt: a.string(), // ISO time of the QR signup
+      emblem: a.string(), // picture chosen from the bank (src/emblems.ts); unique among people who hold a place
+      photo: a.string(), // small JPEG data URL, only when the person agreed (photoConsent)
+      photoConsent: a.boolean(),
+      projectId: a.id(), // which collection project (taller) they belong to; empty = the collector's first one
+      // Whoever helps pay: telephone in `helpers`, and, at the same position, their name and how they are related.
+      helperNames: a.string().array(),
+      helperRels: a.string().array(),
+      sendTo: a.string(), // telephone, among the ones they registered, where codes and receipts should go
       consentShared: a.boolean(), // agreed that the helpers' numbers are shared with the collector
+      // NFC keychain: a long random code (the only thing the chip holds, inside a web address), and whether it works.
+      // Losing the keychain = switch it off; a replacement gets a new code, so the old chip never opens anything again.
+      keyCode: a.string(),
+      keyOn: a.boolean(),
+      keyAt: a.string(), // ISO time the current code was made
+      // Declared on purpose: the public signup function creates rows on the collector's behalf and must set the owner.
+      owner: a.string(),
     }).secondaryIndexes((i) => [i('tel')]).authorization((allow) => [allow.owner()]),
     // One row per collector: places settings and the signup link.
     Project: a.model({
@@ -35,12 +51,31 @@ const schema = a
       token: a.string().required(), // random, rotatable; lives in the signup QR
       capacity: a.integer().required(), // 0 = places switched off
       holdDays: a.integer().required(),
+      // Optional: the usual monthly fee, so a new person can be charged in one tap after approval.
+      monthlyConcept: a.string(),
+      monthlyAmount: a.float(),
+      accountId: a.string(), // account that receives the monthly fee
+      // Charge plans (src/plans.ts) as JSON: up to two, each paid once or monthly for N months. Replaces the fields above.
+      plansJson: a.string(),
     }).secondaryIndexes((i) => [i('token')]).authorization((allow) => [allow.owner()]),
+    // A payment code or receipt (as a small picture) behind a link sent by WhatsApp. The long random token is the secret.
+    Share: a.model({
+      token: a.string().required(),
+      kind: a.enum(['PAY', 'RECEIPT']),
+      title: a.string().required(),
+      description: a.string().required(),
+      image: a.string().required(), // PNG data URL, about 720x900
+      expiresAt: a.string().required(),
+      base: a.string(), // the app's own address when the link is short (/p/<token>); empty for the long link
+    }).secondaryIndexes((i) => [i('token')]).authorization((allow) => [allow.owner()]),
+
     // Rate limit counters for the public signup. Only the signup function can touch them.
     RegAttempt: a.model({
       key: a.string().required(),
       count: a.integer().required(),
-    }).identifier(['key']),
+    }).identifier(['key'])
+      // No row ever gets an owner, so no signed-in person can read these; only the signup function (schema-level rule) can.
+      .authorization((allow) => [allow.owner()]),
     Charge: a.model({
       personId: a.id().required(),
       personName: a.string().required(),
@@ -55,6 +90,7 @@ const schema = a
       numRef: a.string(),
       paidAt: a.datetime(),
       confirmsPlace: a.boolean(), // true for the monthly fee: only that payment confirms a place
+      projectId: a.id(),
     }).secondaryIndexes((i) => [i('transactionId')]).authorization((allow) => [allow.owner()]),
 
     // One entry point for everything that talks to Pey.
@@ -68,7 +104,7 @@ const schema = a
       .authorization((allow) => [allow.authenticated()])
       .handler(a.handler.function(pey)),
   })
-  .authorization((allow) => [allow.resource(pey), allow.resource(peyWebhook), allow.resource(register)]);
+  .authorization((allow) => [allow.resource(pey), allow.resource(peyWebhook), allow.resource(register), allow.resource(share)]);
 
 export type Schema = ClientSchema<typeof schema>;
 

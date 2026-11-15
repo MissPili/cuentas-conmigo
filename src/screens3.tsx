@@ -2,8 +2,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import type { StageProps } from './screens';
-import { pageOf, type Kind, type Per } from './model';
-import { Alert, Choice, Field, IcoCash, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
+import { money, monthName, pageOf, parseAmount, shiftMonth, thisMonth, ready, type Kind, type Per } from './model';
+import { emblemOf } from './emblems';
+import { MAX_PLANS, cycleEnd, cycleStart, duePlans, type Plan } from './plans';
+import { Alert, Avatar, WhoLine, Choice, Field, IcoCash, IcoCheck, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
+import { signupMessage, whatsappShareUrl } from './links';
 import {
   confirmedCount, freeSpots, isFull, occupied, placeState, placesOn, toApprove, waitlisted, type PlaceState,
 } from './places';
@@ -76,6 +79,7 @@ export function Seats({ project, people, charges, page, only, onView }: StagePro
       {ordered.length ? null : <p className="lead">{only === 'review' ? 'No hay inscripciones por revisar.' : 'Todavía nadie tiene lugar.'}</p>}
       {slice.rows.map(({ person, state }) => (
         <button key={person.id} type="button" className="person" onClick={() => onView({ id: 'seat', personId: person.id })}>
+          <Avatar person={person} />
           <span className="person-name">{person.name}</span>
           <Status kind={WORDS[state].kind}>{WORDS[state].text}</Status>
         </button>
@@ -87,7 +91,8 @@ export function Seats({ project, people, charges, page, only, onView }: StagePro
   );
 }
 
-export function SeatDetail({ project, people, charges, personId, busy, onSeat, onView }: StageProps & { personId: string }) {
+export function SeatDetail({ project, people, charges, accounts, personId, busy, onSeat, onCreateCharge, onView }: StageProps & { personId: string }) {
+  const [leaving, setLeaving] = useState(false);
   const person = people.find((p) => p.id === personId);
   if (!person || !placesOn(project)) {
     return (
@@ -100,14 +105,37 @@ export function SeatDetail({ project, people, charges, personId, busy, onSeat, o
   const state = placeState(person, project, charges, new Date());
   const words = WORDS[state];
   const free = freeSpots(people, project, charges, new Date());
+  const month = thisMonth();
+  const due = (state === 'held' || state === 'confirmed' || state === 'overdue')
+    ? duePlans(project.plans, person.id, charges, month).filter((d) => accounts.some((a) => a.id === d.plan.accountId)).slice(0, 2)
+    : [];
+  const feeCharge = charges.find((c) => c.personId === person.id && c.month === month);
   return (
     <section className="stack">
-      <h1>{person.name}</h1>
+      <WhoLine name={person.name} person={person} />
+      {emblemOf(person.emblem) && !person.photo ? <p className="hint">Su imagen: {emblemOf(person.emblem)!.name}</p> : null}
       <Status kind={words.kind}>{words.text}</Status>
       <div className="stat">
         <p><strong>Su WhatsApp:</strong> {fmtTel(person.tel)}</p>
-        {person.helpers?.length ? <p><strong>Quien le ayuda a pagar:</strong> {person.helpers.map(fmtTel).join(', ')}</p> : null}
+        {person.helperInfo?.length
+          ? person.helperInfo.map((h) => (
+            <p key={h.tel}><strong>{h.name ? `${h.name}${h.rel ? ` (${h.rel})` : ''}` : 'Quien le ayuda'}:</strong> {fmtTel(h.tel)}{person.sendTo === h.tel ? ' · le mandas sus códigos' : ''}</p>
+          ))
+          : null}
       </div>
+      {due.map((d, i) => (
+        <Choice
+          key={d.plan.id}
+          primary={i === 0}
+          icon={<IcoPhone />}
+          label={`Cobrarle ${money(d.plan.amount)}`}
+          hint={d.plan.kind === 'ONCE' ? `${d.plan.concept} (una sola vez)` : `${d.plan.concept} de ${monthName(month).toLowerCase()}, mes ${d.nth} de ${d.total}`}
+          onClick={() => onCreateCharge(person.id, d.plan.concept, d.plan.amount, d.plan.accountId, d.confirms)}
+        />
+      ))}
+      {feeCharge && !due.length ? (
+        <Choice primary icon={<IcoPhone />} label={feeCharge.status === 'PAID' ? 'Ver su pago' : 'Ver su cobro'} hint={feeCharge.status === 'PAID' ? 'Enviar comprobante' : 'Mostrar el código para pagar'} onClick={() => onView({ id: feeCharge.status === 'PAID' ? 'receipt' : 'charge', chargeId: feeCharge.id })} />
+      ) : null}
       {state === 'pending' ? (
         <>
           <p className="hint">Hasta que lo apruebes no se le manda ningún cobro ni mensaje.</p>
@@ -124,12 +152,19 @@ export function SeatDetail({ project, people, charges, personId, busy, onSeat, o
       {state === 'overdue' ? (
         <>
           <p className="hint">Pasaron los {project.holdDays} días y no ha pagado.</p>
-          <Choice primary label={busy ? busyLabel : `Dejar ${project.holdDays} días más`} onClick={() => onSeat(person.id, 'extend')} />
-          <Choice danger label="Liberar el lugar" hint="Queda libre para otra persona" onClick={() => onSeat(person.id, 'release')} />
+          <Choice primary={!due.length} label={busy ? busyLabel : `Dejar ${project.holdDays} días más`} onClick={() => onSeat(person.id, 'extend')} />
+          <Choice danger label="Dar de baja" hint="Queda libre su lugar" onClick={() => setLeaving(true)} />
         </>
       ) : null}
       {state === 'held' || state === 'confirmed' ? (
-        <Choice danger label="Quitar el lugar" hint="Queda libre para otra persona" onClick={() => onSeat(person.id, 'release')} />
+        <Choice danger label="Dar de baja" hint="Queda libre su lugar" onClick={() => setLeaving(true)} />
+      ) : null}
+      {leaving ? (
+        <div className="stack">
+          <Alert>Se borran su foto, sus teléfonos y sus notas. Solo queda “{person.name.trim().split(' ')[0]} (baja)” con sus cobros. Si regresa, tiene que inscribirse de nuevo.</Alert>
+          <Choice danger label={busy ? busyLabel : 'Sí, dar de baja'} onClick={() => onSeat(person.id, 'release')} />
+          <Choice label="No, volver" onClick={() => setLeaving(false)} />
+        </div>
       ) : null}
     </section>
   );
@@ -138,6 +173,7 @@ export function SeatDetail({ project, people, charges, personId, busy, onSeat, o
 export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: StageProps) {
   const [img, setImg] = useState('');
   const [failed, setFailed] = useState(false);
+  const [shared, setShared] = useState<{ ok: boolean; text: string } | null>(null);
   const link = project ? signupLink(project.token) : '';
   useEffect(() => {
     if (!link) return;
@@ -156,37 +192,151 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
       </section>
     );
   }
+  const message = signupMessage(project.name || '');
+
+  // The same page the QR opens, to send by WhatsApp or any other way. Nothing leaves the phone by itself.
+  const share = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: project.name || 'Inscripción', text: message, url: link });
+        setShared(null);
+        return;
+      }
+      await navigator.clipboard.writeText(link);
+      setShared({ ok: true, text: 'Enlace copiado. Pégalo donde quieras mandarlo.' });
+    } catch (e) {
+      // The person closing the share sheet is not an error.
+      if ((e as Error).name === 'AbortError') return;
+      setShared({ ok: false, text: 'No se pudo compartir. Mantén el dedo sobre el enlace para copiarlo.' });
+    }
+  };
+
   return (
     <section className="stack">
       <h1>Código para inscribir</h1>
+      <p className="who-line">{project.name || 'Mi proyecto'}</p>
       {failed ? <Alert>No se pudo hacer el código. Intenta de nuevo.</Alert> : img ? <img className="shot" alt="Código QR para inscribirse al taller" src={img} /> : null}
-      <p className="lead">Quien lo escanee deja su nombre y su WhatsApp. Tú apruebas antes de cobrar.</p>
-      <Status kind={project.open ? 'paid' : 'due'}>{project.open ? 'Inscripciones abiertas' : 'Inscripciones cerradas'}</Status>
-      <Choice primary icon={<IcoPhone />} label={project.open ? 'Cerrar inscripciones' : 'Abrir inscripciones'} onClick={onToggleOpen} />
-      <Choice icon={<IcoQr />} label={busy ? busyLabel : 'Hacer un código nuevo'} hint="El anterior deja de servir" onClick={onRotateToken} />
+      <p className="lead">Quien lo escanee se inscribe a este proyecto. Tú apruebas antes de cobrar.</p>
+      <div className="linkbox">
+        <p><strong>O manda este enlace:</strong></p>
+        <p className="link-text">{link}</p>
+      </div>
+      {project.open ? null : <Alert>Las inscripciones están cerradas: quien abra el enlace verá que no hay lugar por ahora.</Alert>}
+      {shared?.ok ? <p className="note" role="status"><IcoCheck /><span>{shared.text}</span></p> : null}
+      {shared && !shared.ok ? <Alert>{shared.text}</Alert> : null}
+      <Choice primary icon={<IcoPhone />} label="Mandar el enlace por WhatsApp" hint="Eliges a quién; tú tocas Enviar" onClick={() => window.open(whatsappShareUrl(`${message}
+
+${link}`), '_blank', 'noopener')} />
+      <Choice icon={<IcoQr />} label="Compartir o copiar el enlace" hint="Mensajes, correo u otra app" onClick={() => { void share(); }} />
+      <Choice icon={<IcoPhone />} label={project.open ? 'Cerrar inscripciones' : 'Abrir inscripciones'} hint={project.open ? 'Ahora se puede inscribir cualquiera con el enlace' : 'Ahora nadie se puede inscribir'} onClick={onToggleOpen} />
+      <Choice icon={<IcoQr />} label={busy ? busyLabel : 'Hacer un código nuevo'} hint="El código y el enlace anteriores dejan de servir" onClick={onRotateToken} />
     </section>
   );
 }
 
-export function PlacesSettings({ project, busy, formError, onSaveProject }: StageProps) {
+type Slot = { kind: 'ONCE' | 'MONTHLY'; concept: string; amount: string; accountId: string; start: string; months: string };
+
+const emptySlot = (accountId: string): Slot => ({ kind: 'ONCE', concept: '', amount: '', accountId, start: cycleStart(new Date()), months: '10' });
+
+function toSlot(p: Plan): Slot {
+  return { kind: p.kind, concept: p.concept, amount: String(p.amount), accountId: p.accountId, start: p.start ?? cycleStart(new Date()), months: String(p.months ?? 10) };
+}
+
+export function PlacesSettings({ project, accounts, busy, formError, onSaveProject }: StageProps) {
+  const usable = accounts.filter((a) => ready(a));
+  const firstAccount = usable[0]?.id ?? '';
+  // Nothing saved yet: suggest the usual first charge (a one-time enrolment). A second one is added on request.
+  const initial: Slot[] = project?.plans.length
+    ? [...project.plans.map(toSlot), emptySlot(firstAccount)].slice(0, MAX_PLANS)
+    : [
+        { kind: 'ONCE', concept: 'Inscripción', amount: '40', accountId: firstAccount, start: cycleStart(new Date()), months: '10' },
+        emptySlot(firstAccount),
+      ];
+  const [slots, setSlots] = useState<Slot[]>(initial);
+  const [shown, setShown] = useState(project?.plans.length ? Math.max(1, project.plans.length) : 1);
+  const [error, setError] = useState('');
+  const set = (i: number, patch: Partial<Slot>) => setSlots(slots.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  const base = cycleStart(new Date());
+  const startOptions = Array.from({ length: 15 }, (_, k) => shiftMonth(base, k - 2));
+
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const d = new FormData(e.currentTarget);
+    const plans: Plan[] = [];
+    for (let i = 0; i < shown; i++) {
+      const s = slots[i];
+      const amount = parseAmount(s.amount);
+      if (!(amount > 0)) continue; // an empty slot is simply not used
+      if (!s.accountId) { setError(`Elige la cuenta del cobro ${i + 1}.`); return; }
+      const months = Number(s.months.replace(/\D/g, ''));
+      if (s.kind === 'MONTHLY' && !(months >= 1 && months <= 24)) { setError(`En el cobro ${i + 1}, los meses van de 1 a 24.`); return; }
+      const concept = s.concept.trim() || (s.kind === 'ONCE' ? 'Inscripción' : 'Mensualidad');
+      plans.push(s.kind === 'ONCE'
+        ? { id: `p${i + 1}`, kind: 'ONCE', concept, amount, accountId: s.accountId }
+        : { id: `p${i + 1}`, kind: 'MONTHLY', concept, amount, accountId: s.accountId, start: s.start, months });
+    }
+    if (new Set(plans.map((p) => p.concept.toLowerCase())).size < plans.length) { setError('Cada cobro necesita un nombre distinto.'); return; }
+    setError('');
     onSaveProject({
       name: String(d.get('name') || '').trim(),
       capacity: Number(String(d.get('capacity') || '0').replace(/\D/g, '')),
       holdDays: Number(String(d.get('hold') || '5').replace(/\D/g, '')),
+      plans,
     });
   };
+
   return (
     <section className="stack">
-      <h1>Lugares</h1>
+      <h1>Lugares y cobros</h1>
       <form className="stack" onSubmit={submit}>
-        {formError ? <Alert>{formError}</Alert> : null}
+        {formError || error ? <Alert>{error || formError}</Alert> : null}
         <Field label="Nombre del taller"><input name="name" defaultValue={project?.name ?? ''} autoComplete="off" placeholder="Taller" /></Field>
         <Field label="¿Cuántos lugares hay?"><input name="capacity" required inputMode="numeric" defaultValue={project?.capacity ? String(project.capacity) : '12'} /></Field>
         <Field label="¿Cuántos días se aparta un lugar?"><input name="hold" required inputMode="numeric" defaultValue={String(project?.holdDays ?? 5)} /></Field>
         <p className="hint">El apartado solo vence para quien se inscribió por el código, ya lo aprobaste y aún no paga.</p>
+
+        {slots.slice(0, shown).map((s, i) => (
+          <fieldset key={i} className="stack plan">
+            <legend className="who-line">Cobro {i + 1}</legend>
+            {i === 0 ? <p className="hint">Es el cobro inicial: cuando lo paguen, el lugar queda confirmado.</p> : null}
+            <Field label="¿Cómo se llama?"><input value={s.concept} onChange={(e) => set(i, { concept: e.target.value })} autoComplete="off" placeholder={s.kind === 'ONCE' ? 'Inscripción' : 'Mensualidad'} /></Field>
+            <Field label="¿Cuánto es? (pesos)"><input value={s.amount} onChange={(e) => set(i, { amount: e.target.value })} inputMode="decimal" placeholder="Déjalo vacío si no lo usas" /></Field>
+            <p className="who-line">¿Cuándo se cobra?</p>
+            <label className="check"><input type="radio" name={`kind${i}`} checked={s.kind === 'ONCE'} onChange={() => set(i, { kind: 'ONCE' })} /><span>Una sola vez</span></label>
+            <label className="check"><input type="radio" name={`kind${i}`} checked={s.kind === 'MONTHLY'} onChange={() => set(i, { kind: 'MONTHLY' })} /><span>Cada mes</span></label>
+            {s.kind === 'MONTHLY' ? (
+              <>
+                <Field label="¿Cuántos meses?"><input value={s.months} onChange={(e) => set(i, { months: e.target.value })} inputMode="numeric" /></Field>
+                <Field label="¿Desde qué mes?">
+                  <select value={s.start} data-ayuda="Toca y elige desde qué mes se cobra." onChange={(e) => set(i, { start: e.target.value })}>
+                    {startOptions.map((m) => <option key={m} value={m}>{monthName(m)} {m.slice(0, 4)}</option>)}
+                  </select>
+                </Field>
+                <p className="hint">Termina en {monthName(cycleEnd({ id: 'x', kind: 'MONTHLY', concept: '', amount: 1, accountId: '', start: s.start, months: Number(s.months.replace(/\D/g, '')) || 1 })).toLowerCase()} {cycleEnd({ id: 'x', kind: 'MONTHLY', concept: '', amount: 1, accountId: '', start: s.start, months: Number(s.months.replace(/\D/g, '')) || 1 }).slice(0, 4)}.</p>
+              </>
+            ) : null}
+            <Field label="¿A qué cuenta llega?">
+              <select value={s.accountId} data-ayuda="Toca y elige a qué cuenta llega este cobro." onChange={(e) => set(i, { accountId: e.target.value })}>
+                <option value="">Elige la cuenta</option>
+                {usable.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
+              </select>
+            </Field>
+            {i > 0 ? <Choice label="Quitar este cobro" onClick={() => { set(i, { amount: '' }); setShown(i); }} /> : null}
+          </fieldset>
+        ))}
+        {shown < MAX_PLANS ? (
+          <Choice
+            icon={<IcoCash />}
+            label="Añadir otro cobro"
+            hint="Por ejemplo, la mensualidad"
+            onClick={() => {
+              // Suggest the usual second charge: monthly for the school cycle.
+              if (!slots[shown].amount) set(shown, { kind: 'MONTHLY', concept: 'Mensualidad', amount: '130', months: '10', accountId: slots[shown].accountId || firstAccount });
+              setShown(shown + 1);
+            }}
+          />
+        ) : null}
+        <p className="hint">Al aprobar a alguien, su ficha te ofrece cobrarle lo que le toque con un solo botón. Los pagos extraordinarios se cobran desde Cobrar.</p>
         <Choice primary type="submit" label={busy ? busyLabel : 'Guardar'} />
       </form>
     </section>

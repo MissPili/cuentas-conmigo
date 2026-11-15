@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { Kind } from './model';
 import logo from './assets/logo-cuentas-conmigo.png';
-import { getA11y, readScreen, speak } from './a11y';
+import { getA11y, helpLine, selectHelp, speak } from './a11y';
+import { emblemOf } from './emblems';
 
 export function Icon({ children }: { children: ReactNode }) {
   return (
@@ -28,6 +29,7 @@ export const IcoQr = () => (
     <path d="M14 14h2v2h-2zM18 14v6h-4M14 18h2" />
   </Icon>
 );
+export const IcoKey = () => <Icon><circle cx="8" cy="12" r="4" /><path d="M12 12h9M18 12v3.5M21 12v2.5" /></Icon>;
 export const IcoBack = () => <Icon><path d="M15 5l-7 7 7 7" /></Icon>;
 export const IcoOut = () => <Icon><path d="M10 5H6v14h4M10 12h9M16 8l4 4-4 4" /></Icon>;
 export const IcoEye = () => <Icon><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
@@ -41,17 +43,19 @@ export function Status({ kind, children }: { kind: Kind; children: ReactNode }) 
 }
 
 export function Choice({
-  primary, danger, icon, label, hint, onClick, type = 'button',
+  primary, danger, attention, icon, label, hint, onClick, type = 'button',
 }: {
   primary?: boolean;
   danger?: boolean;
+  /** Something is waiting for the collector: gold fill, dashed border and a bell, never color alone. */
+  attention?: boolean;
   icon?: ReactNode;
   label: string;
   hint?: string;
   onClick?: () => void;
   type?: 'button' | 'submit';
 }) {
-  const cls = primary ? 'choice primary' : danger ? 'choice danger' : 'choice';
+  const cls = primary ? 'choice primary' : danger ? 'choice danger' : attention ? 'choice attention' : 'choice';
   return (
     <button type={type} className={cls} onClick={onClick}>
       {icon}
@@ -73,23 +77,57 @@ export function Alert({ children }: { children: ReactNode }) {
 
 export function Shell({ canBack, onBack, note, children }: { canBack: boolean; onBack: () => void; note?: string; children: ReactNode }) {
   const [spoken, setSpoken] = useState('');
-  const last = useRef('');
-  const listen = () => {
-    const text = readScreen();
-    last.current = text;
+  const screenLast = useRef('');
+  const say = (text: string) => {
+    if (!text) return;
     setSpoken(text);
     speak(text);
   };
+  // Escuchar works even when the automatic voice is off.
+  const listen = () => {
+    const active = document.activeElement;
+    const text = active instanceof HTMLSelectElement && active.closest('main') ? selectHelp(active) : helpLine();
+    say(text);
+  };
   useEffect(() => {
     const t = window.setTimeout(() => {
-      const text = readScreen();
-      if (!text || text === last.current || !getA11y().voice) return;
-      last.current = text;
-      setSpoken(text);
-      speak(text);
-    }, 120);
+      const text = helpLine();
+      if (!text || text === screenLast.current) return;
+      screenLast.current = text;
+      if (!getA11y().voice) { setSpoken(''); return; }
+      say(text);
+    }, 180);
     return () => window.clearTimeout(t);
   });
+  useEffect(() => {
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target;
+      if (!(el instanceof HTMLSelectElement) || !el.closest('main') || !getA11y().voice) return;
+      const text = selectHelp(el);
+      setSpoken(text);
+      speak(text);
+    };
+    document.addEventListener('focusin', onFocus);
+    const main = document.querySelector('main');
+    const seen = new Set<Element>();
+    main?.querySelectorAll('select').forEach((el) => seen.add(el));
+    const obs = new MutationObserver(() => {
+      if (!getA11y().voice || !main) return;
+      const fresh = [...main.querySelectorAll('select')].filter((el) => !seen.has(el));
+      fresh.forEach((el) => seen.add(el));
+      const el = fresh[fresh.length - 1];
+      if (!el) return;
+      // The screen line, if it changed, speaks a moment later and replaces this.
+      const text = selectHelp(el);
+      setSpoken(text);
+      speak(text);
+    });
+    if (main) obs.observe(main, { childList: true, subtree: true });
+    return () => {
+      document.removeEventListener('focusin', onFocus);
+      obs.disconnect();
+    };
+  }, []);
   return (
     <div className="app">
       <header className="top">
@@ -116,12 +154,32 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
   );
 }
 
-export function Result({ kind, title, text }: { kind: 'paid' | 'bad'; title: string; text: string }) {
+export function Result({ kind, title, text, tech }: { kind: 'paid' | 'bad'; title: string; text: string; tech?: string }) {
   return (
     <div className="result">
       <div className={kind === 'paid' ? 'seal ok' : 'seal bad'}>{kind === 'paid' ? <IcoCheck /> : <IcoAlert />}</div>
       <h1>{title}</h1>
       <p>{text}</p>
+      {tech ? <p className="tech">Detalle para quien te ayuda: {tech}</p> : null}
     </div>
+  );
+}
+
+/** The picture that identifies a person: their photo (with consent), else their chosen picture, else the initial. */
+export function Avatar({ person, name }: { person?: { name?: string; emblem?: string | null; photo?: string | null }; name?: string }) {
+  const label = person?.name ?? name ?? '';
+  if (person?.photo) return <img className="avatar" alt="" src={person.photo} />;
+  const e = emblemOf(person?.emblem);
+  if (e) return <span className="avatar" aria-hidden="true">{e.glyph}</span>;
+  return <span className="avatar initial" aria-hidden="true">{label.trim().charAt(0).toUpperCase()}</span>;
+}
+
+/** Big name line with the picture beside it. */
+export function WhoLine({ name, person }: { name: string; person?: { emblem?: string | null; photo?: string | null } }) {
+  return (
+    <p className="who-line who-with">
+      <Avatar person={{ ...person, name }} />
+      <span>{name}</span>
+    </p>
   );
 }

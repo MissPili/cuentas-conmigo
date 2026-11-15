@@ -67,21 +67,52 @@ export function stopSpeak() {
   try { window.speechSynthesis?.cancel(); } catch { /* optional */ }
 }
 
-/** What the screen says: title, notes and the name of each button. Input values are left out. */
-export function readScreen(): string {
+function clean(t: string | null | undefined): string {
+  return (t || '').replace(/\s+/g, ' ').trim().replace(/\.+$/, '');
+}
+
+function labelOf(el: Element | null): string {
+  if (!el) return '';
+  return clean(el.querySelector('.choice-label')?.textContent || el.getAttribute('aria-label') || el.textContent);
+}
+
+/** One short call to action for what is on screen. A later `data-ayuda` wins, so a step that just opened speaks instead of the page behind it. */
+export function helpLine(): string {
   const main = document.querySelector('main');
   if (!main) return '';
-  const parts: string[] = [];
-  const add = (t: string | null | undefined) => {
-    const s = (t || '').replace(/\s+/g, ' ').trim().replace(/\.+$/, '');
-    if (s) parts.push(s);
-  };
-  const textOf = (el: Element): string =>
-    [...el.childNodes].map((n) => (n.nodeType === 1 ? textOf(n as Element) : n.textContent || '')).join(' ');
-  add(main.querySelector('h1')?.textContent);
-  main.querySelectorAll('.lead, .who-line, .amount, .stat p, .hint, .alert span, .note span, .result p, .steps-text').forEach((n) => add(n.textContent));
-  main.querySelectorAll('button.choice, button.person, a.choice').forEach((n) => add(n.getAttribute('aria-label') || textOf(n)));
-  return parts.join('. ');
+  const marked = [...main.querySelectorAll('[data-ayuda]')].filter((el) => !el.matches('select, option, input, textarea'));
+  for (let i = marked.length - 1; i >= 0; i--) {
+    const el = marked[i];
+    if ((el as HTMLElement).hidden || el.closest('[hidden]')) continue;
+    const t = clean(el.getAttribute('data-ayuda'));
+    if (t) return t.endsWith('.') || t.endsWith('?') || t.endsWith('!') ? t : `${t}.`;
+  }
+  const h1 = clean(main.querySelector('h1')?.textContent);
+  const primary = labelOf(main.querySelector('button.choice.primary, a.choice.primary'));
+  const writing = !!main.querySelector('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]), textarea');
+  if (h1 && primary && writing) return `${h1}. Escribe los datos y toca ${primary}.`;
+  if (h1 && primary) return `${h1}. Toca ${primary}.`;
+  if (main.querySelector('button.person')) {
+    const what = /cuenta/i.test(h1) ? 'una cuenta' : /cobro/i.test(h1) ? 'un cobro' : 'un nombre';
+    return h1 ? `${h1}. Toca ${what}.` : `Toca ${what}.`;
+  }
+  if (main.querySelector('button.emblem-btn')) return h1 ? `${h1}. Toca una.` : 'Toca una.';
+  const extra = clean(main.querySelector('.result p, .lead')?.textContent);
+  if (h1 && extra) return `${h1}. ${extra}.`;
+  if (h1) return `${h1}.`;
+  return '';
+}
+
+/** What to say when a list (a desplegable) is shown or opened. */
+export function selectHelp(el: HTMLSelectElement): string {
+  const custom = clean(el.getAttribute('data-ayuda'));
+  if (custom) return custom.endsWith('.') ? custom : `${custom}.`;
+  const field = el.closest('label');
+  const name = clean(field?.querySelector(':scope > span')?.textContent || el.getAttribute('aria-label'));
+  const current = el.value ? clean(el.selectedOptions[0]?.textContent) : '';
+  if (name && current) return `${name}. Ahora dice ${current}. Toca para cambiar.`;
+  if (name) return `${name}. Toca y elige una.`;
+  return 'Hay una lista. Toca y elige una.';
 }
 
 let audio: AudioContext | null = null;

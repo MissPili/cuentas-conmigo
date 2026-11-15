@@ -5,8 +5,9 @@ import { data } from './data/resource';
 import { pey } from './functions/pey/resource';
 import { peyWebhook } from './functions/pey-webhook/resource';
 import { register } from './functions/register/resource';
+import { share } from './functions/share/resource';
 
-const backend = defineBackend({ auth, data, pey, peyWebhook, register });
+const backend = defineBackend({ auth, data, pey, peyWebhook, register, share });
 
 // Pey needs a public URL to call. Security comes from the webhook signature check in the handler.
 const url = backend.peyWebhook.resources.lambda.addFunctionUrl({
@@ -26,4 +27,6 @@ const registerUrl = backend.register.resources.lambda.addFunctionUrl({
     maxAge: undefined,
   },
 });
-backend.addOutput({ custom: { peyWebhookUrl: url.url, registerUrl: registerUrl.url } });
+// The page behind a WhatsApp link (code to pay or receipt). Opened by whoever receives the link, so no CORS needed.
+const shareUrl = backend.share.resources.lambda.addFunctionUrl({ authType: FunctionUrlAuthType.NONE });
+backend.addOutput({ custom: { peyWebhookUrl: url.url, registerUrl: registerUrl.url, shareUrl: shareUrl.url } });

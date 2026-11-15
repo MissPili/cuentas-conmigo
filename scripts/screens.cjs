@@ -7,31 +7,57 @@ const puppeteer = require(path.join(__dirname, '..', 'prototype', 'tests', 'node
 const BASE = process.env.DEMO_URL || 'http://localhost:5173/demo/index.html';
 const OUT = path.join(__dirname, '..', 'docs', 'pantallas');
 const SHOTS = [
-  ['home', '01-inicio'],
-  ['who', '02-quien-paga'],
-  ['person', '03-cobros-de-una-persona'],
-  ['charge', '04-como-cobrar'],
-  ['qr', '05-codigo-qr'],
-  ['wait', '06-esperando-el-pago'],
-  ['paid', '07-ya-pago'],
-  ['receipt', '08-comprobante'],
-  ['accounts', '09-cuentas-que-reciben'],
-  ['account', '10-cuenta-en-espera-de-pey'],
-  ['add-person', '11-agregar-persona'],
-  ['new-charge', '12-nuevo-cobro'],
-  ['report', '13-reporte-del-mes'],
-  ['places', '14-lugares'],
-  ['review', '15-inscripciones-por-revisar'],
-  ['seat', '16-aprobar-una-inscripcion'],
-  ['seat-late', '17-apartado-vencido'],
-  ['reg-qr', '18-codigo-para-inscribir'],
-  ['places-settings', '19-ajustes-de-lugares'],
-  ['signup1', '20-inscripcion-paso-1'],
-  ['signup2', '21-inscripcion-paso-2'],
-  ['signup3', '22-inscripcion-paso-3'],
-  ['signup4', '23-inscripcion-paso-4'],
-  ['signup-done', '24-inscripcion-lista'],
+  ['projects', '01-proyectos'],
+  ['home', '02-inicio-del-proyecto'],
+  ['who', '03-quien-paga'],
+  ['person', '04-cobros-de-una-persona'],
+  ['charge', '05-como-cobrar'],
+  ['qr', '06-codigo-qr'],
+  ['send-qr', '07-mandar-el-codigo'],
+  ['wait', '08-esperando-el-pago'],
+  ['paid', '09-ya-pago'],
+  ['receipt', '10-comprobante'],
+  ['new-charge', '11-nuevo-cobro'],
+  ['add-person', '12-agregar-persona'],
+  ['more', '13-mas-opciones'],
+  ['more2', '14-mas-opciones-2'],
+  ['people', '15-personas'],
+  ['report', '16-reporte-del-mes'],
+  ['accounts', '17-cuentas-que-reciben'],
+  ['account', '18-cuenta-en-espera-de-pey'],
+  ['places', '19-lugares'],
+  ['places-settings', '20-ajustes-de-lugares'],
+  ['reg-qr', '21-codigo-para-inscribir'],
+  ['review', '22-inscripciones-por-revisar'],
+  ['seat', '23-aprobar-una-inscripcion'],
+  ['seat-late', '24-apartado-vencido-y-cobro-rapido'],
+  ['seat-leave', '25-dar-de-baja'],
+  ['danger', '26-zona-de-peligro'],
+  ['new-project', '27-nuevo-proyecto'],
+  ['signup1', '28-inscripcion-paso-1'],
+  ['signup2', '29-inscripcion-paso-2-imagen'],
+  ['signup2-pick', '30-inscripcion-elegir-dibujo'],
+  ['signup3-choose', '31-inscripcion-paso-3-como-pagas'],
+  ['signup3', '32-inscripcion-paso-3'],
+  ['signup4', '33-inscripcion-paso-4'],
+  ['signup-done', '34-inscripcion-enviada'],
+  ['problem', '35-no-se-pudo-pedir-el-pago'],
+  ['add-person-pic', '36-agregar-persona-su-imagen'],
+  ['add-person-pick', '37-agregar-persona-elegir-dibujo'],
+  ['add-person-pay', '38-agregar-persona-como-paga'],
+  ['add-person-review', '39-agregar-persona-revisar'],
+  ['keyring-hub', '40-imagenes-y-llaveros'],
+  ['keyrings', '41-personas-activas-con-llavero'],
+  ['keyring', '42-imagen-y-llavero-activo'],
+  ['keyring-none', '43-imagen-sin-llavero'],
+  ['keyring-off', '44-llavero-desactivado'],
+  ['keyring-help', '45-como-programar-un-llavero'],
+  ['key-tap-off', '46-al-acercar-un-llavero-desactivado'],
 ];
+// Screens that need a tap to reach (text of the button to press).
+const TAP = { 'seat-leave': 'Dar de baja' };
+
+const KEEP = new Set(SHOTS.map(([, n]) => n + '.png'));
 
 (async () => {
   const exe = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
@@ -41,6 +67,13 @@ const SHOTS = [
     await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true });
     await p.goto(BASE + '?v=' + v, { waitUntil: 'networkidle0' });
     await new Promise((r) => setTimeout(r, 400));
+    if (TAP[v]) {
+      const all = await p.$$('button.choice');
+      for (const bt of all) {
+        if ((await bt.evaluate((e) => e.textContent)).includes(TAP[v])) { await bt.click(); break; }
+      }
+      await new Promise((r) => setTimeout(r, 300));
+    }
     if (v === 'signup-done') {
       await p.click('.check input');
       const buttons = await p.$$('button.choice');
@@ -52,4 +85,6 @@ const SHOTS = [
     console.log('ok', name);
   }
   await b.close();
+  // Drop pictures from older numbering so the folder matches the list.
+  for (const f of require('fs').readdirSync(OUT)) if (f.endsWith('.png') && !KEEP.has(f)) require('fs').unlinkSync(path.join(OUT, f));
 })();

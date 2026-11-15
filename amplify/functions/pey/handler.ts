@@ -21,8 +21,20 @@ async function peyCall(path: string, method: 'GET' | 'POST', body?: unknown) {
   const text = await res.text();
   let json: any = {};
   try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
-  if (!res.ok) throw new Error(`Pey ${res.status}: ${json.message ?? json.error ?? text}`);
+  if (!res.ok) {
+    console.error('pey error', res.status, path, text.slice(0, 500)); // the body holds a message and a request id, never the key
+    throw new Error(`Pey ${res.status}: ${peyMessage(json, text)}`);
+  }
   return json;
+}
+
+// Pey answers errors as {"error":{"message","type","requestId"}}; older shapes put the text at the top level.
+function peyMessage(json: any, text: string): string {
+  const e = json?.error;
+  const message = typeof e === 'string' ? e : e?.message ?? json?.message;
+  const type = typeof e === 'object' ? e?.type : undefined;
+  const body = typeof message === 'string' ? message : text;
+  return `${type ? `${type}: ` : ''}${body}`.slice(0, 300);
 }
 
 // Same rule as the interface: first 7 digits of the time, digits only (Pey numRef is 1-7 digits).
@@ -38,9 +50,25 @@ export const handler: Handler = async (event) => {
   if (!sub) throw new Error('Not signed in');
   const mine = (owner?: string | null) => !!owner && owner.startsWith(sub);
 
+  // "Not found" only when the row is really not there or belongs to someone else. A read that FAILS says so,
+  // and every case leaves a line in the logs (ids only, never names or phones).
+  const loadCharge = async (chargeId: string) => {
+    const { data, errors } = await client.models.Charge.get({ id: chargeId });
+    if (errors?.length) { console.error('charge read failed', chargeId, errors[0]?.message); throw new Error(`Data error: ${errors[0]?.message ?? 'unknown'}`.slice(0, 200)); }
+    if (!data) { console.error('charge is not in the table', chargeId); throw new Error('Charge not found'); }
+    if (!mine(data.owner)) { console.error('charge belongs to another user', chargeId); throw new Error('Charge not found'); }
+    return data;
+  };
+  const loadAccount = async (accountId: string) => {
+    const { data, errors } = await client.models.Account.get({ id: accountId });
+    if (errors?.length) { console.error('account read failed', accountId, errors[0]?.message); throw new Error(`Data error: ${errors[0]?.message ?? 'unknown'}`.slice(0, 200)); }
+    if (!data) { console.error('account is not in the table', accountId); throw new Error('Account not found'); }
+    if (!mine(data.owner)) { console.error('account belongs to another user', accountId); throw new Error('Account not found'); }
+    return data;
+  };
+
   if (action === 'registerAccount') {
-    const { data: acc } = await client.models.Account.get({ id });
-    if (!acc || !mine(acc.owner)) throw new Error('Account not found');
+    const acc = await loadAccount(id);
     const r = await peyCall('/bank-account', 'POST', {
       alias: acc.alias, name: acc.legalName, clabe: acc.clabe, entity: acc.entity ?? 'PERSON',
     });
@@ -49,20 +77,19 @@ export const handler: Handler = async (event) => {
   }
 
   if (action === 'refreshAccount') {
-    const { data: acc } = await client.models.Account.get({ id });
-    if (!acc || !mine(acc.owner) || !acc.peyId) throw new Error('Account not found');
+    const acc = await loadAccount(id);
+    if (!acc.peyId) throw new Error('Account not found');
     const r = await peyCall(`/bank-account/${acc.peyId}`, 'GET');
     await client.models.Account.update({ id, codiStatus: r.codiStatus, errorMessage: r.errorMessage ?? null });
     return r.codiStatus;
   }
 
   if (action === 'requestCodi') {
-    const { data: ch } = await client.models.Charge.get({ id });
-    if (!ch || !mine(ch.owner)) throw new Error('Charge not found');
+    const ch = await loadCharge(id);
     if (ch.status === 'PAID') throw new Error('Already paid');
-    const { data: acc } = await client.models.Account.get({ id: ch.accountId });
+    const acc = await loadAccount(ch.accountId);
     // Never send a CoDi request to an account Pey has not activated yet.
-    if (!acc?.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
+    if (!acc.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
     const numRef = newNumRef();
     const r = await peyCall('/codi/pn', 'POST', {
       amount: ch.amount,
@@ -77,11 +104,10 @@ export const handler: Handler = async (event) => {
   }
 
   if (action === 'requestQr') {
-    const { data: ch } = await client.models.Charge.get({ id });
-    if (!ch || !mine(ch.owner)) throw new Error('Charge not found');
+    const ch = await loadCharge(id);
     if (ch.status === 'PAID') throw new Error('Already paid');
-    const { data: acc } = await client.models.Account.get({ id: ch.accountId });
-    if (!acc?.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
+    const acc = await loadAccount(ch.accountId);
+    if (!acc.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
     const numRef = newNumRef();
     const r = await peyCall('/codi/qr', 'POST', {
       amount: ch.amount,
@@ -95,6 +121,26 @@ export const handler: Handler = async (event) => {
     // Keep the QR id so the webhook can still find the charge if metadata is missing.
     await client.models.Charge.update({ id, via: 'CODI', transactionId: r.id, numRef });
     return JSON.stringify({ qrImage: r.qrImage ?? null, qrString: r.qrString ?? null });
+  }
+
+  // Asks Pey whether a charge was paid. Recovers a payment when the webhook did not arrive (or is not set up yet).
+  if (action === 'checkCharge') {
+    const ch = await loadCharge(id);
+    if (ch.status === 'PAID') return 'PAID';
+    if (!ch.transactionId) return 'PENDING';
+    // A CoDi request has a 26-character ULID transaction id; a CoDi QR keeps the short QR id (IDC).
+    let paid: { datePaid?: number } | undefined;
+    if (ch.transactionId.length === 26) {
+      const t = await peyCall(`/transaction/${ch.transactionId}`, 'GET');
+      if (t.status === 'PAID') paid = t;
+    } else {
+      const t = await peyCall(`/transaction/codi/qr/${ch.transactionId}`, 'GET');
+      paid = (t.items ?? []).find((x: { status?: string }) => x.status === 'PAID');
+    }
+    if (!paid) return 'PENDING';
+    const paidAt = paid.datePaid ? new Date(paid.datePaid * 1000).toISOString() : new Date().toISOString();
+    await client.models.Charge.update({ id, status: 'PAID', via: 'CODI', paidAt });
+    return 'PAID';
   }
 
   throw new Error('Unknown action');
