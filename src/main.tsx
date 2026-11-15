@@ -10,6 +10,7 @@ import Inscripcion from './Inscripcion';
 import favicon from './assets/favicon.png';
 import logo from './assets/logo-cuentas-conmigo.png';
 import './index.css';
+import './a11y';
 
 function AuthLogo() {
   return (

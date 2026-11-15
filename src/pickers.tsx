@@ -95,7 +95,7 @@ export function PictureStep({ p, who, setError, onChosen }: { p: Picture; who: W
 
   if (p.pic === 'pick') {
     return (
-      <div className="stack">
+      <div className="stack" data-ayuda={`${t.pickTitle}. Toca el dibujo que quieres.`}>
         <h1>{t.pickTitle}</h1>
         {p.offered.length ? (
           <div className="emblems">
@@ -199,7 +199,7 @@ export function PayersFields({ p, who, title, children }: { p: Payers; who: Who;
       {children}
       {title ? <h1>{t.ask}</h1> : <h2 className="ask">{t.ask}</h2>}
       <p className="lead">Se paga con CoDi, desde la app de un banco.</p>
-      <div className="emblems">
+      <div className="emblems" data-ayuda={p.mode ? undefined : `${t.ask} Toca una.`}>
         <button type="button" className={p.mode === 'self' ? 'emblem-btn on' : 'emblem-btn'} aria-pressed={p.mode === 'self'} onClick={() => p.setMode('self')}>
           <span className="emblem-glyph" aria-hidden="true">📱</span>
           <span>{t.alone}{p.mode === 'self' ? ' ✔ Elegido' : ''}</span>
@@ -211,7 +211,7 @@ export function PayersFields({ p, who, title, children }: { p: Payers; who: Who;
       </div>
 
       {p.mode === 'helper' ? (
-        <>
+        <div className="stack" data-ayuda={`${t.who} Escribe su nombre y su WhatsApp.`}>
           <h2 className="ask">{t.who}</h2>
           <p className="lead">Escribe sus datos. Si no entiende de qué se trata, le explicaremos por WhatsApp.</p>
           {p.helpers.map((h, i) => (
@@ -226,7 +226,7 @@ export function PayersFields({ p, who, title, children }: { p: Payers; who: Who;
           {p.helpers.length < MAX_HELPERS ? (
             <Choice icon={<IcoPeople />} label="Agregar a otra persona" hint="Es opcional" onClick={() => p.setHelpers([...p.helpers, emptyHelper()])} />
           ) : null}
-        </>
+        </div>
       ) : null}
     </>
   );

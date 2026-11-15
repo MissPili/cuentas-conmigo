@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Kind } from './model';
 import logo from './assets/logo-cuentas-conmigo.png';
+import { getA11y, helpLine, selectHelp, speak } from './a11y';
 import { emblemOf } from './emblems';
 
 export function Icon({ children }: { children: ReactNode }) {
@@ -30,6 +32,8 @@ export const IcoQr = () => (
 export const IcoKey = () => <Icon><circle cx="8" cy="12" r="4" /><path d="M12 12h9M18 12v3.5M21 12v2.5" /></Icon>;
 export const IcoBack = () => <Icon><path d="M15 5l-7 7 7 7" /></Icon>;
 export const IcoOut = () => <Icon><path d="M10 5H6v14h4M10 12h9M16 8l4 4-4 4" /></Icon>;
+export const IcoEye = () => <Icon><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
+export const IcoListen = () => <Icon><path d="M4 10v4h3l4 3V7L7 10z" /><path d="M15 9.2a3.6 3.6 0 010 5.6M17.4 7a6.5 6.5 0 010 10" /></Icon>;
 
 const KIND_ICON = { paid: IcoCheck, wait: IcoClock, due: IcoRing, bad: IcoAlert };
 
@@ -72,6 +76,58 @@ export function Alert({ children }: { children: ReactNode }) {
 }
 
 export function Shell({ canBack, onBack, note, children }: { canBack: boolean; onBack: () => void; note?: string; children: ReactNode }) {
+  const [spoken, setSpoken] = useState('');
+  const screenLast = useRef('');
+  const say = (text: string) => {
+    if (!text) return;
+    setSpoken(text);
+    speak(text);
+  };
+  // Escuchar works even when the automatic voice is off.
+  const listen = () => {
+    const active = document.activeElement;
+    const text = active instanceof HTMLSelectElement && active.closest('main') ? selectHelp(active) : helpLine();
+    say(text);
+  };
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const text = helpLine();
+      if (!text || text === screenLast.current) return;
+      screenLast.current = text;
+      if (!getA11y().voice) { setSpoken(''); return; }
+      say(text);
+    }, 180);
+    return () => window.clearTimeout(t);
+  });
+  useEffect(() => {
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target;
+      if (!(el instanceof HTMLSelectElement) || !el.closest('main') || !getA11y().voice) return;
+      const text = selectHelp(el);
+      setSpoken(text);
+      speak(text);
+    };
+    document.addEventListener('focusin', onFocus);
+    const main = document.querySelector('main');
+    const seen = new Set<Element>();
+    main?.querySelectorAll('select').forEach((el) => seen.add(el));
+    const obs = new MutationObserver(() => {
+      if (!getA11y().voice || !main) return;
+      const fresh = [...main.querySelectorAll('select')].filter((el) => !seen.has(el));
+      fresh.forEach((el) => seen.add(el));
+      const el = fresh[fresh.length - 1];
+      if (!el) return;
+      // The screen line, if it changed, speaks a moment later and replaces this.
+      const text = selectHelp(el);
+      setSpoken(text);
+      speak(text);
+    });
+    if (main) obs.observe(main, { childList: true, subtree: true });
+    return () => {
+      document.removeEventListener('focusin', onFocus);
+      obs.disconnect();
+    };
+  }, []);
   return (
     <div className="app">
       <header className="top">
@@ -80,13 +136,20 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
       <main className="panel">
         {note ? <p className="note" role="status"><IcoCheck /><span>{note}</span></p> : null}
         {children}
+        {spoken ? <p className="spoken" aria-live="polite">«{spoken}»</p> : null}
       </main>
-      {canBack ? (
-        <button type="button" className="back" onClick={onBack}>
-          <IcoBack />
-          <span>Atrás</span>
+      <div className="dock">
+        {canBack ? (
+          <button type="button" className="back" onClick={onBack}>
+            <IcoBack />
+            <span>Atrás</span>
+          </button>
+        ) : null}
+        <button type="button" className={canBack ? 'listen' : 'listen only'} onClick={listen}>
+          <IcoListen />
+          <span>Escuchar</span>
         </button>
-      ) : null}
+      </div>
     </div>
   );
 }

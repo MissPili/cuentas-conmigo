@@ -2,30 +2,40 @@
 import { useState, type FormEvent } from 'react';
 import type { StageProps } from './screens';
 import { money, monthName, shiftMonth, thisMonth } from './model';
-import { Alert, Choice, Field, IcoBank, IcoCash, IcoKey, IcoOut, IcoPeople, Status } from './ui';
+import { Alert, Choice, Field, IcoBank, IcoCash, IcoEye, IcoKey, IcoOut, IcoPeople, Status } from './ui';
 import { canCharge } from './places';
 import { buildReport, reportCsv } from './report';
+import { feedback, speak, stopSpeak, updateA11y, useA11y, type A11y } from './a11y';
 
 export function More({ view, project, projects, onView, onReset, signOut }: StageProps) {
   const page = view.id === 'more' ? view.page ?? 0 : 0;
-  if (page === 0) {
+  if (page <= 0) {
     return (
-      <section className="stack">
+      <section className="stack" data-ayuda="Toca Reporte del mes para ver quién pagó.">
         <h1>Más opciones</h1>
         <Choice primary icon={<IcoCash />} label="Reporte del mes" hint="Quién pagó y quién falta" onClick={() => onView({ id: 'report', month: thisMonth() })} />
         <Choice icon={<IcoPeople />} label="Personas" hint="Nombres, teléfonos y bajas" onClick={() => onView({ id: 'people' })} />
         <Choice icon={<IcoPeople />} label="Lugares e inscripciones" hint="Cupo, código QR y lista de espera" onClick={() => onView({ id: 'places' })} />
-        <Choice label="Ver más" hint="Cuentas, llaveros, proyectos y salir" onClick={() => onView({ id: 'more', page: 1 })} />
+        <Choice label="Ver más" hint="Voz, cuentas, llaveros y salir" onClick={() => onView({ id: 'more', page: 1 })} />
+      </section>
+    );
+  }
+  if (page === 1) {
+    return (
+      <section className="stack" data-ayuda="Toca Ver mejor para prender o apagar la voz.">
+        <h1>Más opciones</h1>
+        <Choice primary icon={<IcoEye />} label="Ver mejor" hint="Voz, letra y colores" onClick={() => onView({ id: 'access' })} />
+        <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
+        <Choice icon={<IcoKey />} label="Imágenes y llaveros" hint="Descargar imágenes y activar llaveros" onClick={() => onView({ id: 'keyring-hub' })} />
+        <Choice label="Ver más" hint="Cambiar de proyecto o salir" onClick={() => onView({ id: 'more', page: 2 })} />
       </section>
     );
   }
   return (
-    <section className="stack">
+    <section className="stack" data-ayuda="Toca para cambiar de proyecto o para salir.">
       <h1>Más opciones</h1>
-      <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
-      <Choice icon={<IcoKey />} label="Imágenes y llaveros" hint="Descargar imágenes y activar llaveros" onClick={() => onView({ id: 'keyring-hub' })} />
       {projects.length > 1 || !project ? <Choice icon={<IcoPeople />} label="Cambiar de proyecto" hint="Otro taller o cobro" onClick={() => onReset({ id: 'projects' })} /> : <Choice icon={<IcoPeople />} label="Nuevo proyecto" hint="Otro taller o cobro" onClick={() => onView({ id: 'new-project' })} />}
-      {signOut ? <Choice icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
+      {signOut ? <Choice primary icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
       <p className="hint">Versión de la app: {__BUILD__}</p>
       {/* The danger entry is deliberately plain and last, so it is not tapped by mistake. */}
       <button type="button" className="quiet" onClick={() => onView({ id: 'danger' })}>Zona de peligro (solo para quien configura)</button>
@@ -94,6 +104,41 @@ export function ReportView({ month, people, charges, accounts, onView }: StagePr
   );
 }
 
+const SWITCHES: { key: keyof A11y; label: string }[] = [
+  { key: 'hc', label: 'Colores fuertes' },
+  { key: 'xl', label: 'Letra extra grande' },
+  { key: 'voice', label: 'Voz de ayuda' },
+  { key: 'sound', label: 'Sonido y vibración' },
+];
+
+export function Access() {
+  const set = useA11y();
+  function flip(key: keyof A11y) {
+    const next = !set[key];
+    updateA11y({ [key]: next });
+    if (key === 'voice') {
+      if (next) speak('Te diré qué tocar en cada pantalla.');
+      else stopSpeak();
+    }
+    if (key === 'sound' && next) feedback('ok');
+  }
+  return (
+    <section className="stack" data-ayuda="Toca para prender o apagar la voz, la letra y los colores.">
+      <h1>Ver mejor</h1>
+      <p className="lead">Toca para activar o apagar. La pantalla se entiende aunque el sonido esté apagado.</p>
+      {SWITCHES.map((s) => {
+        const on = set[s.key];
+        return (
+          <button key={s.key} type="button" className="choice sw" role="switch" aria-checked={on} onClick={() => flip(s.key)}>
+            <span className="choice-text"><span className="choice-label">{s.label}</span></span>
+            <Status kind={on ? 'paid' : 'due'}>{on ? 'Activado' : 'Apagado'}</Status>
+          </button>
+        );
+      })}
+    </section>
+  );
+}
+
 const WORD = 'BORRAR';
 
 /** Wipes test data. Three deliberate steps: read the warning, type a word, type the code sent to the email. */
@@ -103,6 +148,11 @@ export function DangerZone({ people, charges, onSendCode, onWipe, onView }: Stag
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const help = step === 1
+    ? 'Esto borra a todas las personas y cobros. Toca Entiendo solo si estás segura.'
+    : step === 2
+      ? 'Escribe la palabra BORRAR y toca Mandar código.'
+      : 'Escribe el código del correo y toca Borrar. O toca No borrar nada.';
 
   async function sendCode(e: FormEvent) {
     e.preventDefault();
@@ -126,7 +176,7 @@ export function DangerZone({ people, charges, onSendCode, onWipe, onView }: Stag
   }
 
   return (
-    <section className="stack danger-zone">
+    <section className="stack danger-zone" data-ayuda={help}>
       <h1>Zona de peligro</h1>
       <Alert>Esto borra a TODAS las personas ({people.length}) y TODOS los cobros ({charges.length}). No se puede deshacer. Úsalo solo con quien te ayuda a configurar la app.</Alert>
       <p className="hint">No se borran las cuentas que reciben ni los ajustes de lugares. Los cobros que ya se mandaron a Pey no se cancelan allá.</p>

@@ -8,6 +8,7 @@ import { pickEmblems } from './emblems';
 import { KEY_PARAM, codeFromAddress, newKeyCode, resolveTap } from './keyring';
 import { legacyPlan, parsePlans, serializePlans } from './plans';
 import { chargeKind, thisMonth } from './model';
+import { feedback } from './a11y';
 import { Stage } from './screens';
 import { explainProblem, type Problem, type Topic } from './problems';
 import { shareLink, shortLinksWork } from './links';
@@ -209,6 +210,14 @@ export default function App({ signOut }: { signOut?: () => void }) {
     const c = charges.find((x) => x.id === view.chargeId);
     if (c && chargeKind(c) === 'paid') setView({ id: 'paid', chargeId: c.id });
   }, [charges, view]);
+
+  useEffect(() => {
+    if (view.id === 'paid') feedback('ok');
+  }, [view]);
+
+  useEffect(() => {
+    if (problem) feedback('error');
+  }, [problem]);
 
   function go(next: View) {
     setProblem(null);

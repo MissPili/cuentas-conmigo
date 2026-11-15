@@ -308,7 +308,7 @@ export function PlacesSettings({ project, accounts, busy, formError, onSaveProje
               <>
                 <Field label="¿Cuántos meses?"><input value={s.months} onChange={(e) => set(i, { months: e.target.value })} inputMode="numeric" /></Field>
                 <Field label="¿Desde qué mes?">
-                  <select value={s.start} onChange={(e) => set(i, { start: e.target.value })}>
+                  <select value={s.start} data-ayuda="Toca y elige desde qué mes se cobra." onChange={(e) => set(i, { start: e.target.value })}>
                     {startOptions.map((m) => <option key={m} value={m}>{monthName(m)} {m.slice(0, 4)}</option>)}
                   </select>
                 </Field>
@@ -316,7 +316,7 @@ export function PlacesSettings({ project, accounts, busy, formError, onSaveProje
               </>
             ) : null}
             <Field label="¿A qué cuenta llega?">
-              <select value={s.accountId} onChange={(e) => set(i, { accountId: e.target.value })}>
+              <select value={s.accountId} data-ayuda="Toca y elige a qué cuenta llega este cobro." onChange={(e) => set(i, { accountId: e.target.value })}>
                 <option value="">Elige la cuenta</option>
                 {usable.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
               </select>

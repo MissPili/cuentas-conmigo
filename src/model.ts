@@ -107,6 +107,7 @@ export type View =
   | { id: 'reg-qr' }
   | { id: 'places-settings' }
   | { id: 'report'; month: string }
+  | { id: 'access' }
   | { id: 'keyring-hub' }
   | { id: 'keyrings'; page: number }
   | { id: 'keyring'; personId: string }

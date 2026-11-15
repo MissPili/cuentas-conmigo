@@ -7,7 +7,7 @@ import { Alert, Avatar, WhoLine, Choice, Field, IcoBank, IcoCash, IcoClock, IcoO
 import ReceiptView from './Receipt';
 import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprobante';
 import { PictureSend } from './Receipt';
-import { DangerZone, More, ReportView } from './screens2';
+import { Access, DangerZone, More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
 import { duePlans, type Plan } from './plans';
 import type { Problem } from './problems';
@@ -116,6 +116,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'paid') return <PaidStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'receipt') return <ReceiptStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'more') return <More {...p} />;
+  if (v.id === 'access') return <Access />;
   if (v.id === 'danger') return <DangerZone {...p} />;
   if (v.id === 'places') return <PlacesHub {...p} />;
   if (v.id === 'seats') return <Seats {...p} page={v.page} only={v.only} />;
@@ -507,7 +508,7 @@ function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, on
       {!asking ? (
         <Choice danger label="Eliminar cuenta" hint={account.codiStatus === 'ERROR' ? 'Tiene un error' : 'Ya no la necesito'} onClick={() => setAsking(true)} />
       ) : (
-        <div className="stack">
+        <div className="stack" data-ayuda="Esto quita la cuenta de la app. Toca Sí, eliminar. O toca No, volver.">
           <Alert>Se quita de esta app. Los cobros que ya hiciste se conservan, pero sin el nombre de la cuenta. En Pey la cuenta sigue registrada.</Alert>
           <Choice danger label={busy ? busyLabel : 'Sí, eliminar'} onClick={() => onDeleteAccount(account.id)} />
           <Choice label="No, volver" onClick={() => setAsking(false)} />
@@ -538,7 +539,7 @@ function AddAccount({ busy, formError, onAddAccount }: StageProps) {
         <Field label="Nombre de quien es la cuenta"><input name="legal" required autoComplete="name" /></Field>
         <Field label="CLABE, 18 números"><input name="clabe" required inputMode="numeric" autoComplete="off" /></Field>
         <Field label="¿De quién es la cuenta?">
-          <select name="entity" defaultValue="PERSON">
+          <select name="entity" defaultValue="PERSON" data-ayuda="Toca y elige si la cuenta es de una persona o de un negocio.">
             <option value="PERSON">Persona</option>
             <option value="BUSINESS">Negocio o institución</option>
           </select>
@@ -581,7 +582,7 @@ function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge
         </Field>
         {only ? <p className="lead">El dinero llega a {only.alias}.</p> : (
           <Field label="¿A qué cuenta llega?">
-            <select name="account" required defaultValue="">
+            <select name="account" required defaultValue="" data-ayuda="Toca y elige a qué cuenta llega el dinero.">
               <option value="" disabled>Elige la cuenta</option>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
             </select>
