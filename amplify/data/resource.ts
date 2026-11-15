@@ -30,6 +30,8 @@ const schema = a
       photo: a.string(), // small JPEG data URL, only when the person agreed (photoConsent)
       photoConsent: a.boolean(),
       consentShared: a.boolean(), // agreed that the helpers' numbers are shared with the collector
+      // Declared on purpose: the public signup function creates rows on the collector's behalf and must set the owner.
+      owner: a.string(),
     }).secondaryIndexes((i) => [i('tel')]).authorization((allow) => [allow.owner()]),
     // One row per collector: places settings and the signup link.
     Project: a.model({
