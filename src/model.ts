@@ -1,3 +1,5 @@
+import type { Plan } from './plans.ts';
+
 export type Acc = {
   id: string;
   alias: string;
@@ -42,6 +44,7 @@ export type Proj = {
   monthlyConcept?: string | null;
   monthlyAmount?: number | null;
   accountId?: string | null;
+  plans: Plan[]; // what is charged on joining: one-time and/or monthly for a number of months
   createdAt?: string | null; // the oldest project adopts rows created before projects existed
 };
 

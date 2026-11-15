@@ -160,3 +160,30 @@ test('destinations: the number the person chose comes first and helpers carry th
   assert.ok(msg.startsWith('Hola Luis.'));
   assert.ok(msg.includes('Rosa') && msg.includes('Taller') && msg.includes('antes de aprobar'));
 });
+
+test('plans: a one-time enrolment and a monthly fee for the 10 months of the school cycle', async () => {
+  const { cycleStart, cycleMonth, cycleEnd, duePlans, parsePlans, serializePlans, legacyPlan } = await import('../src/plans.ts');
+  assert.equal(cycleStart(new Date(2026, 10, 15)), '2026-08'); // November: this year's cycle
+  assert.equal(cycleStart(new Date(2027, 2, 1)), '2026-08'); // March: still last August's cycle
+  assert.equal(cycleStart(new Date(2026, 7, 1)), '2026-08'); // August starts it
+  const plans = [
+    { id: 'a', kind: 'ONCE' as const, concept: 'Inscripción', amount: 40, accountId: 'x' },
+    { id: 'b', kind: 'MONTHLY' as const, concept: 'Mensualidad', amount: 130, accountId: 'x', start: '2026-08', months: 10 },
+  ];
+  assert.equal(cycleMonth(plans[1], '2026-08'), 1);
+  assert.equal(cycleMonth(plans[1], '2027-05'), 10);
+  assert.equal(cycleMonth(plans[1], '2027-06'), 0); // the cycle is over
+  assert.equal(cycleMonth(plans[1], '2026-07'), 0); // not started
+  assert.equal(cycleEnd(plans[1]), '2027-05');
+  const none: Chg[] = [];
+  assert.deepEqual(duePlans(plans, 'p', none, '2026-11').map((d) => d.plan.id), ['a', 'b']);
+  const paid = (concept: string, month: string): Chg => ({ id: concept + month, personId: 'p', personName: 'P', tel: '5500000001', accountId: 'x', concept, amount: 1, month, status: 'PAID' });
+  // The enrolment is never due twice; the monthly one is due again next month.
+  assert.deepEqual(duePlans(plans, 'p', [paid('Inscripción', '2026-08'), paid('Mensualidad', '2026-11')], '2026-11').map((d) => d.plan.id), []);
+  assert.deepEqual(duePlans(plans, 'p', [paid('Inscripción', '2026-08'), paid('Mensualidad', '2026-11')], '2026-12').map((d) => d.plan.id), ['b']);
+  assert.deepEqual(duePlans(plans, 'p', [paid('Inscripción', '2026-08')], '2027-06').map((d) => d.plan.id), []);
+  assert.deepEqual(parsePlans(serializePlans(plans)), plans);
+  assert.deepEqual(parsePlans('basura'), []);
+  assert.equal(legacyPlan(130, null, 'x', new Date(2026, 10, 1))[0].months, 10);
+  assert.deepEqual(legacyPlan(0, null, 'x', new Date()), []);
+});

@@ -2,8 +2,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import type { StageProps } from './screens';
-import { money, monthName, pageOf, parseAmount, thisMonth, ready, type Kind, type Per } from './model';
+import { money, monthName, pageOf, parseAmount, shiftMonth, thisMonth, ready, type Kind, type Per } from './model';
 import { emblemOf } from './emblems';
+import { MAX_PLANS, cycleEnd, cycleStart, duePlans, type Plan } from './plans';
 import { Alert, Avatar, WhoLine, Choice, Field, IcoCash, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
 import {
   confirmedCount, freeSpots, isFull, occupied, placeState, placesOn, toApprove, waitlisted, type PlaceState,
@@ -103,12 +104,11 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
   const state = placeState(person, project, charges, new Date());
   const words = WORDS[state];
   const free = freeSpots(people, project, charges, new Date());
-  const fee = project.monthlyAmount ?? 0;
-  const feeAccount = accounts.find((a) => a.id === project.accountId);
-  const feeConcept = project.monthlyConcept || 'Mensualidad';
   const month = thisMonth();
+  const due = (state === 'held' || state === 'confirmed' || state === 'overdue')
+    ? duePlans(project.plans, person.id, charges, month).filter((d) => accounts.some((a) => a.id === d.plan.accountId)).slice(0, 2)
+    : [];
   const feeCharge = charges.find((c) => c.personId === person.id && c.month === month && c.confirmsPlace);
-  const canQuick = (state === 'held' || state === 'confirmed' || state === 'overdue') && fee > 0 && !!feeAccount && !feeCharge;
   return (
     <section className="stack">
       <WhoLine name={person.name} person={person} />
@@ -122,10 +122,17 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
           ))
           : null}
       </div>
-      {canQuick ? (
-        <Choice primary icon={<IcoPhone />} label={`Cobrarle ${money(fee)}`} hint={`${feeConcept} de ${monthName(month).toLowerCase()}`} onClick={() => onCreateCharge(person.id, feeConcept, fee, feeAccount.id, true)} />
-      ) : null}
-      {feeCharge ? (
+      {due.map((d, i) => (
+        <Choice
+          key={d.plan.id}
+          primary={i === 0}
+          icon={<IcoPhone />}
+          label={`Cobrarle ${money(d.plan.amount)}`}
+          hint={d.plan.kind === 'ONCE' ? `${d.plan.concept} (una sola vez)` : `${d.plan.concept} de ${monthName(month).toLowerCase()}, mes ${d.nth} de ${d.total}`}
+          onClick={() => onCreateCharge(person.id, d.plan.concept, d.plan.amount, d.plan.accountId, d.plan.kind === 'MONTHLY')}
+        />
+      ))}
+      {feeCharge && !due.length ? (
         <Choice primary icon={<IcoPhone />} label={feeCharge.status === 'PAID' ? 'Ver su pago' : 'Ver su cobro'} hint={feeCharge.status === 'PAID' ? 'Enviar comprobante' : 'Mostrar el código para pagar'} onClick={() => onView({ id: feeCharge.status === 'PAID' ? 'receipt' : 'charge', chargeId: feeCharge.id })} />
       ) : null}
       {state === 'pending' ? (
@@ -144,7 +151,7 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
       {state === 'overdue' ? (
         <>
           <p className="hint">Pasaron los {project.holdDays} días y no ha pagado.</p>
-          <Choice primary label={busy ? busyLabel : `Dejar ${project.holdDays} días más`} onClick={() => onSeat(person.id, 'extend')} />
+          <Choice primary={!due.length} label={busy ? busyLabel : `Dejar ${project.holdDays} días más`} onClick={() => onSeat(person.id, 'extend')} />
           <Choice danger label="Dar de baja" hint="Queda libre su lugar" onClick={() => setLeaving(true)} />
         </>
       ) : null}
@@ -196,38 +203,94 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
   );
 }
 
+type Slot = { kind: 'ONCE' | 'MONTHLY'; concept: string; amount: string; accountId: string; start: string; months: string };
+
+const emptySlot = (accountId: string): Slot => ({ kind: 'ONCE', concept: '', amount: '', accountId, start: cycleStart(new Date()), months: '10' });
+
+function toSlot(p: Plan): Slot {
+  return { kind: p.kind, concept: p.concept, amount: String(p.amount), accountId: p.accountId, start: p.start ?? cycleStart(new Date()), months: String(p.months ?? 10) };
+}
+
 export function PlacesSettings({ project, accounts, busy, formError, onSaveProject }: StageProps) {
   const usable = accounts.filter((a) => ready(a));
+  const firstAccount = usable[0]?.id ?? '';
+  // Nothing saved yet: suggest the usual case (a one-time enrolment and a monthly fee for the school cycle).
+  const initial: Slot[] = project?.plans.length
+    ? [...project.plans.map(toSlot), emptySlot(firstAccount)].slice(0, MAX_PLANS)
+    : [
+        { kind: 'ONCE', concept: 'Inscripción', amount: '40', accountId: firstAccount, start: cycleStart(new Date()), months: '10' },
+        { kind: 'MONTHLY', concept: 'Mensualidad', amount: '130', accountId: firstAccount, start: cycleStart(new Date()), months: '10' },
+      ];
+  const [slots, setSlots] = useState<Slot[]>(initial);
+  const [error, setError] = useState('');
+  const set = (i: number, patch: Partial<Slot>) => setSlots(slots.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  const base = cycleStart(new Date());
+  const startOptions = Array.from({ length: 15 }, (_, k) => shiftMonth(base, k - 2));
+
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const d = new FormData(e.currentTarget);
+    const plans: Plan[] = [];
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      const amount = parseAmount(s.amount);
+      if (!(amount > 0)) continue; // an empty slot is simply not used
+      if (!s.accountId) { setError(`Elige la cuenta del cobro ${i + 1}.`); return; }
+      const months = Number(s.months.replace(/\D/g, ''));
+      if (s.kind === 'MONTHLY' && !(months >= 1 && months <= 24)) { setError(`En el cobro ${i + 1}, los meses van de 1 a 24.`); return; }
+      const concept = s.concept.trim() || (s.kind === 'ONCE' ? 'Inscripción' : 'Mensualidad');
+      plans.push(s.kind === 'ONCE'
+        ? { id: `p${i + 1}`, kind: 'ONCE', concept, amount, accountId: s.accountId }
+        : { id: `p${i + 1}`, kind: 'MONTHLY', concept, amount, accountId: s.accountId, start: s.start, months });
+    }
+    if (new Set(plans.map((p) => p.concept.toLowerCase())).size < plans.length) { setError('Cada cobro necesita un nombre distinto.'); return; }
+    setError('');
     onSaveProject({
       name: String(d.get('name') || '').trim(),
       capacity: Number(String(d.get('capacity') || '0').replace(/\D/g, '')),
       holdDays: Number(String(d.get('hold') || '5').replace(/\D/g, '')),
-      monthlyAmount: parseAmount(String(d.get('fee') || '')),
-      monthlyConcept: String(d.get('feeName') || '').trim(),
-      accountId: String(d.get('account') || ''),
+      plans,
     });
   };
+
   return (
     <section className="stack">
-      <h1>Lugares</h1>
+      <h1>Lugares y cobros</h1>
       <form className="stack" onSubmit={submit}>
-        {formError ? <Alert>{formError}</Alert> : null}
+        {formError || error ? <Alert>{error || formError}</Alert> : null}
         <Field label="Nombre del taller"><input name="name" defaultValue={project?.name ?? ''} autoComplete="off" placeholder="Taller" /></Field>
         <Field label="¿Cuántos lugares hay?"><input name="capacity" required inputMode="numeric" defaultValue={project?.capacity ? String(project.capacity) : '12'} /></Field>
         <Field label="¿Cuántos días se aparta un lugar?"><input name="hold" required inputMode="numeric" defaultValue={String(project?.holdDays ?? 5)} /></Field>
-        <Field label="¿Cuánto cuesta la mensualidad? (pesos)"><input name="fee" inputMode="decimal" defaultValue={project?.monthlyAmount ? String(project.monthlyAmount) : ''} placeholder="130" /></Field>
-        <Field label="¿Cómo se llama el cobro?"><input name="feeName" defaultValue={project?.monthlyConcept ?? 'Mensualidad'} autoComplete="off" /></Field>
-        <Field label="¿A qué cuenta llega?">
-          <select name="account" defaultValue={project?.accountId ?? ''}>
-            <option value="">Elige la cuenta</option>
-            {usable.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
-          </select>
-        </Field>
-        <p className="hint">Con esto, al aprobar a alguien le cobras con un solo botón.</p>
         <p className="hint">El apartado solo vence para quien se inscribió por el código, ya lo aprobaste y aún no paga.</p>
+
+        {slots.map((s, i) => (
+          <fieldset key={i} className="stack plan">
+            <legend className="who-line">Cobro {i + 1}{i > 0 ? ' (opcional)' : ''}</legend>
+            <Field label="¿Cómo se llama?"><input value={s.concept} onChange={(e) => set(i, { concept: e.target.value })} autoComplete="off" placeholder={s.kind === 'ONCE' ? 'Inscripción' : 'Mensualidad'} /></Field>
+            <Field label="¿Cuánto es? (pesos)"><input value={s.amount} onChange={(e) => set(i, { amount: e.target.value })} inputMode="decimal" placeholder="Déjalo vacío si no lo usas" /></Field>
+            <p className="who-line">¿Cuándo se cobra?</p>
+            <label className="check"><input type="radio" name={`kind${i}`} checked={s.kind === 'ONCE'} onChange={() => set(i, { kind: 'ONCE' })} /><span>Una sola vez</span></label>
+            <label className="check"><input type="radio" name={`kind${i}`} checked={s.kind === 'MONTHLY'} onChange={() => set(i, { kind: 'MONTHLY' })} /><span>Cada mes</span></label>
+            {s.kind === 'MONTHLY' ? (
+              <>
+                <Field label="¿Cuántos meses?"><input value={s.months} onChange={(e) => set(i, { months: e.target.value })} inputMode="numeric" /></Field>
+                <Field label="¿Desde qué mes?">
+                  <select value={s.start} onChange={(e) => set(i, { start: e.target.value })}>
+                    {startOptions.map((m) => <option key={m} value={m}>{monthName(m)} {m.slice(0, 4)}</option>)}
+                  </select>
+                </Field>
+                <p className="hint">Termina en {monthName(cycleEnd({ id: 'x', kind: 'MONTHLY', concept: '', amount: 1, accountId: '', start: s.start, months: Number(s.months.replace(/\D/g, '')) || 1 })).toLowerCase()} {cycleEnd({ id: 'x', kind: 'MONTHLY', concept: '', amount: 1, accountId: '', start: s.start, months: Number(s.months.replace(/\D/g, '')) || 1 }).slice(0, 4)}.</p>
+              </>
+            ) : null}
+            <Field label="¿A qué cuenta llega?">
+              <select value={s.accountId} onChange={(e) => set(i, { accountId: e.target.value })}>
+                <option value="">Elige la cuenta</option>
+                {usable.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
+              </select>
+            </Field>
+          </fieldset>
+        ))}
+        <p className="hint">Al aprobar a alguien, su ficha te ofrece cobrarle lo que le toque con un solo botón. Solo la mensualidad confirma el lugar.</p>
         <Choice primary type="submit" label={busy ? busyLabel : 'Guardar'} />
       </form>
     </section>

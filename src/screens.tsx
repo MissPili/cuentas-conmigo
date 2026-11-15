@@ -9,6 +9,7 @@ import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprob
 import { PictureSend } from './Receipt';
 import { DangerZone, More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
+import type { Plan } from './plans';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
 export type StageProps = {
@@ -26,7 +27,7 @@ export type StageProps = {
   onAddPerson: (name: string, tel: string) => void;
   onAddAccount: (input: { alias: string; legalName: string; clabe: string; entity: 'PERSON' | 'BUSINESS' }) => void;
   onCreateCharge: (personId: string, concept: string, amount: number, accountId: string, confirmsPlace: boolean) => void;
-  onSaveProject: (input: { name: string; capacity: number; holdDays: number; monthlyAmount: number; monthlyConcept: string; accountId: string }) => void;
+  onSaveProject: (input: { name: string; capacity: number; holdDays: number; plans: Plan[] }) => void;
   projects: Proj[];
   /** Cobrado este mes por proyecto, para la lista de proyectos. */
   totals?: Record<string, number>;

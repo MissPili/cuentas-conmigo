@@ -24,8 +24,8 @@ const people: Per[] = [
   { id: 'p6', name: 'Marta Díaz', tel: '5500000006', emblem: 'abeja', status: 'PENDING', via: 'QR', helpers: ['5500000016', '5500000026'], helperInfo: [{ tel: '5500000016', name: 'Carlos Díaz', rel: 'mi hijo' }, { tel: '5500000026', name: 'Rita Gómez', rel: 'mi vecina' }], regAt: daysAgo(0) },
   { id: 'p7', name: 'Hugo Ramírez', tel: '5500000007', emblem: 'uvas', status: 'WAITLIST', via: 'QR', helpers: ['5500000017'], regAt: daysAgo(1) },
 ];
-const project: Proj = { id: 'j1', name: 'Taller', open: true, token: 'demo-token-demo-token-demo', capacity: 6, holdDays: 5, monthlyConcept: 'Mensualidad', monthlyAmount: 130, accountId: 'a1' };
-const projects: Proj[] = [project, { id: 'j2', name: 'Tanda de los jueves', open: false, token: 'otro-token-otro-token-otro', capacity: 0, holdDays: 5 }];
+const project: Proj = { id: 'j1', name: 'Taller', open: true, token: 'demo-token-demo-token-demo', capacity: 6, holdDays: 5, plans: [{ id: 'p1', kind: 'ONCE', concept: 'Inscripción', amount: 40, accountId: 'a1' }, { id: 'p2', kind: 'MONTHLY', concept: 'Mensualidad', amount: 130, accountId: 'a1', start: '2026-08', months: 10 }] };
+const projects: Proj[] = [project, { id: 'j2', name: 'Tanda de los jueves', open: false, token: 'otro-token-otro-token-otro', capacity: 0, holdDays: 5, plans: [] }];
 const totals = { j1: 260, j2: 0 };
 const m = thisMonth();
 const base = { month: m, accountId: 'a1', concept: 'Mensualidad', amount: 130, confirmsPlace: true };

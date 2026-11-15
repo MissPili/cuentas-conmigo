@@ -49,6 +49,8 @@ const schema = a
       monthlyConcept: a.string(),
       monthlyAmount: a.float(),
       accountId: a.string(), // account that receives the monthly fee
+      // Charge plans (src/plans.ts) as JSON: up to two, each paid once or monthly for N months. Replaces the fields above.
+      plansJson: a.string(),
     }).secondaryIndexes((i) => [i('token')]).authorization((allow) => [allow.owner()]),
     // Rate limit counters for the public signup. Only the signup function can touch them.
     RegAttempt: a.model({

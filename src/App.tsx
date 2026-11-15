@@ -5,6 +5,7 @@ import type { Schema } from '../amplify/data/resource';
 import type { Acc, Chg, Per, Proj, View } from './model';
 import { freeSpots, isFull } from './places';
 import { pickEmblems } from './emblems';
+import { legacyPlan, parsePlans, serializePlans } from './plans';
 import { chargeKind, thisMonth } from './model';
 import { Stage } from './screens';
 import { Shell } from './ui';
@@ -17,7 +18,9 @@ type Project = Schema['Project']['type'];
 
 function mapProject(p: Project): Proj | null {
   if (!p.id || !p.token || p.open == null || p.capacity == null || p.holdDays == null) return null;
-  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays, monthlyConcept: p.monthlyConcept, monthlyAmount: p.monthlyAmount, accountId: p.accountId, createdAt: p.createdAt };
+  const saved = parsePlans(p.plansJson);
+  const plans = saved.length ? saved : legacyPlan(p.monthlyAmount, p.monthlyConcept, p.accountId, new Date());
+  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays, monthlyConcept: p.monthlyConcept, monthlyAmount: p.monthlyAmount, accountId: p.accountId, plans, createdAt: p.createdAt };
 }
 
 function newToken(): string {
@@ -335,9 +338,10 @@ export default function App({ signOut }: { signOut?: () => void }) {
             name: input.name,
             capacity: input.capacity,
             holdDays: input.holdDays,
-            monthlyAmount: input.monthlyAmount > 0 ? input.monthlyAmount : null,
-            monthlyConcept: input.monthlyConcept || null,
-            accountId: input.accountId || null,
+            plansJson: serializePlans(input.plans),
+            monthlyAmount: null,
+            monthlyConcept: null,
+            accountId: null,
           };
           void run(async () => {
             const r = project

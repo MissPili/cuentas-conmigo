@@ -26,7 +26,7 @@ La app es de pocos pasos, con letra grande y alto contraste, pensada para person
 | Quien ayuda a pagar con nombre y relación; la persona elige a quién mandarle códigos y comprobantes | Hecho; falta probarlo desplegado |
 | Lugares (cupo), inscripción por QR con aprobación, lista de espera y vencimiento | Hecho |
 | Identificador visual: dibujo único o foto con consentimiento | Hecho; falta probarlo desplegado |
-| Mensualidad predefinida y cobro rápido tras aprobar | Hecho; falta probarlo desplegado |
+| Cobros del proyecto: hasta 2, cada uno **una sola vez** (inscripción $40) o **cada mes** por N meses desde un mes (mensualidad $130, 10 meses desde agosto); cobro rápido tras aprobar | Hecho; falta probarlo desplegado |
 | Dar de baja (queda "Nombre (baja)" con sus cobros) | Hecho; falta probarlo desplegado |
 | Zona de peligro: borrar personas y cobros con código al correo | Hecho (probado el borrado) |
 | Instalable como app (PWA) y fuentes sin internet | Pendiente |
@@ -57,7 +57,7 @@ Capturas hechas con el modo de demostración (datos inventados, sin servidor), a
 
 | | | |
 | --- | --- | --- |
-| ![](docs/pantallas/19-lugares.png)<br>**19. Lugares** | ![](docs/pantallas/20-ajustes-de-lugares.png)<br>**20. Ajustes: lugares y mensualidad** | ![](docs/pantallas/21-codigo-para-inscribir.png)<br>**21. Código para inscribir** |
+| ![](docs/pantallas/19-lugares.png)<br>**19. Lugares** | ![](docs/pantallas/20-ajustes-de-lugares.png)<br>**20. Ajustes: lugares y cobros (único o mensual)** | ![](docs/pantallas/21-codigo-para-inscribir.png)<br>**21. Código para inscribir** |
 | ![](docs/pantallas/22-inscripciones-por-revisar.png)<br>**22. Inscripciones por revisar** | ![](docs/pantallas/23-aprobar-una-inscripcion.png)<br>**23. Aprobar una inscripción** | ![](docs/pantallas/24-apartado-vencido-y-cobro-rapido.png)<br>**24. Apartado vencido y cobro rápido** |
 | ![](docs/pantallas/25-dar-de-baja.png)<br>**25. Dar de baja** | ![](docs/pantallas/26-zona-de-peligro.png)<br>**26. Zona de peligro** | ![](docs/pantallas/27-nuevo-proyecto.png)<br>**27. Nuevo proyecto** |
 
@@ -91,11 +91,11 @@ Cada cobro manda a Pey el `bankAccountId` de su cuenta, así una sola llave de P
 
 ## Lugares e inscripción por QR
 
-1. En **Lugares → Ajustes** quien cobra pone el nombre del taller, cuántos lugares hay, cuántos días se aparta uno (5 por defecto) y, si quiere, la **mensualidad** (monto, nombre del cobro y cuenta que recibe).
+1. En **Lugares → Ajustes** quien cobra pone el nombre del taller, cuántos lugares hay, cuántos días se aparta uno (5 por defecto) y los **cobros** del proyecto (hasta 2). Cada cobro lleva nombre, monto, cuenta que recibe y se marca como **una sola vez** o **cada mes**; si es mensual se indica cuántos meses dura y desde qué mes. Ejemplo del caso de estudio: **Inscripción $40, una sola vez**, y **Mensualidad $130, cada mes, 10 meses desde agosto** (termina en mayo, el fin del ciclo escolar).
 2. **Código para inscribir** muestra un QR que abre una página pública (sin cuenta) en 4 pasos: nombre, **imagen que la identifica**, WhatsApp propio y de **una** persona que le ayuda a pagar (con su **nombre y qué es suya**, por ejemplo "mi hija"; un botón permite agregar hasta 3), y revisar. En el último paso la persona **elige a quién quiere que le mandemos su código de pago y su comprobante** entre las que registró, y da su consentimiento.
 3. **Imagen que la identifica:** un **dibujo** de un banco de 28 (con su nombre escrito, y nunca uno que ya tenga otra persona con lugar) o **su foto**, con casilla de autorización obligatoria. La foto se reduce a unos 320 px y se guarda en su registro.
 4. La inscripción **solo registra**. No se manda ningún cobro ni mensaje hasta que quien cobra **apruebe**. Si el taller está lleno, la persona queda en lista de espera.
-5. Tras aprobar, la ficha ofrece **"Cobrarle $130"** con un solo botón (usa la mensualidad predefinida).
+5. Tras aprobar, la ficha ofrece un botón por cada cobro que le toca: **"Cobrarle $40"** (la inscripción, una sola vez, y deja de ofrecerse cuando ya se cobró) y **"Cobrarle $130"** (la mensualidad, "mes 4 de 10"). Fuera del ciclo, por ejemplo antes de agosto o después de mayo, la mensualidad no se ofrece.
 6. Solo la mensualidad confirma el lugar. El cobro anual del DIF no.
 7. El apartado vence **solo** para quien se inscribió por QR, ya fue aprobado y todavía no paga. Quien cobra decide dejarlo más días o darlo de baja. Quien ya pagó, o fue agregado a mano, no vence.
 8. El servidor limita los intentos por dirección y por código. Cada proyecto tiene sus propios lugares y dibujos. Si dos personas se inscriben a la vez por el último lugar, o eligen el mismo dibujo, gana quien llegó primero (se ordena por hora de llegada después de guardar, no con una escritura condicional).
