@@ -131,3 +131,15 @@ test('months shift across the year and amounts accept comma or point', () => {
   assert.equal(parseAmount('1,250'), 1250);
   assert.equal(parseAmount('12,5'), 12.5);
 });
+
+test('picture bank: ids are unique and a pick never repeats a taken one', async () => {
+  const { EMBLEMS, pickEmblems, freeEmblems } = await import('../src/emblems.ts');
+  assert.equal(new Set(EMBLEMS.map((e) => e.id)).size, EMBLEMS.length);
+  assert.equal(new Set(EMBLEMS.map((e) => e.glyph)).size, EMBLEMS.length);
+  const taken = EMBLEMS.slice(0, 20).map((e) => e.id);
+  const got = pickEmblems(taken, 3);
+  assert.equal(got.length, 3);
+  assert.ok(got.every((e) => !taken.includes(e.id)));
+  assert.equal(freeEmblems(EMBLEMS.map((e) => e.id)).length, 0);
+  assert.deepEqual(pickEmblems(EMBLEMS.map((e) => e.id), 3), []);
+});

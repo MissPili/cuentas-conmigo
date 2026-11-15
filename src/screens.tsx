@@ -3,7 +3,7 @@ import {
   accountWords, chargeKind, chargeWords, money, monthName, pageOf, parseAmount, personWords, ready, thisMonth,
   type Acc, type Chg, type Per, type Proj, type View,
 } from './model';
-import { Alert, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
+import { Alert, Avatar, WhoLine, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
 import ReceiptView from './Receipt';
 import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprobante';
 import { PictureSend } from './Receipt';
@@ -171,6 +171,7 @@ function Who({ people, charges, onOpenPerson, onView, page }: StageProps & { pag
       <p className="lead">Toca el nombre.</p>
       {slice.rows.map(({ person, words }) => (
         <button key={person.id} type="button" className="person" onClick={() => onOpenPerson(person.id)}>
+          <Avatar person={person} />
           <span className="person-name">{person.name}</span>
           <Status kind={words.kind}>{words.text}</Status>
         </button>
@@ -205,7 +206,7 @@ function PersonCharges({ people, charges, onView, personId, page }: StageProps &
   const slice = pageOf(rows, page);
   return (
     <section className="stack">
-      <p className="who-line">{person.name}</p>
+      <WhoLine name={person.name} person={person} />
       <h1>Sus cobros de {monthName(month).toLowerCase()}</h1>
       {slice.rows.map((row) => <div key={row.key}>{row.node}</div>)}
       {slice.more ? <Choice label={slice.more.label} hint={slice.more.hint} onClick={() => onView({ id: 'person', personId, page: slice.more!.page })} /> : null}
@@ -220,7 +221,7 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
   const name = findPerson(people, charge.personId)?.name || charge.personName;
   return (
     <section className="stack">
-      <p className="who-line">{name}</p>
+      <WhoLine name={name} person={findPerson(people, charge.personId)} />
       <h1>¿Cómo paga?</h1>
       <p className="amount">{money(charge.amount)}</p>
       <p className="lead">{charge.concept}. {account ? `El dinero llega a ${account.alias}.` : 'No encuentro la cuenta de este cobro.'}</p>
@@ -238,11 +239,11 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
   );
 }
 
-function CashStep({ charge, busy, onCash, onView }: StageProps & { charge: Chg | undefined }) {
+function CashStep({ charge, people, busy, onCash, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   return (
     <section className="stack">
-      <p className="who-line">{charge.personName}</p>
+      <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>¿Recibiste {money(charge.amount)}?</h1>
       <p className="lead">Cuéntalos antes de confirmar. Es de {charge.concept}.</p>
       <Choice primary icon={<IcoCash />} label={busy ? busyLabel : 'Sí, ya lo recibí'} onClick={() => onCash(charge.id)} />
@@ -250,11 +251,11 @@ function CashStep({ charge, busy, onCash, onView }: StageProps & { charge: Chg |
   );
 }
 
-function WaitStep({ charge, busy, onCheck, onShowQr, onView }: StageProps & { charge: Chg | undefined }) {
+function WaitStep({ charge, people, busy, onCheck, onShowQr, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   return (
     <section className="stack">
-      <p className="who-line">{charge.personName}</p>
+      <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>Esperando el pago</h1>
       <p className="amount">{money(charge.amount)}</p>
       <Status kind="wait">Esperando el pago</Status>
@@ -279,11 +280,11 @@ function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Ch
   );
 }
 
-function QrStep({ charge, img, busy, onCheck, onView }: StageProps & { charge: Chg | undefined; img: string }) {
+function QrStep({ charge, people, img, busy, onCheck, onView }: StageProps & { charge: Chg | undefined; img: string }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   return (
     <section className="stack">
-      <p className="who-line">{charge.personName}</p>
+      <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>Muestra el código</h1>
       <img className="shot" alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`} src={`data:image/png;base64,${img}`} />
       <p className="lead">Escanéalo con la app del banco. Cuando pague, aquí se marca solo.</p>
@@ -343,7 +344,8 @@ function ReceiptStep({ charge, accounts, people, project, onView }: StageProps &
   );
 }
 
-function People({ people, onView }: StageProps) {
+function People({ people: all, onView }: StageProps) {
+  const people = all.filter((x) => x.status !== 'RELEASED');
   return (
     <section className="stack">
       <h1>Personas</h1>
@@ -482,7 +484,7 @@ function NewCharge({ people, accounts, personId, project, busy, formError, onCre
   };
   return (
     <section className="stack">
-      <p className="who-line">{person.name}</p>
+      <WhoLine name={person.name} person={person} />
       <h1>Nuevo cobro</h1>
       <form className="stack" onSubmit={submit}>
         {formError ? <Alert>{formError}</Alert> : null}

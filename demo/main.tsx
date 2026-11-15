@@ -16,13 +16,13 @@ const accounts: Acc[] = [
 ];
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
 const people: Per[] = [
-  { id: 'p1', name: 'Rosa Martínez', tel: '5500000001', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40) },
-  { id: 'p2', name: 'Juan López', tel: '5500000002', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40) },
-  { id: 'p3', name: 'Elena Ruiz', tel: '5500000003', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40) },
-  { id: 'p4', name: 'Pedro Sánchez', tel: '5500000004', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40) },
-  { id: 'p5', name: 'Lucía Torres', tel: '5500000005', status: 'ENROLLED', via: 'QR', heldOn: daysAgo(8), helpers: ['5500000015'], regAt: daysAgo(9) },
-  { id: 'p6', name: 'Marta Díaz', tel: '5500000006', status: 'PENDING', via: 'QR', helpers: ['5500000016', '5500000026'], regAt: daysAgo(0) },
-  { id: 'p7', name: 'Hugo Ramírez', tel: '5500000007', status: 'WAITLIST', via: 'QR', helpers: ['5500000017'], regAt: daysAgo(1) },
+  { id: 'p1', name: 'Rosa Martínez', tel: '5500000001', emblem: 'gato', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
+  { id: 'p2', name: 'Juan López', tel: '5500000002', emblem: 'perro', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
+  { id: 'p3', name: 'Elena Ruiz', tel: '5500000003', emblem: 'pez', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
+  { id: 'p4', name: 'Pedro Sánchez', tel: '5500000004', emblem: 'nopal', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
+  { id: 'p5', name: 'Lucía Torres', tel: '5500000005', emblem: 'luna', status: 'ENROLLED', via: 'QR', heldOn: daysAgo(8), helpers: ['5500000015'], regAt: daysAgo(9) },
+  { id: 'p6', name: 'Marta Díaz', tel: '5500000006', emblem: 'abeja', status: 'PENDING', via: 'QR', helpers: ['5500000016', '5500000026'], regAt: daysAgo(0) },
+  { id: 'p7', name: 'Hugo Ramírez', tel: '5500000007', emblem: 'uvas', status: 'WAITLIST', via: 'QR', helpers: ['5500000017'], regAt: daysAgo(1) },
 ];
 const project: Proj = { id: 'j1', name: 'Taller', open: true, token: 'demo-token-demo-token-demo', capacity: 6, holdDays: 5, monthlyConcept: 'Mensualidad', monthlyAmount: 130, accountId: 'a1' };
 const m = thisMonth();
@@ -99,9 +99,10 @@ function start(): View {
 const signupSteps: Record<string, { step: number; name?: string; tel?: string; helpers?: string[] }> = {
   signup1: { step: 1 },
   signup2: { step: 2, name: 'María Hernández' },
-  signup3: { step: 3, name: 'María Hernández', tel: '5500000009' },
-  signup4: { step: 4, name: 'María Hernández', tel: '5500000009', helpers: ['5500000019', '5500000029'] },
-  'signup-done': { step: 4, name: 'María Hernández', tel: '5500000009', helpers: ['5500000019'] },
+  'signup2-pick': { step: 2, name: 'María Hernández', pic: 'pick' },
+  signup3: { step: 3, name: 'María Hernández', emblem: 'girasol', tel: '5500000009' },
+  signup4: { step: 4, name: 'María Hernández', emblem: 'girasol', tel: '5500000009', helpers: ['5500000019', '5500000029'] },
+  'signup-done': { step: 4, name: 'María Hernández', emblem: 'girasol', tel: '5500000009', helpers: ['5500000019'] },
   'signup-full': { step: 1 },
 };
 
@@ -110,7 +111,7 @@ if (first.startsWith('signup')) {
   window.fetch = (async (_url: unknown, init?: RequestInit) => {
     const body = init?.method === 'POST'
       ? { status: 'registered' }
-      : { status: 'open', name: 'Taller de ejemplo', full: first === 'signup-full' };
+      : { status: 'open', name: 'Taller de ejemplo', full: first === 'signup-full', taken: ['gato', 'perro', 'sol'] };
     return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
   }) as typeof window.fetch;
 }

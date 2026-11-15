@@ -6,6 +6,7 @@ import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtim
 import { env } from '$amplify/env/register';
 import type { Schema } from '../../data/resource';
 import { TEL10, overflowIds, takesPlaceByStatus } from '../../../src/places';
+import { isEmblemId } from '../../../src/emblems';
 
 // Public signup. It only REGISTERS a person. No charge, no CoDi request and no message leaves from here:
 // the collector must approve first. Answers reveal nothing beyond what the person just typed.
@@ -59,7 +60,7 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
 
   try {
     let token = '';
-    let body: { name?: unknown; tel?: unknown; helpers?: unknown; consent?: unknown } = {};
+    let body: { name?: unknown; tel?: unknown; helpers?: unknown; consent?: unknown; emblem?: unknown; photo?: unknown; photoConsent?: unknown } = {};
     if (method === 'GET') {
       token = event.queryStringParameters?.token ?? '';
     } else if (method === 'POST') {
@@ -82,7 +83,9 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
     const taking = people.filter((p) => takesPlaceByStatus(p.status));
     const full = project.capacity > 0 && taking.length >= project.capacity;
 
-    if (method === 'GET') return json(200, { status: project.open ? 'open' : 'closed', name: project.name ?? '', full });
+    // Pictures already held, so the page only offers free ones. Nothing about who holds them.
+    const taken = people.filter((p) => p.status !== 'RELEASED' && p.emblem).map((p) => p.emblem as string);
+    if (method === 'GET') return json(200, { status: project.open ? 'open' : 'closed', name: project.name ?? '', full, taken });
     if (!project.open) return json(200, { status: 'closed' });
 
     if (!(await allow(client, `tok:${token.slice(0, 16)}:${hour}`, PER_TOKEN_PER_HOUR))) return json(200, { status: 'limit' });
@@ -96,7 +99,13 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
       return json(200, { status: 'invalid' });
     }
 
+    // Identifier: a picture from the bank (unique) or their own photo (only with consent, small JPEG).
+    const photo = typeof body.photo === 'string' && body.photo.startsWith('data:image/jpeg;base64,') && /^[A-Za-z0-9+/=]+$/.test(body.photo.slice(23)) && body.photo.length <= 120_000 ? body.photo : '';
+    const emblem = isEmblemId(body.emblem) ? body.emblem : '';
+    if (photo ? body.photoConsent !== true : !emblem) return json(200, { status: 'invalid' });
+
     if (people.some((p) => p.tel === tel && p.status !== 'RELEASED')) return json(200, { status: 'already' });
+    if (!photo && taken.includes(emblem)) return json(200, { status: 'taken' });
 
     const now = new Date().toISOString();
     const created = await client.models.Person.create({
@@ -104,12 +113,24 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
       tel,
       helpers,
       consentShared: true,
+      ...(photo ? { photo, photoConsent: true } : { emblem }),
       via: 'QR',
       regAt: now,
       status: full ? 'WAITLIST' : 'PENDING',
       owner: project.owner, // the row belongs to the collector, who is not the one calling
     });
     const me = must(created, 'guardar inscripción');
+
+    // Two signups can pick the same picture at once: the earlier one keeps it, the later one is removed and asked again.
+    if (!photo) {
+      const same = (await everyPerson(client))
+        .filter((p) => p.owner === project.owner && p.status !== 'RELEASED' && p.emblem === emblem)
+        .sort((a, b) => (a.regAt ?? '').localeCompare(b.regAt ?? '') || a.id.localeCompare(b.id));
+      if (same[0] && same[0].id !== me.id) {
+        must(await client.models.Person.delete({ id: me.id }), 'quitar imagen repetida');
+        return json(200, { status: 'taken' });
+      }
+    }
 
     // Two signups can both see the last free place. Settle it by arrival order: those beyond capacity wait.
     let status = me.status;

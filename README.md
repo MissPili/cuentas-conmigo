@@ -43,6 +43,7 @@ Lugares, inscripciones y el reporte (pantallas 13 a 19), y la página pública d
 | ![Ajustes](docs/pantallas/19-ajustes-de-lugares.png)<br>**19. Ajustes de lugares** | ![Paso 1](docs/pantallas/20-inscripcion-paso-1.png)<br>**20. Inscripción, paso 1** | ![Paso 2](docs/pantallas/21-inscripcion-paso-2.png)<br>**21. Inscripción, paso 2** |
 | ![Paso 3](docs/pantallas/22-inscripcion-paso-3.png)<br>**22. Inscripción, paso 3** | ![Paso 4](docs/pantallas/23-inscripcion-paso-4.png)<br>**23. Inscripción, paso 4** | ![Lista](docs/pantallas/24-inscripcion-lista.png)<br>**24. Inscripción enviada** |
 | ![Mandar el código](docs/pantallas/25-mandar-el-codigo.png)<br>**25. Mandar el código como imagen** | | |
+| ![Elegir dibujo](docs/pantallas/27-inscripcion-elegir-dibujo.png)<br>**27. Inscripción: elegir un dibujo** | ![Zona de peligro](docs/pantallas/26-zona-de-peligro.png)<br>**26. Zona de peligro** | |
 
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color). El comprobante es una imagen de 1080×1350 con **PAGADO**, el monto grande y los datos del pago.
 

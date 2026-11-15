@@ -21,6 +21,8 @@ export type Per = {
   via?: 'QR' | 'MANUAL' | null;
   helpers?: string[]; // 10-digit WhatsApp numbers of the people who help pay (1 to 3)
   regAt?: string | null; // when they signed up through the QR
+  emblem?: string | null; // id of the picture chosen from the bank (see emblems.ts)
+  photo?: string | null; // small JPEG as a data URL, only with consent
 };
 
 /** One row per collector: settings for places and the signup QR. */

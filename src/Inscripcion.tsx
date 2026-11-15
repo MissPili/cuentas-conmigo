@@ -1,9 +1,11 @@
 // Public signup page: opens from the QR, no account. It only REGISTERS the person; the collector approves later.
-// Four steps, one action each: name, own WhatsApp, WhatsApp of whoever helps pay (1 to 3), review and confirm.
-import { useEffect, useState, type FormEvent } from 'react';
+// Four steps: name, picture that identifies them (own photo with consent, or one from a bank), WhatsApp numbers
+// (their own and whoever helps pay, 1 to 3), review and confirm.
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { emblemOf, pickEmblems, type Emblem } from './emblems';
 import { Alert, Choice, Field, IcoCheck, IcoClock, IcoPeople, IcoPhone, IcoAlert, Shell } from './ui';
 
-type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean; detail?: string };
+type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean; detail?: string; taken?: string[] };
 type Done = 'registered' | 'waitlist' | 'already' | 'closed' | 'limit' | 'invalid' | 'error';
 
 const digits = (s: string) => s.replace(/\D/g, '');
@@ -26,7 +28,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   token: string;
   registerUrl: string;
   /** Only for the demo harness (screenshots): start on a given step with sample values. */
-  initial?: { step: number; name?: string; tel?: string; helpers?: string[] };
+  initial?: { step: number; name?: string; tel?: string; helpers?: string[]; emblem?: string; pic?: 'menu' | 'pick' };
 }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [step, setStep] = useState(initial?.step ?? 1);
@@ -34,18 +36,51 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   const [tel, setTel] = useState(initial?.tel ?? '');
   const [helpers, setHelpers] = useState<string[]>(initial?.helpers ?? ['']);
   const [consent, setConsent] = useState(false);
+  const [emblem, setEmblem] = useState(initial?.emblem ?? '');
+  const [photo, setPhoto] = useState('');
+  const [photoOk, setPhotoOk] = useState(false);
+  const [pic, setPic] = useState<'menu' | 'pick' | 'photo'>(initial?.pic ?? 'menu');
+  const [offered, setOffered] = useState<Emblem[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
   const [detail, setDetail] = useState(''); // technical reason from the server, shown small so a failure can be diagnosed
 
-  useEffect(() => {
-    if (!registerUrl) { setInfo({ status: 'error' }); return; }
+  const loadInfo = () =>
     fetch(`${registerUrl}?token=${encodeURIComponent(token)}`)
       .then((r) => r.json() as Promise<Info>)
-      .then(setInfo)
-      .catch(() => setInfo({ status: 'error' }));
+      .catch((): Info => ({ status: 'error' }));
+
+  useEffect(() => {
+    if (!registerUrl) { setInfo({ status: 'error' }); return; }
+    void loadInfo().then((i) => {
+      setInfo(i);
+      if (initial?.pic === 'pick') setOffered(pickEmblems(i.taken ?? [], 3));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, registerUrl]);
+
+  const offer = (i: Info | null = info) => setOffered(pickEmblems(i?.taken ?? [], 3));
+
+  /** Shrinks the photo to a small JPEG so it is light to send and store. */
+  async function takePhoto(file: File | undefined) {
+    if (!file) return;
+    try {
+      const bmp = await createImageBitmap(file);
+      const k = Math.min(1, 320 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * k);
+      c.height = Math.round(bmp.height * k);
+      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+      setPhoto(c.toDataURL('image/jpeg', 0.75));
+      setEmblem('');
+      setPhotoOk(false);
+      setError('');
+    } catch {
+      setError('No se pudo usar esa foto. Prueba con otra.');
+    }
+  }
 
   const cleanHelpers = [...new Set(helpers.map(digits).filter(Boolean))];
 
@@ -54,9 +89,8 @@ export default function Inscripcion({ token, registerUrl, initial }: {
     setError('');
     if (step === 1) {
       if (name.trim().length < 2) { setError('Escribe tu nombre.'); return; }
-    } else if (step === 2) {
-      if (digits(tel).length !== 10) { setError('Tu WhatsApp debe tener 10 números.'); return; }
     } else if (step === 3) {
+      if (digits(tel).length !== 10) { setError('Tu WhatsApp debe tener 10 números.'); return; }
       if (!cleanHelpers.length) { setError('Escribe el WhatsApp de quien te ayuda a pagar.'); return; }
       if (cleanHelpers.some((h) => h.length !== 10)) { setError('Cada número debe tener 10 números.'); return; }
     }
@@ -71,11 +105,22 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       const r = await fetch(registerUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token, name: name.trim(), tel: digits(tel), helpers: cleanHelpers, consent: true }),
+        body: JSON.stringify({ token, name: name.trim(), tel: digits(tel), helpers: cleanHelpers, consent: true, ...(photo ? { photo, photoConsent: true } : { emblem }) }),
       });
-      const j = (await r.json()) as { status?: Done; detail?: string };
+      const j = (await r.json()) as { status?: Done | 'taken'; detail?: string };
       setDetail(j.detail ?? '');
-      setDone(j.status ?? 'error');
+      if (j.status === 'taken') {
+        // Someone chose that picture a moment ago: refresh what is free and ask again.
+        const fresh = await loadInfo();
+        setInfo(fresh);
+        setEmblem('');
+        setPic('pick');
+        offer(fresh);
+        setStep(2);
+        setError('Esa imagen ya la eligió otra persona. Elige otra.');
+        return;
+      }
+      setDone((j.status as Done | undefined) ?? 'error');
     } catch (e) {
       setDetail(`sin respuesta (${(e as Error).message})`);
       setDone('error');
@@ -84,7 +129,11 @@ export default function Inscripcion({ token, registerUrl, initial }: {
     }
   }
 
-  const back = () => { setError(''); setStep((s) => Math.max(1, s - 1)); };
+  const back = () => {
+    setError('');
+    if (step === 2 && pic !== 'menu') { setPic('menu'); return; }
+    setStep((s) => Math.max(1, s - 1));
+  };
   const again = () => { setDone(null); setError(''); };
 
   if (!info) {
@@ -157,20 +206,59 @@ export default function Inscripcion({ token, registerUrl, initial }: {
           </form>
         ) : null}
 
-        {step === 2 ? (
-          <form className="stack" onSubmit={next}>
-            <h1>Tu WhatsApp</h1>
-            <Field label="10 números"><input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="numeric" autoComplete="tel" required /></Field>
-            <Choice primary type="submit" icon={<IcoPhone />} label="Siguiente" />
-          </form>
+        {step === 2 && pic === 'menu' ? (
+          <div className="stack">
+            <h1>Tu imagen</h1>
+            <p className="lead">Con ella te reconoce quien da el taller.</p>
+            <Choice primary icon={<IcoPeople />} label="Elegir un dibujo" hint="Uno que nadie más tenga" onClick={() => { offer(); setPic('pick'); }} />
+            <Choice icon={<IcoPhone />} label="Usar mi foto" hint="Si tú quieres" onClick={() => setPic('photo')} />
+          </div>
+        ) : null}
+
+        {step === 2 && pic === 'pick' ? (
+          <div className="stack">
+            <h1>Elige tu dibujo</h1>
+            {offered.length ? (
+              <div className="emblems">
+                {offered.map((e) => (
+                  <button key={e.id} type="button" className="emblem-btn" onClick={() => { setEmblem(e.id); setPhoto(''); setError(''); setStep(3); }}>
+                    <span className="emblem-glyph" aria-hidden="true">{e.glyph}</span>
+                    <span>{e.name}</span>
+                  </button>
+                ))}
+              </div>
+            ) : <p className="lead">Ya no quedan dibujos libres. Usa tu foto.</p>}
+            {offered.length ? <Choice icon={<IcoClock />} label="Ver otros" onClick={() => offer()} /> : null}
+          </div>
+        ) : null}
+
+        {step === 2 && pic === 'photo' ? (
+          <div className="stack">
+            <h1>Tu foto</h1>
+            <input ref={fileRef} type="file" accept="image/*" capture="user" hidden onChange={(e) => { void takePhoto(e.target.files?.[0]); e.target.value = ''; }} />
+            {photo ? (
+              <>
+                <img className="shot" alt="Tu foto" src={photo} />
+                <label className="check">
+                  <input type="checkbox" checked={photoOk} onChange={(e) => setPhotoOk(e.target.checked)} />
+                  <span>Autorizo que quien da el taller guarde mi foto para reconocerme.</span>
+                </label>
+                <Choice primary icon={<IcoCheck />} label="Usar esta foto" onClick={() => { if (!photoOk) { setError('Marca la casilla para usar tu foto.'); return; } setError(''); setStep(3); }} />
+                <Choice icon={<IcoPhone />} label="Tomar otra" onClick={() => fileRef.current?.click()} />
+              </>
+            ) : (
+              <Choice primary icon={<IcoPhone />} label="Tomar mi foto" hint="Se abre la cámara" onClick={() => fileRef.current?.click()} />
+            )}
+          </div>
         ) : null}
 
         {step === 3 ? (
           <form className="stack" onSubmit={next}>
-            <h1>¿Quién te ayuda a pagar?</h1>
-            <p className="lead">Escribe su WhatsApp. Puedes poner hasta 3.</p>
+            <h1>Los WhatsApp</h1>
+            <Field label="Tu WhatsApp (10 números)"><input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="numeric" autoComplete="tel" required /></Field>
+            <p className="lead">¿Quién te ayuda a pagar? Escribe su WhatsApp. Puedes poner hasta 3.</p>
             {helpers.map((h, i) => (
-              <Field key={i} label={`WhatsApp ${i + 1}`}>
+              <Field key={i} label={`WhatsApp de quien ayuda ${i + 1}`}>
                 <input value={h} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? e.target.value : x)))} inputMode="numeric" autoComplete="off" required={i === 0} />
               </Field>
             ))}
@@ -184,6 +272,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
             <h1>Revisa y confirma</h1>
             <div className="stat">
               <p><strong>Nombre:</strong> {name.trim()}</p>
+              <p><strong>Tu imagen:</strong> {photo ? 'tu foto' : `${emblemOf(emblem)?.glyph ?? ''} ${emblemOf(emblem)?.name ?? ''}`}</p>
               <p><strong>Tu WhatsApp:</strong> {fmtTel(digits(tel))}</p>
               <p><strong>Quien te ayuda:</strong> {cleanHelpers.map(fmtTel).join(', ')}</p>
             </div>

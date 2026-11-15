@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Kind } from './model';
 import logo from './assets/logo-cuentas-conmigo.png';
+import { emblemOf } from './emblems';
 
 export function Icon({ children }: { children: ReactNode }) {
   return (
@@ -94,5 +95,24 @@ export function Result({ kind, title, text }: { kind: 'paid' | 'bad'; title: str
       <h1>{title}</h1>
       <p>{text}</p>
     </div>
+  );
+}
+
+/** The picture that identifies a person: their photo (with consent), else their chosen picture, else the initial. */
+export function Avatar({ person, name }: { person?: { name?: string; emblem?: string | null; photo?: string | null }; name?: string }) {
+  const label = person?.name ?? name ?? '';
+  if (person?.photo) return <img className="avatar" alt="" src={person.photo} />;
+  const e = emblemOf(person?.emblem);
+  if (e) return <span className="avatar" aria-hidden="true">{e.glyph}</span>;
+  return <span className="avatar initial" aria-hidden="true">{label.trim().charAt(0).toUpperCase()}</span>;
+}
+
+/** Big name line with the picture beside it. */
+export function WhoLine({ name, person }: { name: string; person?: { emblem?: string | null; photo?: string | null } }) {
+  return (
+    <p className="who-line who-with">
+      <Avatar person={{ ...person, name }} />
+      <span>{name}</span>
+    </p>
   );
 }

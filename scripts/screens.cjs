@@ -28,6 +28,7 @@ const SHOTS = [
   ['places-settings', '19-ajustes-de-lugares'],
   ['signup1', '20-inscripcion-paso-1'],
   ['signup2', '21-inscripcion-paso-2'],
+  ['signup2-pick', '27-inscripcion-elegir-dibujo'],
   ['signup3', '22-inscripcion-paso-3'],
   ['signup4', '23-inscripcion-paso-4'],
   ['signup-done', '24-inscripcion-lista'],

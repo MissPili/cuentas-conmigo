@@ -4,6 +4,7 @@ import { confirmUserAttribute, sendUserAttributeVerificationCode } from 'aws-amp
 import type { Schema } from '../amplify/data/resource';
 import type { Acc, Chg, Per, Proj, View } from './model';
 import { freeSpots, isFull } from './places';
+import { pickEmblems } from './emblems';
 import { chargeKind, thisMonth } from './model';
 import { Stage } from './screens';
 import { Shell } from './ui';
@@ -49,6 +50,8 @@ function mapPerson(p: Person): Per | null {
     via: p.via,
     helpers: (p.helpers ?? []).filter((h): h is string => !!h),
     regAt: p.regAt,
+    emblem: p.emblem,
+    photo: p.photo,
   };
 }
 
@@ -215,7 +218,8 @@ export default function App({ signOut }: { signOut?: () => void }) {
           const digits = tel.replace(/\D/g, '');
           if (digits.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
           void run(async () => {
-            await client.models.Person.create({ name: name.trim(), tel: digits, via: 'MANUAL', status: 'ENROLLED', heldOn: new Date().toISOString() });
+            const emblem = pickEmblems(people.filter((x) => x.status !== 'RELEASED').map((x) => x.emblem ?? ''), 1)[0]?.id;
+            await client.models.Person.create({ name: name.trim(), tel: digits, via: 'MANUAL', status: 'ENROLLED', heldOn: new Date().toISOString(), emblem });
             await load();
           }, () => land({ id: 'people' }, 'Persona guardada.'));
         }}
@@ -360,15 +364,36 @@ export default function App({ signOut }: { signOut?: () => void }) {
             return;
           }
           const now = new Date().toISOString();
-          const patch =
-            action === 'release' ? { status: 'RELEASED' as const }
-            : action === 'extend' ? { heldOn: now }
-            : { status: 'ENROLLED' as const, heldOn: now };
+          const patch = action === 'extend' ? { heldOn: now } : { status: 'ENROLLED' as const, heldOn: now };
           const message =
-            action === 'release' ? 'Listo. Ese lugar quedó libre.'
+            action === 'release' ? 'Listo. Quedó dado de baja y su lugar está libre.'
             : action === 'extend' ? 'Listo. Se apartó más días.'
             : 'Listo. Ya tiene lugar. Ya le puedes cobrar.';
           void run(async () => {
+            if (action === 'release') {
+              // A person with no charges just disappears. One with charges stays only as "Name (baja)" so the
+              // money records keep their meaning; everything else about them (photo, phones, notes) is erased.
+              const person = people.find((x) => x.id === personId);
+              if (!person) return;
+              const mine = charges.filter((c) => c.personId === personId);
+              if (!mine.length) {
+                const d = await client.models.Person.delete({ id: personId });
+                if (d.errors?.length) throw new Error('seat');
+              } else {
+                const label = `${person.name.trim().split(/s+/)[0]} (baja)`;
+                for (let i = 0; i < mine.length; i += 10) {
+                  const rs = await Promise.all(mine.slice(i, i + 10).map((c) => client.models.Charge.update({ id: c.id, personName: label, tel: 'baja' })));
+                  if (rs.some((x) => x.errors?.length)) throw new Error('seat');
+                }
+                const u = await client.models.Person.update({
+                  id: personId, name: label, tel: 'baja', status: 'RELEASED', note: null, helpers: [], emblem: null, photo: null,
+                  photoConsent: false, consentShared: false, heldOn: null, regAt: null, via: null,
+                });
+                if (u.errors?.length) throw new Error('seat');
+              }
+              await load();
+              return;
+            }
             const r = await client.models.Person.update({ id: personId, ...patch });
             if (r.errors?.length) throw new Error('seat');
             await load();

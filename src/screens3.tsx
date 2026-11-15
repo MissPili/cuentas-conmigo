@@ -3,7 +3,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import type { StageProps } from './screens';
 import { money, monthName, pageOf, parseAmount, thisMonth, ready, type Kind, type Per } from './model';
-import { Alert, Choice, Field, IcoCash, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
+import { emblemOf } from './emblems';
+import { Alert, Avatar, WhoLine, Choice, Field, IcoCash, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
 import {
   confirmedCount, freeSpots, isFull, occupied, placeState, placesOn, toApprove, waitlisted, type PlaceState,
 } from './places';
@@ -76,6 +77,7 @@ export function Seats({ project, people, charges, page, only, onView }: StagePro
       {ordered.length ? null : <p className="lead">{only === 'review' ? 'No hay inscripciones por revisar.' : 'Todavía nadie tiene lugar.'}</p>}
       {slice.rows.map(({ person, state }) => (
         <button key={person.id} type="button" className="person" onClick={() => onView({ id: 'seat', personId: person.id })}>
+          <Avatar person={person} />
           <span className="person-name">{person.name}</span>
           <Status kind={WORDS[state].kind}>{WORDS[state].text}</Status>
         </button>
@@ -88,6 +90,7 @@ export function Seats({ project, people, charges, page, only, onView }: StagePro
 }
 
 export function SeatDetail({ project, people, charges, accounts, personId, busy, onSeat, onCreateCharge, onView }: StageProps & { personId: string }) {
+  const [leaving, setLeaving] = useState(false);
   const person = people.find((p) => p.id === personId);
   if (!person || !placesOn(project)) {
     return (
@@ -108,7 +111,8 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
   const canQuick = (state === 'held' || state === 'confirmed' || state === 'overdue') && fee > 0 && !!feeAccount && !feeCharge;
   return (
     <section className="stack">
-      <h1>{person.name}</h1>
+      <WhoLine name={person.name} person={person} />
+      {emblemOf(person.emblem) && !person.photo ? <p className="hint">Su imagen: {emblemOf(person.emblem)!.name}</p> : null}
       <Status kind={words.kind}>{words.text}</Status>
       <div className="stat">
         <p><strong>Su WhatsApp:</strong> {fmtTel(person.tel)}</p>
@@ -137,11 +141,18 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
         <>
           <p className="hint">Pasaron los {project.holdDays} días y no ha pagado.</p>
           <Choice primary label={busy ? busyLabel : `Dejar ${project.holdDays} días más`} onClick={() => onSeat(person.id, 'extend')} />
-          <Choice danger label="Liberar el lugar" hint="Queda libre para otra persona" onClick={() => onSeat(person.id, 'release')} />
+          <Choice danger label="Dar de baja" hint="Queda libre su lugar" onClick={() => setLeaving(true)} />
         </>
       ) : null}
       {state === 'held' || state === 'confirmed' ? (
-        <Choice danger label="Quitar el lugar" hint="Queda libre para otra persona" onClick={() => onSeat(person.id, 'release')} />
+        <Choice danger label="Dar de baja" hint="Queda libre su lugar" onClick={() => setLeaving(true)} />
+      ) : null}
+      {leaving ? (
+        <div className="stack">
+          <Alert>Se borran su foto, sus teléfonos y sus notas. Solo queda “{person.name.trim().split(' ')[0]} (baja)” con sus cobros. Si regresa, tiene que inscribirse de nuevo.</Alert>
+          <Choice danger label={busy ? busyLabel : 'Sí, dar de baja'} onClick={() => onSeat(person.id, 'release')} />
+          <Choice label="No, volver" onClick={() => setLeaving(false)} />
+        </div>
       ) : null}
     </section>
   );

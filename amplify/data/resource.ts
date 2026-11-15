@@ -26,6 +26,9 @@ const schema = a
       via: a.enum(['QR', 'MANUAL']),
       helpers: a.string().array(), // 10-digit WhatsApp numbers of whoever helps pay (1 to 3)
       regAt: a.string(), // ISO time of the QR signup
+      emblem: a.string(), // picture chosen from the bank (src/emblems.ts); unique among people who hold a place
+      photo: a.string(), // small JPEG data URL, only when the person agreed (photoConsent)
+      photoConsent: a.boolean(),
       consentShared: a.boolean(), // agreed that the helpers' numbers are shared with the collector
     }).secondaryIndexes((i) => [i('tel')]).authorization((allow) => [allow.owner()]),
     // One row per collector: places settings and the signup link.
