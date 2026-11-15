@@ -37,15 +37,40 @@ export function KeyringHub({ people, onView }: StageProps) {
   const withKey = active.filter((p) => keyState(p) === 'on');
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState('');
+  // Files already made, waiting for the second tap (phones: the share sheet must open straight from a tap).
+  const [ready, setReady] = useState<File[] | null>(null);
 
-  // One image file per person. The browser may ask permission to download several files.
+  // Forget the prepared files when somebody's picture changes.
+  const sameImages = withImage.map((p) => `${p.id}:${p.emblem ?? ''}:${p.photo?.length ?? 0}`).join('|');
+  useEffect(() => setReady(null), [sameImages]);
+
+  // A phone or tablet with a share sheet that takes files (iPhone: "Guardar imágenes", AirDrop, WhatsApp...).
+  const canShareFiles = (files: File[]) => navigator.maxTouchPoints > 0 && !!navigator.canShare && navigator.canShare({ files });
+
+  async function sendReady(files: File[]) {
+    try {
+      await navigator.share({ files });
+    } catch (e) {
+      // Closing the menu is not an error.
+      if (!(e instanceof DOMException && e.name === 'AbortError')) setError('No se pudo abrir el menú. Descarga las imágenes una por una.');
+    }
+  }
+
+  // One image file per person. On a phone: make them all, then a second tap opens the share sheet. On a computer:
+  // downloads one after another (the browser may ask permission to download several files).
   async function downloadAll() {
     setError('');
+    if (ready) { void sendReady(ready); return; } // straight from the tap, as the phone requires
     const names = dedupeNames(withImage.map(fileFor));
     try {
+      const files: File[] = [];
       for (const [i, p] of withImage.entries()) {
         setProgress({ done: i, total: withImage.length });
-        saveBlob(await makeImage(p), names[i]);
+        files.push(new File([await makeImage(p)], names[i], { type: 'image/png' }));
+      }
+      if (canShareFiles(files)) { setReady(files); return; }
+      for (const f of files) {
+        saveBlob(f, f.name);
         await pause(500);
       }
     } catch {
@@ -68,8 +93,8 @@ export function KeyringHub({ people, onView }: StageProps) {
       <Choice primary icon={<IcoPeople />} label="Ver las imágenes" hint="Una por persona, para descargar" onClick={() => onView({ id: 'keyrings', page: 0 })} />
       <Choice
         icon={<IcoCash />}
-        label={progress ? `Descargando ${progress.done + 1} de ${progress.total}…` : 'Descargar todas las imágenes'}
-        hint={withImage.length ? `${withImage.length} archivos de imagen` : 'Aún no hay imágenes'}
+        label={progress ? `Preparando ${progress.done + 1} de ${progress.total}…` : ready ? 'Guardar o mandar las imágenes' : 'Descargar todas las imágenes'}
+        hint={ready ? 'Toca otra vez: se abre el menú del celular' : withImage.length ? `${withImage.length} archivos de imagen` : 'Aún no hay imágenes'}
         onClick={() => { if (!progress && withImage.length) void downloadAll(); }}
       />
       <Choice icon={<IcoKey />} label="Cómo programar los llaveros" hint="Escribir el chip, probarlo y bloquearlo" onClick={() => onView({ id: 'keyring-help' })} />
@@ -198,7 +223,7 @@ export function KeyringHelp() {
         <li>Entra a la persona, activa su llavero y copia la dirección.</li>
         <li>Abre en tu celular una app para escribir etiquetas NFC (por ejemplo NFC Tools). Elige escribir un registro de tipo enlace y pega la dirección.</li>
         <li>Acerca el llavero a la parte de atrás del celular y espera el aviso de que se escribió.</li>
-        <li>Pruébalo: con la app cerrada, acerca el llavero otra vez. Debe abrirse la pantalla de cobro de esa persona.</li>
+        <li>Pruébalo: con la app cerrada, acerca el llavero otra vez. En iPhone puede aparecer un aviso arriba: tócalo. Debe abrirse la pantalla de cobro de esa persona.</li>
         <li>Solo si la prueba salió bien, bloquea el chip. Después ya no se puede cambiar.</li>
       </ol>
       <Alert>La dirección queda grabada para siempre en el chip. Cópiala desde la misma dirección web y el mismo navegador con los que cobras, y no bloquees ningún chip hasta estar segura de seguir usando este sitio.</Alert>
@@ -215,7 +240,7 @@ export function KeyTap({ kind, personId, people, onView, onReset }: StageProps &
       ? { title: 'Este llavero está desactivado', text: 'Se marcó como perdido. Con él no se puede cobrar a nadie.' }
       : kind === 'gone'
         ? { title: 'Esa persona ya no está activa', text: 'Su llavero ya no sirve.' }
-        : { title: 'No reconocemos este llavero', text: 'Puede ser de otro taller, o haber sido cambiado por uno nuevo.' };
+        : { title: 'No reconocemos este llavero', text: 'Puede ser de otro taller, de alguien que ya se dio de baja, o haber sido cambiado por uno nuevo.' };
   return (
     <section className="stack">
       <Result kind="bad" title={copy.title} text={copy.text} />
