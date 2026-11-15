@@ -9,6 +9,7 @@ import { Stage } from '../src/screens';
 import { Shell } from '../src/ui';
 import Inscripcion from '../src/Inscripcion';
 import { thisMonth, type Acc, type Chg, type Per, type Proj, type View } from '../src/model';
+import { explainProblem } from '../src/problems';
 
 const accounts: Acc[] = [
   { id: 'a1', alias: 'Taller', legalName: 'Titular de ejemplo', clabe: '012180015826225713', entity: 'PERSON', peyId: 'p1', codiStatus: 'ACTIVE' },
@@ -162,7 +163,8 @@ function Demo() {
         onRegister={noop}
         onRefresh={noop}
         onRetry={noop}
-        problem={first === 'problem' ? { title: 'No se pudo', detail: 'Pey no respondió. Intenta de nuevo.' } : null}
+        onDismiss={noop}
+        problem={first === 'problem' ? explainProblem('Pey 500: INTERNAL_SERVER_ERROR: Error creating CoDi push notification') : null}
       />
     </Shell>
   );

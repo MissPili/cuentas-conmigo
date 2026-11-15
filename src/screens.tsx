@@ -10,6 +10,7 @@ import { PictureSend } from './Receipt';
 import { DangerZone, More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
 import { duePlans, type Plan } from './plans';
+import type { Problem } from './problems';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
 export type StageProps = {
@@ -50,7 +51,9 @@ export type StageProps = {
   onRegister: (accountId: string) => void;
   onRefresh: (accountId: string) => void;
   onRetry: () => void;
-  problem: { title: string; detail: string } | null;
+  /** Closes the error screen and stays on the screen where it happened. */
+  onDismiss: () => void;
+  problem: Problem | null;
 };
 
 const busyLabel = 'Un momento…';
@@ -80,9 +83,10 @@ export function Stage(p: StageProps) {
   if (p.problem) {
     return (
       <section className="stack">
-        <Result kind="bad" title={p.problem.title} text={p.problem.detail} />
+        <Result kind="bad" title={p.problem.title} text={p.problem.detail} tech={p.problem.tech} />
         <Choice primary icon={<IcoClock />} label={p.busy ? busyLabel : 'Intentar de nuevo'} onClick={p.onRetry} />
-        <Choice label="Volver al inicio" onClick={() => p.onReset({ id: 'home' })} />
+        <Choice label="Volver" hint="Para elegir otra forma de cobrar" onClick={p.onDismiss} />
+        <button type="button" className="quiet" onClick={() => p.onReset({ id: 'home' })}>Ir al inicio</button>
       </section>
     );
   }
@@ -141,7 +145,7 @@ function Home({ accounts, people, charges, project, onView }: StageProps) {
       </div>
       {primary}
       {review ? (
-        <Choice icon={<IcoPeople />} label={`Aprobar inscripciones (${review})`} hint={review === 1 ? 'Hay 1 persona esperando' : `Hay ${review} personas esperando`} onClick={() => onView({ id: 'seats', page: 0, only: 'review' })} />
+        <Choice attention icon={<span className="ico-emoji" aria-hidden="true">🔔</span>} label={`Aprobar inscripciones (${review})`} hint={review === 1 ? 'Hay 1 persona esperando tu respuesta' : `Hay ${review} personas esperando tu respuesta`} onClick={() => onView({ id: 'seats', page: 0, only: 'review' })} />
       ) : null}
       <Choice icon={<IcoBank />} label="Más opciones" hint="Personas, lugares, reporte y cuentas" onClick={() => onView({ id: 'more' })} />
     </section>

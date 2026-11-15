@@ -8,6 +8,7 @@ import { pickEmblems } from './emblems';
 import { legacyPlan, parsePlans, serializePlans } from './plans';
 import { chargeKind, thisMonth } from './model';
 import { Stage } from './screens';
+import { explainProblem, type Problem, type Topic } from './problems';
 import { Shell } from './ui';
 import outputs from '../amplify_outputs.json';
 
@@ -114,7 +115,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
   const [note, setNote] = useState('');
-  const [problem, setProblem] = useState<{ title: string; detail: string } | null>(null);
+  const [problem, setProblem] = useState<Problem | null>(null);
   const retryRef = useRef<(() => void) | null>(null);
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -200,17 +201,20 @@ export default function App({ signOut }: { signOut?: () => void }) {
     setView(next);
   }
 
-  async function run(task: () => Promise<void>, done?: () => void) {
+  /** The error of a backend call, with the real reason when the backend gave one. */
+  const failed = (errors?: readonly { message?: string }[] | null) => new Error(errors?.[0]?.message || 'backend');
+
+  async function run(task: () => Promise<void>, done?: () => void, topic: Topic = 'charge') {
     if (busy) return;
     setBusy(true);
     setFormError('');
     try {
       await task();
       done?.();
-    } catch {
-      const again = () => { void run(task, done); };
+    } catch (e) {
+      const again = () => { void run(task, done, topic); };
       retryRef.current = again;
-      setProblem({ title: 'No se pudo completar', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
+      setProblem(explainProblem(e instanceof Error ? e.message : String(e), topic));
     } finally {
       setBusy(false);
     }
@@ -245,6 +249,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
         }}
         onOpenPerson={openPerson}
         onRetry={() => retryRef.current?.()}
+        onDismiss={() => setProblem(null)}
         onAddPerson={(name, tel) => {
           const digits = tel.replace(/\D/g, '');
           if (digits.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
@@ -294,14 +299,15 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onRequest={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'requestCodi', id });
-            if (r.errors?.length) throw new Error('pey');
+            if (r.errors?.length) throw failed(r.errors);
             await load();
           }, () => setView({ id: 'wait', chargeId: id }));
         }}
         onShowQr={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'requestQr', id });
-            if (r.errors?.length || !r.data) throw new Error('qr');
+            if (r.errors?.length) throw failed(r.errors);
+            if (!r.data) throw new Error('qr');
             const parsed = JSON.parse(r.data) as { qrImage?: string | null };
             if (!parsed.qrImage) throw new Error('qr');
             await load();
@@ -323,9 +329,9 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onRegister={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'registerAccount', id });
-            if (r.errors?.length) throw new Error('pey');
+            if (r.errors?.length) throw failed(r.errors);
             await load();
-          }, () => land({ id: 'account', accountId: id }, 'Listo. Ya la mandamos a revisar.'));
+          }, () => land({ id: 'account', accountId: id }, 'Listo. Ya la mandamos a revisar.'), 'account');
         }}
         onSaveProject={(input) => {
           if (!(input.capacity >= 1 && input.capacity <= 200)) { setFormError('Escribe cuántos lugares hay, de 1 a 200.'); return; }
@@ -480,7 +486,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onCheck={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'checkCharge', id });
-            if (r.errors?.length) throw new Error('pey');
+            if (r.errors?.length) throw failed(r.errors);
             await load();
             setNote(r.data === 'PAID' ? 'Sí, ya pagó.' : 'Todavía no vemos el pago. Intenta en un momento.');
           });
@@ -488,9 +494,9 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onRefresh={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'refreshAccount', id });
-            if (r.errors?.length) throw new Error('pey');
+            if (r.errors?.length) throw failed(r.errors);
             await load();
-          }, () => setNote('Ya revisamos la cuenta.'));
+          }, () => setNote('Ya revisamos la cuenta.'), 'account');
         }}
       />
     </Shell>

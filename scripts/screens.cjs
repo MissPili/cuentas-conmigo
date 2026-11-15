@@ -41,6 +41,7 @@ const SHOTS = [
   ['signup3', '32-inscripcion-paso-3'],
   ['signup4', '33-inscripcion-paso-4'],
   ['signup-done', '34-inscripcion-enviada'],
+  ['problem', '35-no-se-pudo-pedir-el-pago'],
 ];
 // Screens that need a tap to reach (text of the button to press).
 const TAP = { 'seat-leave': 'Dar de baja' };

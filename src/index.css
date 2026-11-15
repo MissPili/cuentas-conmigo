@@ -122,6 +122,22 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   box-shadow: 0 8px 18px rgba(78, 26, 110, .16);
 }
 .choice.danger { color: var(--bad); border-color: var(--bad); }
+/* Someone is waiting for the collector (approve signups): the "waiting" look, gold fill + dashed edge + a bell. */
+.choice.attention {
+  min-height: 5rem;
+  background: var(--wait);
+  color: var(--on-wait);
+  border: 4px dashed var(--on-wait);
+  box-shadow: 0 8px 18px rgba(42, 29, 0, .18);
+}
+.choice.attention small { color: var(--on-wait); }
+.ico-emoji { flex: none; width: 2.5rem; text-align: center; font-size: 2.25rem; line-height: 1; }
+/* The bell sits on a white disc so it stands out from the gold fill. */
+.choice.attention .ico-emoji {
+  width: 3.5rem; height: 3.5rem; display: grid; place-items: center;
+  border-radius: 50%; background: #fff; border: 3px solid var(--on-wait); font-size: 2rem;
+}
+.tech { margin: 0; font-size: 1.25rem; line-height: 1.5; color: var(--soft); overflow-wrap: anywhere; }
 .choice-text { display: grid; gap: 2px; min-width: 0; }
 .choice-label { overflow-wrap: anywhere; }
 .choice small, .person-amt {

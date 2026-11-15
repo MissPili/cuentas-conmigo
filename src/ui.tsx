@@ -38,17 +38,19 @@ export function Status({ kind, children }: { kind: Kind; children: ReactNode }) 
 }
 
 export function Choice({
-  primary, danger, icon, label, hint, onClick, type = 'button',
+  primary, danger, attention, icon, label, hint, onClick, type = 'button',
 }: {
   primary?: boolean;
   danger?: boolean;
+  /** Something is waiting for the collector: gold fill, dashed border and a bell, never color alone. */
+  attention?: boolean;
   icon?: ReactNode;
   label: string;
   hint?: string;
   onClick?: () => void;
   type?: 'button' | 'submit';
 }) {
-  const cls = primary ? 'choice primary' : danger ? 'choice danger' : 'choice';
+  const cls = primary ? 'choice primary' : danger ? 'choice danger' : attention ? 'choice attention' : 'choice';
   return (
     <button type={type} className={cls} onClick={onClick}>
       {icon}
@@ -88,12 +90,13 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
   );
 }
 
-export function Result({ kind, title, text }: { kind: 'paid' | 'bad'; title: string; text: string }) {
+export function Result({ kind, title, text, tech }: { kind: 'paid' | 'bad'; title: string; text: string; tech?: string }) {
   return (
     <div className="result">
       <div className={kind === 'paid' ? 'seal ok' : 'seal bad'}>{kind === 'paid' ? <IcoCheck /> : <IcoAlert />}</div>
       <h1>{title}</h1>
       <p>{text}</p>
+      {tech ? <p className="tech">Detalle para quien te ayuda: {tech}</p> : null}
     </div>
   );
 }

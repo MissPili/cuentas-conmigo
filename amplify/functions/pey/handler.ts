@@ -21,8 +21,20 @@ async function peyCall(path: string, method: 'GET' | 'POST', body?: unknown) {
   const text = await res.text();
   let json: any = {};
   try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
-  if (!res.ok) throw new Error(`Pey ${res.status}: ${json.message ?? json.error ?? text}`);
+  if (!res.ok) {
+    console.error('pey error', res.status, path, text.slice(0, 500)); // the body holds a message and a request id, never the key
+    throw new Error(`Pey ${res.status}: ${peyMessage(json, text)}`);
+  }
   return json;
+}
+
+// Pey answers errors as {"error":{"message","type","requestId"}}; older shapes put the text at the top level.
+function peyMessage(json: any, text: string): string {
+  const e = json?.error;
+  const message = typeof e === 'string' ? e : e?.message ?? json?.message;
+  const type = typeof e === 'object' ? e?.type : undefined;
+  const body = typeof message === 'string' ? message : text;
+  return `${type ? `${type}: ` : ''}${body}`.slice(0, 300);
 }
 
 // Same rule as the interface: first 7 digits of the time, digits only (Pey numRef is 1-7 digits).

@@ -67,7 +67,7 @@ Capturas hechas con el modo de demostración (datos inventados, sin servidor), a
 | --- | --- | --- |
 | ![](docs/pantallas/28-inscripcion-paso-1.png)<br>**28. Inscripción, paso 1: nombre** | ![](docs/pantallas/29-inscripcion-paso-2-imagen.png)<br>**29. Paso 2: su imagen** | ![](docs/pantallas/30-inscripcion-elegir-dibujo.png)<br>**30. Elegir un dibujo** |
 | ![](docs/pantallas/31-inscripcion-paso-3-como-pagas.png)<br>**31. Paso 3: WhatsApp, costos y cómo paga** | ![](docs/pantallas/32-inscripcion-paso-3.png)<br>**32. Paso 3: con ayuda de un familiar** | ![](docs/pantallas/33-inscripcion-paso-4.png)<br>**33. Paso 4: revisar y a quién mandar** |
-| ![](docs/pantallas/34-inscripcion-enviada.png)<br>**34. Inscripción enviada** |  |  |
+| ![](docs/pantallas/34-inscripcion-enviada.png)<br>**34. Inscripción enviada** | ![](docs/pantallas/35-no-se-pudo-pedir-el-pago.png)<br>**35. Cuando algo falla: el motivo en palabras claras** |  |
 
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color).
 
@@ -75,7 +75,7 @@ Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y
 
 Quien cobra puede llevar varios talleres o proyectos de cobro. Después de entrar ve **Tus proyectos** (con lo cobrado en el mes en cada uno); si solo tiene uno, entra directo. Cada proyecto tiene sus propias personas, cobros, lugares, mensualidad y **código QR de inscripción**, así que el mensaje a quien ayuda a pagar siempre nombra el taller correcto. Se cambia de proyecto o se crea otro en **Más opciones → Ver más**.
 
-El inicio de un proyecto es deliberadamente corto: el dato de **cuánto se ha cobrado** este mes, el botón **Cobrar** (ahí se ve a quién se puede cobrar y se agrega gente a mano), **Aprobar inscripciones (N)** solo si hay alguien esperando, y **Más opciones**. Personas, lugares (cupos e inscripciones), reporte y cuentas son configuración y viven en Más opciones.
+El inicio de un proyecto es deliberadamente corto: el dato de **cuánto se ha cobrado** este mes, el botón **Cobrar** (ahí se ve a quién se puede cobrar y se agrega gente a mano), **Aprobar inscripciones (N)** solo si hay alguien esperando (con campana 🔔, fondo dorado y borde punteado para que no se confunda con Más opciones), y **Más opciones**. Personas, lugares (cupos e inscripciones), reporte y cuentas son configuración y viven en Más opciones.
 
 ## Cómo funciona un cobro
 

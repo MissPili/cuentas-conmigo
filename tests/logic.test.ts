@@ -7,6 +7,7 @@ import {
 } from '../src/places.ts';
 import { buildReport, reportCsv } from '../src/report.ts';
 import { parseAmount, shiftMonth } from '../src/model.ts';
+import { explainProblem } from '../src/problems.ts';
 
 const proj: Proj = { id: 'j', open: true, token: 't', capacity: 3, holdDays: 5 };
 const now = new Date('2026-11-20T12:00:00Z');
@@ -196,4 +197,29 @@ test('plans: only the first (initial) charge confirms the place', async () => {
   ];
   const due = duePlans(plans, 'p', [], '2026-11');
   assert.deepEqual(due.map((d) => [d.plan.id, d.confirms]), [['a', true], ['b', false]]);
+});
+
+test('a push CoDi refused by Pey says so, in plain words, and keeps the real reason', () => {
+  const p = explainProblem('Pey 500: INTERNAL_SERVER_ERROR: Error creating CoDi push notification');
+  assert.equal(p.title, 'Pey no pudo pedir el pago');
+  assert.match(p.detail, /código para pagar/);
+  assert.match(p.tech ?? '', /Error creating CoDi push notification/);
+});
+
+test('an account that is not active yet is explained without technical text', () => {
+  const p = explainProblem('Account not active yet');
+  assert.equal(p.title, 'La cuenta todavía no está lista');
+  assert.equal(p.tech, undefined);
+});
+
+test('only real connection failures talk about the connection', () => {
+  assert.match(explainProblem('Network error').detail, /conexión/);
+  assert.match(explainProblem('Load failed').detail, /conexión/);
+  assert.doesNotMatch(explainProblem('seat').detail, /conexión/);
+  assert.doesNotMatch(explainProblem('Pey 400: INVALID_PARAMETER: bad phone').detail, /conexión/);
+});
+
+test('the advice changes with the topic: accounts do not suggest the payment code', () => {
+  assert.doesNotMatch(explainProblem('Pey 400: INVALID_PARAMETER: bad clabe', 'account').detail, /código/);
+  assert.match(explainProblem('Pey 503: SERVICE_UNAVAILABLE: maintenance').title, /no está disponible/);
 });
