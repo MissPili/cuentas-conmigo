@@ -35,10 +35,12 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
   const client = generateClient<Schema>({ authMode: 'iam' });
 
   const transactionId: string | undefined = evt.transactionId;
+  const qrId: string | undefined = evt.codiQrId; // QR payments carry the QR id
   const chargeId: string | undefined = evt.metadata?.chargeId;
   let charge = chargeId ? (await client.models.Charge.get({ id: chargeId })).data : null;
-  if (!charge && transactionId) {
-    charge = (await client.models.Charge.listChargeByTransactionId({ transactionId })).data[0] ?? null;
+  for (const key of [transactionId, qrId]) {
+    if (charge || !key) continue;
+    charge = (await client.models.Charge.listChargeByTransactionId({ transactionId: key })).data[0] ?? null;
   }
   if (!charge) return reply(200, 'no matching charge'); // ack so Pey does not retry forever
   if (charge.status === 'PAID') return reply(200, 'already recorded'); // idempotent

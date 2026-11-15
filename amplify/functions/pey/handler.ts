@@ -76,5 +76,26 @@ export const handler: Handler = async (event) => {
     return r.transactionId;
   }
 
+  if (action === 'requestQr') {
+    const { data: ch } = await client.models.Charge.get({ id });
+    if (!ch || !mine(ch.owner)) throw new Error('Charge not found');
+    if (ch.status === 'PAID') throw new Error('Already paid');
+    const { data: acc } = await client.models.Account.get({ id: ch.accountId });
+    if (!acc?.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
+    const numRef = newNumRef();
+    const r = await peyCall('/codi/qr', 'POST', {
+      amount: ch.amount,
+      concept: ch.concept.slice(0, 40),
+      expiration: 86400, // one day; the QR also stops working once paid
+      numRef,
+      generateImage: true,
+      bankAccountId: acc.peyId, // always explicit, same as push requests
+      metadata: { chargeId: ch.id },
+    });
+    // Keep the QR id so the webhook can still find the charge if metadata is missing.
+    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.id, numRef });
+    return JSON.stringify({ qrImage: r.qrImage ?? null, qrString: r.qrString ?? null });
+  }
+
   throw new Error('Unknown action');
 };

@@ -20,6 +20,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
   const [people, setPeople] = useState<Person[]>([]);
   const [charges, setCharges] = useState<Charge[]>([]);
   const [msg, setMsg] = useState('');
+  const [qr, setQr] = useState<{ id: string; img: string } | null>(null);
 
   const load = useCallback(async () => {
     const [a, p, c] = await Promise.all([
@@ -45,10 +46,20 @@ export default function App({ signOut }: { signOut?: () => void }) {
       const r = await client.mutations.peyAction({ action, id });
       if (r.errors?.length) throw new Error(r.errors[0].message);
       setMsg('Listo.');
+      return r.data ?? null;
     } catch (e) {
       setMsg('No se pudo: ' + (e as Error).message + ' Intenta de nuevo.');
     }
     load();
+    return null;
+  };
+
+  const showQr = async (id: string) => {
+    const out = await act('requestQr', id);
+    if (!out) return;
+    const img = JSON.parse(out).qrImage as string | null;
+    if (img) setQr({ id, img });
+    else setMsg('No se pudo generar la imagen del QR. Intenta de nuevo.');
   };
 
   const addAccount = async (f: FormData) => {
@@ -176,9 +187,17 @@ export default function App({ signOut }: { signOut?: () => void }) {
                     <span className="wait">⏳ Falta pagar{c.transactionId ? ' · solicitud enviada' : ''}</span>
                     <div className="row">
                       <button onClick={() => act('requestCodi', c.id)}>Pedir pago por CoDi</button>
+                      <button onClick={() => showQr(c.id)}>Mostrar QR de CoDi</button>
                       <button className="alt" onClick={() => cash(c)}>Cobré en efectivo</button>
                     </div>
                   </>
+                )}
+                {qr?.id === c.id && c.status !== 'PAID' && (
+                  <div className="card">
+                    <img alt="QR de CoDi para pagar" width={280} height={280} src={`data:image/png;base64,${qr.img}`} />
+                    <span>Escanéalo con la app de tu banco (opción CoDi).</span>
+                    <button className="alt" onClick={() => setQr(null)}>Cerrar QR</button>
+                  </div>
                 )}
               </div>
             ))}
