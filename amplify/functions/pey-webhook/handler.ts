@@ -21,9 +21,13 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
       'webhook-timestamp': event.headers['webhook-timestamp'] ?? '',
       'webhook-signature': event.headers['webhook-signature'] ?? '',
     };
-    payload = new Webhook(env.PEY_WEBHOOK_SECRET).verify(raw, headers);
-  } catch {
-    return reply(401, 'invalid signature');
+    // A pasted secret often carries stray spaces or a newline.
+    const secret = (env.PEY_WEBHOOK_SECRET ?? '').trim();
+    if (!secret) return reply(500, 'webhook secret not configured');
+    payload = new Webhook(secret).verify(raw, headers);
+  } catch (e) {
+    // The library message names the failure (e.g. no matching signature) and never contains the secret.
+    return reply(401, 'invalid signature: ' + (e as Error).message);
   }
 
   const evt = payload?.data ?? payload; // tolerate both wrapped and flat shapes
