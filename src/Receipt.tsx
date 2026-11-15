@@ -8,16 +8,16 @@ import {
   shareImage,
   svgToPng,
 } from './comprobante';
+import { Alert, Choice, IcoPhone } from './ui';
 
-// Shows the receipt picture and the ways to send it. Styling is deliberately minimal.
-export default function Receipt({ data, tel, onClose }: { data: ReceiptData; tel: string; onClose: () => void }) {
+export default function Receipt({ data, tel }: { data: ReceiptData; tel: string }) {
   const [note, setNote] = useState('');
   const svg = receiptSvg(data);
 
   const share = async () => {
     try {
       const ok = await shareImage(data);
-      if (!ok) setNote('Este teléfono no permite compartir la imagen. Usa "Guardar imagen" y mándala por WhatsApp.');
+      if (!ok) setNote('Este celular no permite compartir la imagen. Usa Guardar imagen y mándala por WhatsApp.');
     } catch {
       setNote('No se pudo compartir. Intenta de nuevo.');
     }
@@ -37,15 +37,16 @@ export default function Receipt({ data, tel, onClose }: { data: ReceiptData; tel
   };
 
   return (
-    <div className="card">
-      <img alt={`Comprobante de pago de ${data.payerName}`} src={svgDataUrl(svg)} style={{ width: '100%', height: 'auto' }} />
-      {note && <p className="msg" role="status">{note}</p>}
-      <a className="btn" href={whatsappUrl(tel, receiptText(data))} target="_blank" rel="noopener noreferrer">
-        Enviar por WhatsApp a {data.payerName}
+    <section className="stack">
+      <h1>Comprobante</h1>
+      <img className="shot" alt={`Comprobante de pago de ${data.payerName} por ${data.concept}`} src={svgDataUrl(svg)} />
+      {note ? <Alert>{note}</Alert> : null}
+      <a className="choice primary" href={whatsappUrl(tel, receiptText(data))} target="_blank" rel="noopener noreferrer">
+        <IcoPhone />
+        <span className="choice-text"><span className="choice-label">Enviar por WhatsApp</span></span>
       </a>
-      <button onClick={share}>Compartir imagen</button>
-      <button className="alt" onClick={save}>Guardar imagen</button>
-      <button className="alt" onClick={onClose}>Cerrar</button>
-    </div>
+      <Choice label="Compartir imagen" onClick={() => { void share(); }} />
+      <Choice label="Guardar imagen" onClick={() => { void save(); }} />
+    </section>
   );
 }

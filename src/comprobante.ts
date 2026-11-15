@@ -19,7 +19,7 @@ const GOLD = '#EDB438';
 export const money = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
 
-export const viaName = (v: ReceiptData['via']) => (v === 'CASH' ? 'Efectivo' : 'CoDi');
+export const viaName = (v: ReceiptData['via']) => (v === 'CASH' ? 'Efectivo' : 'Por celular');
 
 export const folioOf = (chargeId: string) => 'CC-' + chargeId.replace(/-/g, '').slice(0, 6).toUpperCase();
 

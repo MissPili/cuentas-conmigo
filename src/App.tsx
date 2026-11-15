@@ -1,29 +1,66 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
-import Receipt from './Receipt';
-import { folioOf } from './comprobante';
+import type { Acc, Chg, Per, View } from './model';
+import { chargeKind, thisMonth } from './model';
+import { Stage } from './screens';
+import { Shell } from './ui';
 
 const client = generateClient<Schema>();
 type Account = Schema['Account']['type'];
 type Person = Schema['Person']['type'];
 type Charge = Schema['Charge']['type'];
 
-const month = () => new Date().toISOString().slice(0, 7);
-const STATUS: Record<string, string> = {
-  PENDING: 'Por confirmar',
-  PROCESSING: 'En espera de Pey (hasta 5 días hábiles)',
-  ACTIVE: 'Lista para cobrar',
-  ERROR: 'Con error',
-};
+function mapAccount(a: Account): Acc | null {
+  if (!a.id || !a.alias || !a.legalName || !a.clabe) return null;
+  return {
+    id: a.id,
+    alias: a.alias,
+    legalName: a.legalName,
+    clabe: a.clabe,
+    entity: a.entity === 'BUSINESS' ? 'BUSINESS' : 'PERSON',
+    peyId: a.peyId,
+    codiStatus: a.codiStatus,
+    errorMessage: a.errorMessage,
+  };
+}
+
+function mapPerson(p: Person): Per | null {
+  if (!p.id || !p.name || !p.tel) return null;
+  return { id: p.id, name: p.name, tel: p.tel };
+}
+
+function mapCharge(c: Charge): Chg | null {
+  if (!c.id || !c.personId || !c.personName || !c.tel || !c.accountId || !c.concept || c.amount == null || !c.month) return null;
+  return {
+    id: c.id,
+    personId: c.personId,
+    personName: c.personName,
+    tel: c.tel,
+    accountId: c.accountId,
+    concept: c.concept,
+    amount: c.amount,
+    month: c.month,
+    via: c.via,
+    status: c.status,
+    transactionId: c.transactionId,
+    paidAt: c.paidAt,
+  };
+}
 
 export default function App({ signOut }: { signOut?: () => void }) {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
-  const [charges, setCharges] = useState<Charge[]>([]);
-  const [msg, setMsg] = useState('');
-  const [receiptFor, setReceiptFor] = useState<string | null>(null);
-  const [qr, setQr] = useState<{ id: string; img: string } | null>(null);
+  const [accounts, setAccounts] = useState<Acc[]>([]);
+  const [people, setPeople] = useState<Per[]>([]);
+  const [charges, setCharges] = useState<Chg[]>([]);
+  const [view, setView] = useState<View>({ id: 'loading' });
+  const [hist, setHist] = useState<View[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [note, setNote] = useState('');
+  const [problem, setProblem] = useState<{ title: string; detail: string } | null>(null);
+  const retryRef = useRef<(() => void) | null>(null);
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   const load = useCallback(async () => {
     const [a, p, c] = await Promise.all([
@@ -31,220 +68,209 @@ export default function App({ signOut }: { signOut?: () => void }) {
       client.models.Person.list(),
       client.models.Charge.list(),
     ]);
-    setAccounts(a.data);
-    setPeople(p.data);
-    setCharges(c.data);
+    if (a.errors?.length || p.errors?.length || c.errors?.length) {
+      throw new Error('list');
+    }
+    setAccounts(a.data.map(mapAccount).filter((x): x is Acc => !!x));
+    setPeople(p.data.map(mapPerson).filter((x): x is Per => !!x));
+    setCharges(c.data.map(mapCharge).filter((x): x is Chg => !!x));
   }, []);
 
   useEffect(() => {
-    load();
-    // Refresh often so a payment confirmed by the webhook shows up on its own.
-    const t = setInterval(load, 8000);
-    return () => clearInterval(t);
+    let alive = true;
+    load()
+      .then(() => { if (alive) setView((v) => (v.id === 'loading' ? { id: 'home' } : v)); })
+      .catch(() => {
+        if (!alive) return;
+        retryRef.current = () => {
+          setProblem(null);
+          setView({ id: 'loading' });
+          load().then(() => setView({ id: 'home' })).catch(() => {
+            setView({ id: 'home' });
+            setProblem({ title: 'No se pudieron leer tus datos', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
+          });
+        };
+        setView({ id: 'home' });
+        setProblem({ title: 'No se pudieron leer tus datos', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
+      });
+    const t = setInterval(() => { load().catch(() => { /* the next try will show it */ }); }, 8000);
+    return () => { alive = false; clearInterval(t); };
   }, [load]);
 
-  const act = async (action: string, id: string) => {
-    setMsg('Un momento…');
+  useEffect(() => {
+    if (view.id !== 'wait' && view.id !== 'qr') return;
+    const c = charges.find((x) => x.id === view.chargeId);
+    if (c && chargeKind(c) === 'paid') setView({ id: 'paid', chargeId: c.id });
+  }, [charges, view]);
+
+  function go(next: View) {
+    setProblem(null);
+    setFormError('');
+    setNote('');
+    if (next.id === 'home') {
+      setHist([]);
+      setView({ id: 'home' });
+      return;
+    }
+    setHist((h) => [...h, viewRef.current]);
+    setView(next);
+  }
+
+  function back() {
+    if (problem) { setProblem(null); return; }
+    setFormError('');
+    setNote('');
+    setHist((h) => {
+      const prev = h[h.length - 1];
+      if (prev) setView(prev);
+      return h.slice(0, -1);
+    });
+  }
+
+  function land(next: View, message: string) {
+    setProblem(null);
+    setFormError('');
+    setNote(message);
+    setHist([{ id: 'home' }]);
+    setView(next);
+  }
+
+  async function run(task: () => Promise<void>, done?: () => void) {
+    if (busy) return;
+    setBusy(true);
+    setFormError('');
     try {
-      const r = await client.mutations.peyAction({ action, id });
-      if (r.errors?.length) throw new Error(r.errors[0].message);
-      setMsg('Listo.');
-      return r.data ?? null;
-    } catch (e) {
-      setMsg('No se pudo: ' + (e as Error).message + ' Intenta de nuevo.');
+      await task();
+      done?.();
+    } catch {
+      const again = () => { void run(task, done); };
+      retryRef.current = again;
+      setProblem({ title: 'No se pudo completar', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
+    } finally {
+      setBusy(false);
     }
-    load();
-    return null;
-  };
+  }
 
-  const showQr = async (id: string) => {
-    const out = await act('requestQr', id);
-    if (!out) return;
-    const img = JSON.parse(out).qrImage as string | null;
-    if (img) setQr({ id, img });
-    else setMsg('No se pudo generar la imagen del QR. Intenta de nuevo.');
-  };
-
-  const addAccount = async (f: FormData) => {
-    await client.models.Account.create({
-      alias: String(f.get('alias')),
-      legalName: String(f.get('legal')),
-      clabe: String(f.get('clabe')),
-      entity: f.get('entity') === 'BUSINESS' ? 'BUSINESS' : 'PERSON',
-    });
-    load();
-  };
-
-  const addPerson = async (f: FormData) => {
-    const tel = String(f.get('tel')).replace(/\D/g, '');
-    if (tel.length !== 10) {
-      setMsg('El teléfono debe tener 10 números.');
-      return;
-    }
-    await client.models.Person.create({ name: String(f.get('name')), tel });
-    load();
-  };
-
-  const newCharge = async (p: Person, f: FormData) => {
-    const amount = Number(String(f.get('amount')).replace(',', '.'));
-    if (!(amount > 0) || !f.get('account')) {
-      setMsg('Escribe el monto y elige la cuenta.');
-      return;
-    }
-    await client.models.Charge.create({
-      personId: p.id,
-      personName: p.name,
-      tel: p.tel,
-      accountId: String(f.get('account')),
-      concept: String(f.get('concept') || 'Cuota'),
-      amount,
-      month: month(),
-      status: 'PENDING',
-    });
-    load();
-  };
-
-  const cash = async (c: Charge) => {
-    await client.models.Charge.update({
-      id: c.id,
-      status: 'PAID',
-      via: 'CASH',
-      paidAt: new Date().toISOString(),
-    });
-    load();
-  };
+  function openPerson(personId: string) {
+    const month = thisMonth();
+    const mine = charges.filter((c) => c.personId === personId && c.month === month);
+    if (mine.length === 0) go({ id: 'new-charge', personId });
+    else if (mine.length === 1) {
+      const c = mine[0];
+      if (chargeKind(c) === 'paid') go({ id: 'paid', chargeId: c.id });
+      else if (chargeKind(c) === 'wait') go({ id: 'wait', chargeId: c.id });
+      else go({ id: 'charge', chargeId: c.id });
+    } else go({ id: 'person', personId, page: 0 });
+  }
 
   return (
-    <main>
-      <h1>Cuentas conmigo</h1>
-      <div className="row">
-        <button className="alt" onClick={signOut}>Salir</button>
-      </div>
-      {msg && <p className="msg" role="status">{msg}</p>}
-
-      <h2>1. Cuenta que recibe</h2>
-      {accounts.map((a) => (
-        <div className="card" key={a.id}>
-          <strong>{a.alias}</strong>
-          <span>{STATUS[a.codiStatus ?? 'PENDING']}</span>
-          {!a.peyId && <button onClick={() => act('registerAccount', a.id)}>Registrar en Pey</button>}
-          {a.peyId && a.codiStatus !== 'ACTIVE' && (
-            <button className="alt" onClick={() => act('refreshAccount', a.id)}>Revisar estado</button>
-          )}
-          {a.errorMessage && <span>{a.errorMessage}</span>}
-        </div>
-      ))}
-      <form
-        className="card"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const form = e.currentTarget;
-          addAccount(new FormData(form));
-          form.reset();
+    <Shell canBack={hist.length > 0 && view.id !== 'loading'} onBack={back} note={note}>
+      <Stage
+        view={view}
+        busy={busy}
+        formError={formError}
+        accounts={accounts}
+        people={people}
+        charges={charges}
+        signOut={signOut}
+        problem={problem}
+        onView={go}
+        onReset={(next) => {
+          setProblem(null);
+          setFormError('');
+          setNote('');
+          setHist(next.id === 'home' ? [] : [{ id: 'home' }]);
+          setView(next);
         }}
-      >
-        <label>Nombre corto<input name="alias" required /></label>
-        <label>Nombre completo del titular<input name="legal" required /></label>
-        <label>
-          CLABE (18 números)
-          <input name="clabe" required inputMode="numeric" pattern="[0-9]{18}" />
-        </label>
-        <label>
-          Es
-          <select name="entity">
-            <option value="PERSON">Persona</option>
-            <option value="BUSINESS">Negocio o institución</option>
-          </select>
-        </label>
-        <button>Agregar cuenta</button>
-      </form>
-
-      <h2>2. Personas</h2>
-      <form
-        className="card"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const form = e.currentTarget;
-          addPerson(new FormData(form));
-          form.reset();
+        onOpenPerson={openPerson}
+        onRetry={() => retryRef.current?.()}
+        onAddPerson={(name, tel) => {
+          const digits = tel.replace(/\D/g, '');
+          if (digits.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
+          void run(async () => {
+            await client.models.Person.create({ name: name.trim(), tel: digits });
+            await load();
+          }, () => land({ id: 'people' }, 'Persona guardada.'));
         }}
-      >
-        <label>Nombre<input name="name" required /></label>
-        <label>WhatsApp (10 números)<input name="tel" required inputMode="numeric" /></label>
-        <button>Agregar persona</button>
-      </form>
-
-      <h2>3. Cobros de {month()}</h2>
-      {people.map((p) => {
-        const mine = charges.filter((c) => c.personId === p.id && c.month === month());
-        return (
-          <div className="card" key={p.id}>
-            <strong>{p.name}</strong>
-            {mine.map((c) => (
-              <div key={c.id} className="card">
-                <span>{c.concept}: ${c.amount.toFixed(2)}</span>
-                <small>Código del cobro (para pruebas): {c.id}</small>
-                {c.status === 'PAID' ? (
-                  <>
-                    <span className="paid">✔ Pagado ({c.via === 'CASH' ? 'efectivo' : 'CoDi'})</span>
-                    <button className="alt" onClick={() => setReceiptFor(receiptFor === c.id ? null : c.id)}>
-                      {receiptFor === c.id ? 'Ocultar comprobante' : 'Ver y enviar comprobante'}
-                    </button>
-                    {receiptFor === c.id && (
-                      <Receipt
-                        tel={c.tel}
-                        onClose={() => setReceiptFor(null)}
-                        data={{
-                          folio: folioOf(c.id),
-                          payerName: c.personName,
-                          concept: c.concept,
-                          amount: c.amount,
-                          via: c.via === 'CASH' ? 'CASH' : 'CODI',
-                          recipient: accounts.find((a) => a.id === c.accountId)?.alias ?? '',
-                          paidAt: c.paidAt ?? new Date().toISOString(),
-                        }}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <span className="wait">⏳ Falta pagar{c.transactionId ? ' · solicitud enviada' : ''}</span>
-                    <div className="row">
-                      <button onClick={() => act('requestCodi', c.id)}>Pedir pago por CoDi</button>
-                      <button onClick={() => showQr(c.id)}>Mostrar QR de CoDi</button>
-                      <button className="alt" onClick={() => cash(c)}>Cobré en efectivo</button>
-                    </div>
-                  </>
-                )}
-                {qr?.id === c.id && c.status !== 'PAID' && (
-                  <div className="card">
-                    <img alt="QR de CoDi para pagar" width={280} height={280} src={`data:image/png;base64,${qr.img}`} />
-                    <span>Escanéalo con la app de tu banco (opción CoDi).</span>
-                    <button className="alt" onClick={() => setQr(null)}>Cerrar QR</button>
-                  </div>
-                )}
-              </div>
-            ))}
-            <form
-              className="row"
-              onSubmit={(e) => {
-                e.preventDefault();
-                newCharge(p, new FormData(e.currentTarget));
-              }}
-            >
-              <input name="concept" placeholder="Concepto" />
-              <input name="amount" inputMode="decimal" placeholder="Monto" required />
-              <select name="account" defaultValue="">
-                <option value="" disabled>Cuenta</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>{a.alias}</option>
-                ))}
-              </select>
-              <button className="alt">Crear cobro</button>
-            </form>
-          </div>
-        );
-      })}
-    </main>
+        onAddAccount={(input) => {
+          const clabe = input.clabe.replace(/\D/g, '');
+          if (clabe.length !== 18) { setFormError('La CLABE debe tener 18 números.'); return; }
+          if (!input.alias.trim() || !input.legalName.trim()) { setFormError('Escribe el nombre corto y el nombre de quien es la cuenta.'); return; }
+          void run(async () => {
+            await client.models.Account.create({
+              alias: input.alias.trim(),
+              legalName: input.legalName.trim(),
+              clabe,
+              entity: input.entity,
+            });
+            await load();
+          }, () => land({ id: 'accounts', page: 0 }, 'Cuenta guardada.'));
+        }}
+        onCreateCharge={(personId, concept, amount, accountId) => {
+          const person = people.find((x) => x.id === personId);
+          if (!person) return;
+          if (!(amount > 0)) { setFormError('Escribe el monto.'); return; }
+          if (!accountId) { setFormError('Elige la cuenta.'); return; }
+          void run(async () => {
+            const created = await client.models.Charge.create({
+              personId: person.id,
+              personName: person.name,
+              tel: person.tel,
+              accountId,
+              concept: concept.trim() || 'Cuota',
+              amount,
+              month: thisMonth(),
+              status: 'PENDING',
+            });
+            if (created.errors?.length || !created.data?.id) throw new Error('create');
+            await load();
+            go({ id: 'charge', chargeId: created.data.id });
+          });
+        }}
+        onRequest={(id) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'requestCodi', id });
+            if (r.errors?.length) throw new Error('pey');
+            await load();
+          }, () => setView({ id: 'wait', chargeId: id }));
+        }}
+        onShowQr={(id) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'requestQr', id });
+            if (r.errors?.length || !r.data) throw new Error('qr');
+            const parsed = JSON.parse(r.data) as { qrImage?: string | null };
+            if (!parsed.qrImage) throw new Error('qr');
+            await load();
+            setView({ id: 'qr', chargeId: id, img: parsed.qrImage });
+          });
+        }}
+        onCash={(id) => {
+          void run(async () => {
+            const r = await client.models.Charge.update({
+              id,
+              status: 'PAID',
+              via: 'CASH',
+              paidAt: new Date().toISOString(),
+            });
+            if (r.errors?.length) throw new Error('cash');
+            await load();
+          }, () => setView({ id: 'paid', chargeId: id }));
+        }}
+        onRegister={(id) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'registerAccount', id });
+            if (r.errors?.length) throw new Error('pey');
+            await load();
+          }, () => land({ id: 'account', accountId: id }, 'Listo. Ya la mandamos a revisar.'));
+        }}
+        onRefresh={(id) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'refreshAccount', id });
+            if (r.errors?.length) throw new Error('pey');
+            await load();
+          }, () => setNote('Ya revisamos la cuenta.'));
+        }}
+      />
+    </Shell>
   );
 }
