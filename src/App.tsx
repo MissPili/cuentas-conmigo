@@ -180,6 +180,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
             {mine.map((c) => (
               <div key={c.id} className="card">
                 <span>{c.concept}: ${c.amount.toFixed(2)}</span>
+                <small>Código del cobro (para pruebas): {c.id}</small>
                 {c.status === 'PAID' ? (
                   <span className="paid">✔ Pagado ({c.via === 'CASH' ? 'efectivo' : 'CoDi'})</span>
                 ) : (
