@@ -10,6 +10,9 @@ import { parseAmount, shiftMonth } from '../src/model.ts';
 import { explainProblem } from '../src/problems.ts';
 import { chooseSendTo, cleanHelpers, payProblem } from '../src/payers.ts';
 import { isProbe, parseShareRequest, shareLink, shortLinksWork, signupMessage, whatsappShareUrl } from '../src/links.ts';
+import {
+  activeForKeyring, codeFromAddress, dedupeNames, isKeyCode, keyState, keyringFileName, keyringUrl, newKeyCode, resolveTap,
+} from '../src/keyring.ts';
 
 const proj: Proj = { id: 'j', open: true, token: 't', capacity: 3, holdDays: 5 };
 const now = new Date('2026-11-20T12:00:00Z');
@@ -325,4 +328,113 @@ test('where codes and receipts go: the chosen number if still valid, else the fi
   assert.equal(chooseSendTo(clean, '5500000010', '5500000010'), '5500000010');
   assert.equal(chooseSendTo(clean, '5599999999', '5500000010'), '5500000011');
   assert.equal(chooseSendTo([], '', '5500000010'), '5500000010');
+});
+
+// ---- NFC keychain ----
+
+test('a keychain code is long, random, url-safe and different every time', () => {
+  const codes = new Set(Array.from({ length: 200 }, () => newKeyCode()));
+  assert.equal(codes.size, 200);
+  for (const c of codes) {
+    assert.equal(c.length, 22); // 16 random bytes
+    assert.ok(isKeyCode(c));
+    assert.match(c, /^[A-Za-z0-9_-]+$/); // nothing that needs escaping inside a web address
+  }
+});
+
+test('only well-formed codes are accepted', () => {
+  assert.equal(isKeyCode('abc'), false); // too short to be one of ours
+  assert.equal(isKeyCode('a'.repeat(22) + '!'), false);
+  assert.equal(isKeyCode(''), false);
+  assert.equal(isKeyCode(null), false);
+  assert.equal(isKeyCode(undefined), false);
+});
+
+test('the chip address is the app address plus the code, and reads back to the same code', () => {
+  const code = newKeyCode();
+  const url = new URL(keyringUrl('https://cuentasconmigo.misspili.com.mx', code));
+  assert.equal(url.origin, 'https://cuentasconmigo.misspili.com.mx');
+  assert.equal(codeFromAddress(url.pathname, url.search), code);
+});
+
+test('the code is found in /?l=<code> and in /llavero/<code>, and nowhere else', () => {
+  const code = newKeyCode();
+  assert.equal(codeFromAddress('/', '?l=' + code), code);
+  assert.equal(codeFromAddress('/llavero/' + code, ''), code);
+  assert.equal(codeFromAddress('/llavero/' + code + '/', ''), code);
+  assert.equal(codeFromAddress('/', ''), null);
+  assert.equal(codeFromAddress('/', '?l=corto'), null);
+  assert.equal(codeFromAddress('/', '?i=' + code), null); // the signup parameter is a different thing
+  assert.equal(codeFromAddress('/otra/' + code, ''), null);
+  assert.equal(codeFromAddress('/llavero/' + code + '/mas', ''), null);
+});
+
+test('who can have a keychain: approved people only, in alphabetical order', () => {
+  const list = [
+    per('1', { name: 'Zoila', status: 'ENROLLED' }),
+    per('2', { name: 'Ana' }), // added by hand: no status
+    per('3', { name: 'Beto', status: 'PENDING' }),
+    per('4', { name: 'Carla', status: 'WAITLIST' }),
+    per('5', { name: 'Dora (baja)', status: 'RELEASED' }),
+    per('6', { name: 'Álvaro', status: 'ENROLLED' }),
+  ];
+  // The accent does not move Álvaro away from the A's: Álvaro, Ana, Zoila.
+  assert.deepEqual(activeForKeyring(list).map((p) => p.id), ['6', '2', '1']);
+});
+
+test('keychain state: none, on, or off', () => {
+  assert.equal(keyState({}), 'none');
+  assert.equal(keyState({ keyCode: 'x', keyOn: true }), 'on');
+  assert.equal(keyState({ keyCode: 'x' }), 'on'); // a code with no flag works
+  assert.equal(keyState({ keyCode: 'x', keyOn: false }), 'off');
+  assert.equal(keyState({ keyOn: true }), 'none'); // a flag with no code is nothing
+});
+
+test('a tap opens the charge screen only for an active keychain of an active person', () => {
+  const a = newKeyCode();
+  const b = newKeyCode();
+  const c = newKeyCode();
+  const people = [
+    per('1', { keyCode: a, keyOn: true, status: 'ENROLLED' }),
+    per('2', { keyCode: b, keyOn: false, status: 'ENROLLED' }), // lost
+    per('3', { keyCode: c, keyOn: true, status: 'RELEASED' }), // dada de baja
+    per('4'),
+  ];
+  const ok = resolveTap(people, a);
+  assert.equal(ok.kind, 'ok');
+  assert.equal(ok.kind === 'ok' && ok.person.id, '1');
+  assert.equal(resolveTap(people, b).kind, 'off');
+  assert.equal(resolveTap(people, c).kind, 'gone');
+  assert.equal(resolveTap(people, newKeyCode()).kind, 'unknown');
+});
+
+test('a replaced keychain: the old code no longer matches anyone', () => {
+  const oldCode = newKeyCode();
+  const fresh = newKeyCode();
+  const before = [per('1', { keyCode: oldCode, keyOn: true })];
+  assert.equal(resolveTap(before, oldCode).kind, 'ok');
+  const after = [per('1', { keyCode: fresh, keyOn: true })];
+  assert.equal(resolveTap(after, oldCode).kind, 'unknown');
+  assert.equal(resolveTap(after, fresh).kind, 'ok');
+});
+
+test('a tap for a code nobody has never shows another person', () => {
+  const people = [per('1', { keyCode: newKeyCode(), keyOn: true })];
+  assert.equal(resolveTap(people, newKeyCode()).kind, 'unknown');
+  assert.equal(resolveTap([], newKeyCode()).kind, 'unknown');
+});
+
+test('image file names: the drawing name, or the first name for a photo, never the phone', () => {
+  assert.equal(keyringFileName({ name: 'Ana López', emblemName: 'Girasol', hasPhoto: false }), 'llavero-girasol.png');
+  assert.equal(keyringFileName({ name: 'Ana López', emblemName: 'Mariposa azul', hasPhoto: false }), 'llavero-mariposa-azul.png');
+  assert.equal(keyringFileName({ name: 'José Ángel Pérez', emblemName: null, hasPhoto: true }), 'llavero-jose.png');
+  assert.equal(keyringFileName({ name: 'Ana López', emblemName: 'Girasol', hasPhoto: true }), 'llavero-ana.png');
+  assert.equal(keyringFileName({ name: '   ', emblemName: null, hasPhoto: false }), 'llavero-persona.png');
+});
+
+test('repeated file names in one batch get a number', () => {
+  assert.deepEqual(
+    dedupeNames(['llavero-ana.png', 'llavero-luis.png', 'llavero-ana.png', 'llavero-ana.png']),
+    ['llavero-ana.png', 'llavero-luis.png', 'llavero-ana-2.png', 'llavero-ana-3.png'],
+  );
 });

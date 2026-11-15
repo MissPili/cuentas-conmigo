@@ -29,6 +29,7 @@ La app es de pocos pasos, con letra grande y alto contraste, pensada para person
 | Cobros del proyecto: hasta 2, cada uno **una sola vez** (inscripción $40) o **cada mes** por N meses desde un mes (mensualidad $130, 10 meses desde agosto); cobro rápido tras aprobar | Hecho; falta probarlo desplegado |
 | Dar de baja (queda "Nombre (baja)" con sus cobros) | Hecho; falta probarlo desplegado |
 | Zona de peligro: borrar personas y cobros con código al correo | Hecho (probado el borrado) |
+| Imágenes de las personas activas para imprimir (PNG) y llaveros NFC: código aleatorio por persona, activar, desactivar si se pierde, código nuevo | Hecho; falta probar con un chip y un iPhone reales |
 | Instalable como app (PWA) y fuentes sin internet | Pendiente |
 
 Lo que ya está probado con el servidor real: crear una cuenta, registrarla en Pey, crear un cobro, pagarlo con el QR de CoDi y ver **Pagado** en la app; un aviso con firma falsa se rechaza y repetir el mismo aviso no lo duplica. Lo que no está probado: compartir imágenes desde un iPhone, la inscripción por QR de punta a punta con el servidor desplegado, y personas mayores usando la app. Todavía no están en la app real la tanda (turnos), el fiado ni la instalación como PWA; solo existen en el prototipo.
@@ -82,6 +83,14 @@ Son los mismos 4 pasos de la inscripción, escritos por quien cobra y en tercera
 
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color).
 
+### Imágenes y llaveros (Más opciones → Imágenes y llaveros)
+
+| | | |
+| --- | --- | --- |
+| ![](docs/pantallas/40-imagenes-y-llaveros.png)<br>**40. Imágenes y llaveros** | ![](docs/pantallas/41-personas-activas-con-llavero.png)<br>**41. Personas activas** (cada una con el estado de su llavero) | ![](docs/pantallas/42-imagen-y-llavero-activo.png)<br>**42. Imagen para descargar y llavero activo** |
+| ![](docs/pantallas/43-imagen-sin-llavero.png)<br>**43. Todavía sin llavero** | ![](docs/pantallas/44-llavero-desactivado.png)<br>**44. Llavero desactivado (se perdió)** | ![](docs/pantallas/45-como-programar-un-llavero.png)<br>**45. Cómo programar un llavero** |
+| ![](docs/pantallas/46-al-acercar-un-llavero-desactivado.png)<br>**46. Lo que se ve al acercar un llavero desactivado** |  |  |
+
 ## Proyectos y pantalla de inicio
 
 Quien cobra puede llevar varios talleres o proyectos de cobro. Después de entrar ve **Tus proyectos** (con lo cobrado en el mes en cada uno); si solo tiene uno, entra directo. Cada proyecto tiene sus propias personas, cobros, lugares, mensualidad y **código QR de inscripción**, así que el mensaje a quien ayuda a pagar siempre nombra el taller correcto. Se cambia de proyecto o se crea otro en **Más opciones → Ver más**.
@@ -134,10 +143,26 @@ Sin verificar: que Amplify reenvíe bien la ruta y la imagen por esta regla, y l
 
 **Zona de peligro** (Más opciones, al final y discreta): borra todas las personas y todos los cobros, para limpiar datos de prueba. Pide leer el aviso, escribir BORRAR y escribir un código que llega al correo con el que se entra. No borra cuentas ni ajustes ni cancela cobros ya hechos en Pey.
 
+## Llavero NFC
+
+Idea de `nota-nfc-llavero.pdf` (no está en el repositorio): un llavero redondo con un chip NFC por persona. Al acercarlo al celular de quien cobra, se abre la pantalla de cobro de esa persona. Solo **acelera encontrar a la persona**: es en persona, necesita un celular con NFC y no sustituye a la foto ni al QR.
+
+- **Imágenes para imprimir.** En **Más opciones → Imágenes y llaveros** se ven las personas **activas** (con lugar aprobado, o agregadas a mano; no las que esperan, están en lista de espera o ya se dieron de baja). Cada una tiene un archivo PNG de 1200 × 1200 px: fondo morado hasta las orillas (sirve para cortar redondo o cuadrado sin borde blanco), aro dorado y, al centro, su dibujo o su foto (la foto solo si dio su consentimiento). **No lleva nombre ni teléfono.** El archivo se llama `llavero-<dibujo>.png` (o `llavero-<primer nombre>.png` con foto). **Descargar todas las imágenes** baja un archivo por persona, uno tras otro (sin ZIP, para no sumar dependencias); el navegador puede pedir permiso para varias descargas. La imagen se dibuja en el celular con el emoji del propio sistema, así que **se ve distinta en iPhone y en Android**: conviene descargarlas desde el iPhone con el que se van a imprimir.
+- **Qué guarda el chip.** Una sola cosa: `https://<dominio de la app>/?l=<código>`. El código son 16 bytes aleatorios (22 caracteres, 128 bits) sin relación con el nombre, el teléfono ni el orden de inscripción. El chip no guarda nombre, monto ni datos del banco, y por sí solo no cobra nada: quien no haya entrado a la app solo ve la pantalla de entrada.
+- **Qué pasa al acercarlo.** La app (con la sesión de quien cobra) busca el código **entre sus propias personas**. Si es de una persona activa y el llavero está activo, abre directo **su página de cobro** (la nota propone esto; es lo más rápido). Si el llavero se desactivó, la persona ya no está activa o el código no es de nadie, muestra un aviso en palabras claras y **nunca** abre otra persona. La dirección con el código se quita de la barra del navegador al leerla.
+- **Por persona** (en su imagen): **Activar llavero** (crea el código), **Copiar la dirección** (para escribirla en el chip), **Desactivar: se perdió** (deja de funcionar al momento), **Activar de nuevo** y **Hacer un código nuevo** (para el llavero de reemplazo, pide confirmar; el anterior ya no sirve nunca). Al dar de baja a una persona se borran también su código y su estado.
+- **Programar los chips** (pantalla *Cómo programar los llaveros*): con una app como NFC Tools, escribir un registro de tipo enlace con la dirección copiada, **probarlo con la app cerrada** y solo entonces bloquearlo (NTAG213 o NTAG215; ya bloqueado no se puede cambiar).
+
+**Por qué `/?l=<código>` y no `/llavero/<código>`:** en Amplify la ruta `/llavero/<código>` responde primero con una redirección y luego con el HTML de la app pero con estado HTTP 404; `/?l=<código>` responde 200 directo (igual que el QR de inscripción, `/?i=`). La app también entiende `/llavero/<código>`, por si algún día se prefiere esa forma (haría falta otra regla en Amplify).
+
+**Cuidado antes de bloquear un chip:** la dirección grabada incluye el dominio. Copia la dirección desde el mismo dominio y navegador con los que cobras (la sesión es por dominio y navegador) y no bloquees ningún chip hasta estar segura de que seguirás usando ese dominio.
+
+Sin verificar: tocar un chip real con un iPhone, que la imagen salga bien en otros celulares, "Descargar todas" en iPhone, y el costo/tiempo de un lote de 12 chips. No se agregó ningún servicio de AWS: son tres campos opcionales nuevos en Persona (`keyCode`, `keyOn`, `keyAt`).
+
 ## Estructura
 
 ```
-src/                  app real (pantallas, comprobante, banco de dibujos, modelo de datos)
+src/                  app real (pantallas, comprobante, banco de dibujos, modelo de datos, llaveros)
 amplify/              servidor: acceso (Cognito), datos (DynamoDB) y cuatro funciones
   functions/pey/        llama a Pey: registrar cuenta, solicitud CoDi, QR, revisar pago
   functions/pey-webhook/  recibe el aviso de pago de Pey y verifica la firma
@@ -160,8 +185,8 @@ npm install
 npm run dev
 ```
 
-- **Modo de demostración** (sin servidor ni cuenta): abre `http://localhost:5173/demo/index.html?v=home`. Otras pantallas: `who`, `person`, `charge`, `qr`, `send-qr`, `wait`, `paid`, `receipt`, `new-charge`, `add-person`, `accounts`, `account`, `projects`, `new-project`, `more`, `more2`, `people`, `report`, `places`, `places-settings`, `reg-qr`, `review`, `seat`, `seat-late`, `seat-leave`, `danger`, y la inscripción: `signup1`, `signup2`, `signup2-pick`, `signup3`, `signup4`, `signup-done`.
-- **Pruebas de lógica** (lugares, vencimientos, reporte, dibujos): `npm test` (14 pruebas).
+- **Modo de demostración** (sin servidor ni cuenta): abre `http://localhost:5173/demo/index.html?v=home`. Otras pantallas: `who`, `person`, `charge`, `qr`, `send-qr`, `wait`, `paid`, `receipt`, `new-charge`, `add-person`, `accounts`, `account`, `projects`, `new-project`, `more`, `more2`, `people`, `report`, `places`, `places-settings`, `reg-qr`, `review`, `seat`, `seat-late`, `seat-leave`, `danger`, los llaveros (`keyring-hub`, `keyrings`, `keyring`, `keyring-none`, `keyring-off`, `keyring-help`, `key-tap-off`, `key-tap-unknown`), y la inscripción: `signup1`, `signup2`, `signup2-pick`, `signup3`, `signup4`, `signup-done`.
+- **Pruebas de lógica** (lugares, vencimientos, reporte, dibujos): `npm test` (44 pruebas, incluidas las del llavero: códigos, lectura de la dirección y qué hace cada toque).
 - **Capturas del README:** con `npm run dev` corriendo, `node scripts/screens.cjs` (necesita Google Chrome; `CHROME_PATH` cambia su ubicación). Borra las capturas con numeración vieja.
 - **App completa:** necesita `amplify_outputs.json` en la raíz, que Amplify genera al desplegar (descárgalo en la consola de Amplify). No se sube al repositorio.
 - **Prueba del webhook sin dinero:** `WEBHOOK_URL=… WEBHOOK_SECRET=… CHARGE_ID=… node scripts/test-webhook.cjs`.
@@ -184,6 +209,7 @@ Las llaves nunca van en el repositorio ni en el código. Hay un aviso de presupu
 - La inscripción pública no manda cobros ni mensajes; solo registra, y limita los intentos.
 - La foto solo se guarda con autorización explícita; sin foto se usa un dibujo. Al dar de baja se borra.
 - Borrar datos pide una confirmación por correo, para que no se haga por error.
+- El chip del llavero solo guarda una dirección con un código aleatorio largo: sin nombre, monto ni datos del banco. Un llavero perdido se desactiva al momento; el de reemplazo recibe un código nuevo.
 - Los datos de este repositorio (personas, teléfonos, CLABEs) son inventados o son la CLABE de prueba que Pey publica.
 
 ## Qué falta
@@ -192,6 +218,7 @@ Las llaves nunca van en el repositorio ni en el código. Hay un aviso de presupu
 2. Pasar a la app real la tanda, el fiado y la foto tomada por quien cobra, que hoy solo están en el prototipo.
 3. Hacerla instalable (PWA), alojar las tipografías y probarla con la primera usuaria.
 4. Dibujos propios en lugar de emojis (se ven distinto en Android y iPhone).
-5. Confirmar con Pey cuántas cuentas admite una llave y si el titular de una cuenta puede ser distinto del dueño de la llave (necesario para la cuenta del DIF).
+5. Probar un llavero NFC real con un iPhone (escribir un chip, acercarlo con la app cerrada, ver que abre la pantalla de cobro) antes de bloquear ninguno.
+6. Confirmar con Pey cuántas cuentas admite una llave y si el titular de una cuenta puede ser distinto del dueño de la llave (necesario para la cuenta del DIF).
 
 La arquitectura prevista (Pey, CoDi, Amplify y las reglas de aprobación) está en `docs/ARQUITECTURA.md`.

@@ -5,6 +5,7 @@ import type { Schema } from '../amplify/data/resource';
 import type { Acc, Chg, Per, Proj, View } from './model';
 import { freeSpots, isFull } from './places';
 import { pickEmblems } from './emblems';
+import { KEY_PARAM, codeFromAddress, newKeyCode, resolveTap } from './keyring';
 import { legacyPlan, parsePlans, serializePlans } from './plans';
 import { chargeKind, thisMonth } from './model';
 import { Stage } from './screens';
@@ -64,6 +65,9 @@ function mapPerson(p: Person): Per | null {
     helperInfo: (p.helpers ?? []).map((tel, i) => ({ tel: tel ?? '', name: p.helperNames?.[i] ?? '', rel: p.helperRels?.[i] ?? '' })).filter((h) => !!h.tel),
     emblem: p.emblem,
     photo: p.photo,
+    keyCode: p.keyCode,
+    keyOn: p.keyOn,
+    keyAt: p.keyAt,
   };
 }
 
@@ -134,28 +138,61 @@ export default function App({ signOut }: { signOut?: () => void }) {
     if (a.errors?.length || p.errors?.length || c.errors?.length || j.errors?.length) {
       throw new Error('list');
     }
+    const everyone = p.data.map(mapPerson).filter((x): x is Per => !!x);
     setAccounts(a.data.map(mapAccount).filter((x): x is Acc => !!x));
-    setPeople(p.data.map(mapPerson).filter((x): x is Per => !!x));
+    setPeople(everyone);
     setCharges(c.data.map(mapCharge).filter((x): x is Chg => !!x));
     const list = j.data.map(mapProject).filter((x): x is Proj => !!x);
     projectsRef.current = list;
     setProjects(list);
     // With a single project there is nothing to choose: go straight in.
     setProjectId((cur) => (cur && list.some((x) => x.id === cur) ? cur : list.length === 1 ? list[0].id : null));
+    return { people: everyone, projects: list };
   }, []);
 
   const firstView = (): View => (projectsRef.current.length === 1 ? { id: 'home' } : { id: 'projects' });
 
+  // The NFC keychain opens the app on /?l=<code>. It is read once, here, and resolved with the people just loaded.
+  const tapCode = useRef<string | null>(codeFromAddress(location.pathname, location.search));
+
+  /** First screen after the data arrives: the person of a tapped keychain, or the usual start. */
+  function openFirst(d: { people: Per[]; projects: Proj[] }) {
+    const code = tapCode.current;
+    tapCode.current = null;
+    if (!code) { setView((v) => (v.id === 'loading' ? firstView() : v)); return; }
+    // The code does not stay in the address bar (history, screenshots, a refresh that would reopen it).
+    const clean = new URL(location.href);
+    clean.searchParams.delete(KEY_PARAM);
+    if (clean.pathname.startsWith('/llavero')) clean.pathname = '/';
+    history.replaceState(null, '', clean);
+
+    const tap = resolveTap(d.people, code);
+    setProblem(null);
+    setFormError('');
+    if (tap.kind === 'unknown') { setHist([]); setView({ id: 'key-tap', kind: 'unknown' }); return; }
+    // Rows from before projects existed belong to the oldest project.
+    const oldest = [...d.projects].sort((x, y) => (x.createdAt ?? '').localeCompare(y.createdAt ?? ''))[0]?.id ?? null;
+    const pid = tap.person.projectId ?? oldest;
+    if (pid) setProjectId(pid);
+    setHist([{ id: 'home' }]);
+    if (tap.kind === 'ok') {
+      setNote(`Llavero de ${tap.person.name.split(' ')[0]}.`);
+      setView({ id: 'person', personId: tap.person.id, page: 0 });
+    } else {
+      setView({ id: 'key-tap', kind: tap.kind, personId: tap.person.id });
+    }
+  }
+
   useEffect(() => {
     let alive = true;
     load()
-      .then(() => { if (alive) setView((v) => (v.id === 'loading' ? firstView() : v)); })
+      .then((d) => { if (alive) openFirst(d); })
       .catch(() => {
         if (!alive) return;
         retryRef.current = () => {
           setProblem(null);
           setView({ id: 'loading' });
-          load().then(() => setView(firstView())).catch(() => {
+          load().then((d) => openFirst(d)).catch(() => {
             setView({ id: 'home' });
             setProblem({ title: 'No se pudieron leer tus datos', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
           });
@@ -490,7 +527,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
                 const d = await client.models.Person.delete({ id: personId });
                 if (d.errors?.length) throw new Error('seat');
               } else {
-                const label = `${person.name.trim().split(/s+/)[0]} (baja)`;
+                const label = `${person.name.trim().split(/\s+/)[0]} (baja)`;
                 for (let i = 0; i < mine.length; i += 10) {
                   const rs = await Promise.all(mine.slice(i, i + 10).map((c) => client.models.Charge.update({ id: c.id, personName: label, tel: 'baja' })));
                   if (rs.some((x) => x.errors?.length)) throw new Error('seat');
@@ -498,6 +535,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
                 const u = await client.models.Person.update({
                   id: personId, name: label, tel: 'baja', status: 'RELEASED', note: null, helpers: [], emblem: null, photo: null,
                   photoConsent: false, consentShared: false, heldOn: null, regAt: null, via: null,
+                  keyCode: null, keyOn: null, keyAt: null, // a keychain of someone dada de baja must never open anything again
                 });
                 if (u.errors?.length) throw new Error('seat');
               }
@@ -508,6 +546,36 @@ export default function App({ signOut }: { signOut?: () => void }) {
             if (r.errors?.length) throw new Error('seat');
             await load();
           }, () => land(action === 'release' || action === 'extend' ? { id: 'places' } : { id: 'seat', personId }, message));
+        }}
+        onKey={(personId, action) => {
+          const person = people.find((x) => x.id === personId);
+          if (!person) return;
+          void run(async () => {
+            if (action === 'emblem') {
+              const taken = people.filter((x) => x.status !== 'RELEASED').map((x) => x.emblem ?? '');
+              const pick = pickEmblems(taken, 1)[0];
+              if (!pick) throw new Error('emblem');
+              const r = await client.models.Person.update({ id: personId, emblem: pick.id });
+              if (r.errors?.length) throw failed(r.errors);
+            } else {
+              const now = new Date().toISOString();
+              // 'activate' reuses a code that already exists (never two codes for one person); 'new' always makes another.
+              const patch =
+                action === 'activate' ? { keyCode: person.keyCode || newKeyCode(), keyOn: true, keyAt: person.keyCode ? person.keyAt : now }
+                : action === 'on' ? { keyOn: true }
+                : action === 'off' ? { keyOn: false }
+                : { keyCode: newKeyCode(), keyOn: true, keyAt: now };
+              const r = await client.models.Person.update({ id: personId, ...patch });
+              if (r.errors?.length) throw failed(r.errors);
+            }
+            await load();
+          }, () => setNote(
+            action === 'emblem' ? 'Listo. Ya tiene su dibujo.'
+            : action === 'activate' ? 'Listo. Su llavero está activo.'
+            : action === 'on' ? 'Listo. Su llavero volvió a funcionar.'
+            : action === 'off' ? 'Listo. Su llavero ya no abre nada.'
+            : 'Listo. Hay un código nuevo. El llavero anterior ya no sirve.',
+          ));
         }}
         onCheck={(id) => {
           void run(async () => {

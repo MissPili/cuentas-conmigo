@@ -27,6 +27,7 @@ export const IcoQr = () => (
     <path d="M14 14h2v2h-2zM18 14v6h-4M14 18h2" />
   </Icon>
 );
+export const IcoKey = () => <Icon><circle cx="8" cy="12" r="4" /><path d="M12 12h9M18 12v3.5M21 12v2.5" /></Icon>;
 export const IcoBack = () => <Icon><path d="M15 5l-7 7 7 7" /></Icon>;
 export const IcoOut = () => <Icon><path d="M10 5H6v14h4M10 12h9M16 8l4 4-4 4" /></Icon>;
 

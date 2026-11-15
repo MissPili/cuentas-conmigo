@@ -12,6 +12,7 @@ import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3'
 import { duePlans, type Plan } from './plans';
 import type { Problem } from './problems';
 import { AddPerson, type AddPersonInitial } from './AddPerson';
+import { KeyTap, KeyringDetail, KeyringHelp, KeyringHub, Keyrings, type KeyAction } from './screensKeys';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
 export type StageProps = {
@@ -27,6 +28,8 @@ export type StageProps = {
   onReset: (next: View) => void;
   onOpenPerson: (personId: string) => void;
   onAddPerson: (input: NewPerson) => void;
+  /** NFC keychain of a person: make it, switch it off or on, new code for a replacement, or pick a drawing for the image. */
+  onKey: (personId: string, action: KeyAction) => void;
   /** A screen with its own steps asks the bar's "Atrás" to go back inside it first (returns true when it did). */
   onInterceptBack: (fn: (() => boolean) | null) => void;
   /** Only for the demo harness (screenshots). */
@@ -97,6 +100,8 @@ export function Stage(p: StageProps) {
   }
 
   const v = p.view;
+  // What a keychain tap shows when it cannot open a charge: it must not depend on having chosen a project.
+  if (v.id === 'key-tap') return <KeyTap {...p} kind={v.kind} personId={v.personId} />;
   if (v.id === 'projects' || !p.project) return <ProjectsView {...p} />;
   if (v.id === 'new-project') return <NewProject {...p} />;
   if (v.id === 'home') return <Home {...p} />;
@@ -117,6 +122,10 @@ export function Stage(p: StageProps) {
   if (v.id === 'reg-qr') return <RegQr {...p} />;
   if (v.id === 'places-settings') return <PlacesSettings {...p} />;
   if (v.id === 'report') return <ReportView {...p} month={v.month} />;
+  if (v.id === 'keyring-hub') return <KeyringHub {...p} />;
+  if (v.id === 'keyrings') return <Keyrings {...p} page={v.page} />;
+  if (v.id === 'keyring') return <KeyringDetail {...p} personId={v.personId} />;
+  if (v.id === 'keyring-help') return <KeyringHelp />;
   if (v.id === 'people') return <People {...p} />;
   if (v.id === 'add-person') return <AddPerson {...p} />;
   if (v.id === 'accounts') return <Accounts {...p} page={v.page} />;

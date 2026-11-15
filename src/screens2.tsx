@@ -2,7 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import type { StageProps } from './screens';
 import { money, monthName, shiftMonth, thisMonth } from './model';
-import { Alert, Choice, Field, IcoBank, IcoCash, IcoOut, IcoPeople, Status } from './ui';
+import { Alert, Choice, Field, IcoBank, IcoCash, IcoKey, IcoOut, IcoPeople, Status } from './ui';
 import { canCharge } from './places';
 import { buildReport, reportCsv } from './report';
 
@@ -15,7 +15,7 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
         <Choice primary icon={<IcoCash />} label="Reporte del mes" hint="Quién pagó y quién falta" onClick={() => onView({ id: 'report', month: thisMonth() })} />
         <Choice icon={<IcoPeople />} label="Personas" hint="Nombres, teléfonos y bajas" onClick={() => onView({ id: 'people' })} />
         <Choice icon={<IcoPeople />} label="Lugares e inscripciones" hint="Cupo, código QR y lista de espera" onClick={() => onView({ id: 'places' })} />
-        <Choice label="Ver más" hint="Cuentas, proyectos y salir" onClick={() => onView({ id: 'more', page: 1 })} />
+        <Choice label="Ver más" hint="Cuentas, llaveros, proyectos y salir" onClick={() => onView({ id: 'more', page: 1 })} />
       </section>
     );
   }
@@ -23,6 +23,7 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
     <section className="stack">
       <h1>Más opciones</h1>
       <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
+      <Choice icon={<IcoKey />} label="Imágenes y llaveros" hint="Descargar imágenes y activar llaveros" onClick={() => onView({ id: 'keyring-hub' })} />
       {projects.length > 1 || !project ? <Choice icon={<IcoPeople />} label="Cambiar de proyecto" hint="Otro taller o cobro" onClick={() => onReset({ id: 'projects' })} /> : <Choice icon={<IcoPeople />} label="Nuevo proyecto" hint="Otro taller o cobro" onClick={() => onView({ id: 'new-project' })} />}
       {signOut ? <Choice icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
       <p className="hint">Versión de la app: {__BUILD__}</p>

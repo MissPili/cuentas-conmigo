@@ -31,6 +31,9 @@ export type Per = {
   regAt?: string | null; // when they signed up through the QR
   emblem?: string | null; // id of the picture chosen from the bank (see emblems.ts)
   photo?: string | null; // small JPEG as a data URL, only with consent
+  keyCode?: string | null; // NFC keychain code (see keyring.ts); empty = no keychain yet
+  keyOn?: boolean | null; // false = switched off (lost)
+  keyAt?: string | null; // when the current code was made
 };
 
 /** What the collector types to add a person by hand (same data the person gives in the signup). */
@@ -104,6 +107,11 @@ export type View =
   | { id: 'reg-qr' }
   | { id: 'places-settings' }
   | { id: 'report'; month: string }
+  | { id: 'keyring-hub' }
+  | { id: 'keyrings'; page: number }
+  | { id: 'keyring'; personId: string }
+  | { id: 'keyring-help' }
+  | { id: 'key-tap'; kind: 'off' | 'unknown' | 'gone'; personId?: string }
   | { id: 'loading' };
 
 export type Kind = 'paid' | 'wait' | 'due' | 'bad';

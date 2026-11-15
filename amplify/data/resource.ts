@@ -36,6 +36,11 @@ const schema = a
       helperRels: a.string().array(),
       sendTo: a.string(), // telephone, among the ones they registered, where codes and receipts should go
       consentShared: a.boolean(), // agreed that the helpers' numbers are shared with the collector
+      // NFC keychain: a long random code (the only thing the chip holds, inside a web address), and whether it works.
+      // Losing the keychain = switch it off; a replacement gets a new code, so the old chip never opens anything again.
+      keyCode: a.string(),
+      keyOn: a.boolean(),
+      keyAt: a.string(), // ISO time the current code was made
       // Declared on purpose: the public signup function creates rows on the collector's behalf and must set the owner.
       owner: a.string(),
     }).secondaryIndexes((i) => [i('tel')]).authorization((allow) => [allow.owner()]),

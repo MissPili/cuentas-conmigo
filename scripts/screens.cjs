@@ -46,6 +46,13 @@ const SHOTS = [
   ['add-person-pick', '37-agregar-persona-elegir-dibujo'],
   ['add-person-pay', '38-agregar-persona-como-paga'],
   ['add-person-review', '39-agregar-persona-revisar'],
+  ['keyring-hub', '40-imagenes-y-llaveros'],
+  ['keyrings', '41-personas-activas-con-llavero'],
+  ['keyring', '42-imagen-y-llavero-activo'],
+  ['keyring-none', '43-imagen-sin-llavero'],
+  ['keyring-off', '44-llavero-desactivado'],
+  ['keyring-help', '45-como-programar-un-llavero'],
+  ['key-tap-off', '46-al-acercar-un-llavero-desactivado'],
 ];
 // Screens that need a tap to reach (text of the button to press).
 const TAP = { 'seat-leave': 'Dar de baja' };

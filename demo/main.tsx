@@ -1,7 +1,7 @@
 // Demo harness: the real screens with INVENTED data and no server. Used for screenshots and design work.
 // Run `npm run dev` and open /demo/index.html?v=home. Views: home, more, who, person, charge, cash, wait, qr, send-qr, paid,
 // receipt, people, add-person, new-charge, accounts, account, add-account, report, places, seats, review, seat,
-// seat-late, reg-qr, places-settings, problem, and the public signup page: signup1 ... signup4, signup-done, signup-full.
+// seat-late, reg-qr, places-settings, keyring-hub, keyrings, keyring, keyring-off, keyring-none, keyring-help, key-tap-off, key-tap-unknown, problem, and the public signup page: signup1 ... signup4, signup-done, signup-full.
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import '../src/index.css';
@@ -18,8 +18,8 @@ const accounts: Acc[] = [
 ];
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
 const people: Per[] = [
-  { id: 'p1', name: 'Rosa Martínez', tel: '5500000001', emblem: 'gato', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
-  { id: 'p2', name: 'Juan López', tel: '5500000002', emblem: 'perro', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
+  { id: 'p1', name: 'Rosa Martínez', tel: '5500000001', emblem: 'gato', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40), keyCode: 'Q7mX2vN9kLd4RtYb8WpZcA', keyOn: true },
+  { id: 'p2', name: 'Juan López', tel: '5500000002', emblem: 'perro', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40), keyCode: 'Hs3TgE5uVq1JfWz0Xn6MoB', keyOn: false },
   { id: 'p3', name: 'Elena Ruiz', tel: '5500000003', emblem: 'pez', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
   { id: 'p4', name: 'Pedro Sánchez', tel: '5500000004', emblem: 'nopal', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
   { id: 'p5', name: 'Lucía Torres', tel: '5500000005', emblem: 'luna', status: 'ENROLLED', via: 'QR', heldOn: daysAgo(8), helpers: ['5500000015'], helperInfo: [{ tel: '5500000015', name: 'Ana Torres', rel: 'mi hija' }], sendTo: '5500000015', regAt: daysAgo(9) },
@@ -99,6 +99,14 @@ function start(): View {
     case 'seat-leave': return { id: 'seat', personId: 'p3' };
     case 'seat-late': return { id: 'seat', personId: 'p5' };
     case 'reg-qr': return { id: 'reg-qr' };
+    case 'keyring-hub': return { id: 'keyring-hub' };
+    case 'keyrings': return { id: 'keyrings', page: 0 };
+    case 'keyring': return { id: 'keyring', personId: 'p1' };
+    case 'keyring-off': return { id: 'keyring', personId: 'p2' };
+    case 'keyring-none': return { id: 'keyring', personId: 'p3' };
+    case 'keyring-help': return { id: 'keyring-help' };
+    case 'key-tap-off': return { id: 'key-tap', kind: 'off', personId: 'p2' };
+    case 'key-tap-unknown': return { id: 'key-tap', kind: 'unknown' };
     case 'places-settings': return { id: 'places-settings' };
     default: return { id: 'home' };
   }
@@ -168,6 +176,7 @@ function Demo() {
         onWipe={async () => ''}
         onRotateToken={noop}
         onSeat={noop}
+        onKey={noop}
         onRequest={() => setView({ id: 'wait', chargeId: 'c3' })}
         onShowQr={() => setView({ id: 'qr', chargeId: 'c3', img: fakeQr() })}
         onCash={() => setView({ id: 'paid', chargeId: 'c3' })}

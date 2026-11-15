@@ -306,6 +306,8 @@ a.choice { text-decoration: none; box-sizing: border-box; }
 .linkbox p { margin: 0; }
 .link-text { font-size: 1.25rem; line-height: 1.5; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; color: var(--soft); }
 
+.steps-list { margin: 0; padding-left: 1.6em; display: grid; gap: 12px; font-size: 1.25rem; line-height: 1.5; font-weight: 600; }
+
 /* Picture that identifies a person. */
 .avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; display: inline-grid; place-items: center; font-size: 2rem; line-height: 1; background: #fff; border: 3px solid #4E1A6E; }
 .avatar.initial { background: #EFE8F5; color: #4E1A6E; font-size: 1.6rem; font-weight: 800; }
