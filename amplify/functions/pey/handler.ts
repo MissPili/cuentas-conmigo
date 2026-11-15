@@ -8,10 +8,14 @@ const PEY = 'https://api.pey.mx';
 
 type Handler = Schema['peyAction']['functionHandler'];
 
+// A pasted key often carries a trailing space/newline or a "Bearer " prefix; clean it.
+const apiKey = () => (env.PEY_API_KEY ?? "").trim().replace(/^Bearer\s+/i, "");
+
 async function peyCall(path: string, method: 'GET' | 'POST', body?: unknown) {
+  console.log("pey call", method, path, "keyLength", apiKey().length); // never log the key itself
   const res = await fetch(PEY + path, {
     method,
-    headers: { Authorization: `Bearer ${env.PEY_API_KEY}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await res.text();
