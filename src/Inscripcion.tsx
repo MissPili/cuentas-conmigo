@@ -344,19 +344,22 @@ export default function Inscripcion({ token, registerUrl, initial }: {
             </div>
             {cleanHelpers.length ? (
             <fieldset className="stack choose">
-              <legend className="who-line">¿A quién le mandamos tu código de pago y tu comprobante?</legend>
+              <legend className="ask">¿A quién le mandamos tu código de pago y tu comprobante?</legend>
               {[...cleanHelpers.map((h) => ({ tel: h.tel, text: `${h.name} (${h.rel})` })), { tel: digits(tel), text: 'A mí, a mi WhatsApp' }].map((o) => (
-                <label key={o.tel} className="check">
+                <label key={o.tel} className={sendTel === o.tel ? 'opt on' : 'opt'}>
                   <input type="radio" name="sendTo" checked={sendTel === o.tel} onChange={() => setSendTo(o.tel)} />
-                  <span>{o.text}</span>
+                  <span>{o.text}{sendTel === o.tel ? ' ✔' : ''}</span>
                 </label>
               ))}
             </fieldset>
             ) : null}
-            <label className="check">
-              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-              <span>Acepto que estos teléfonos se compartan con quien da el taller.</span>
-            </label>
+            <div className="consent">
+              <h2 className="ask">Antes de enviar</h2>
+              <label className="check">
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                <span>Acepto que estos teléfonos se compartan con quien da el taller.</span>
+              </label>
+            </div>
             <Choice primary icon={<IcoCheck />} label={busy ? 'Un momento…' : 'Enviar inscripción'} onClick={() => { void send(); }} />
           </div>
         ) : null}
