@@ -1,11 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Amplify } from 'aws-amplify';
-import { Authenticator } from '@aws-amplify/ui-react';
+import { I18n } from 'aws-amplify/utils';
+import { Authenticator, translations } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import outputs from '../amplify_outputs.json';
 import App from './App';
+import favicon from './assets/favicon.png';
 import './index.css';
+
+I18n.putVocabularies(translations);
+I18n.setLanguage('es');
+document.documentElement.lang = 'es-MX';
+document.title = 'Cuentas conmigo';
+const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+if (icon) icon.href = favicon;
 
 Amplify.configure(outputs);
 
