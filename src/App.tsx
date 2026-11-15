@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
+import Receipt from './Receipt';
+import { folioOf } from './comprobante';
 
 const client = generateClient<Schema>();
 type Account = Schema['Account']['type'];
@@ -20,6 +22,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
   const [people, setPeople] = useState<Person[]>([]);
   const [charges, setCharges] = useState<Charge[]>([]);
   const [msg, setMsg] = useState('');
+  const [receiptFor, setReceiptFor] = useState<string | null>(null);
   const [qr, setQr] = useState<{ id: string; img: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -182,7 +185,27 @@ export default function App({ signOut }: { signOut?: () => void }) {
                 <span>{c.concept}: ${c.amount.toFixed(2)}</span>
                 <small>Código del cobro (para pruebas): {c.id}</small>
                 {c.status === 'PAID' ? (
-                  <span className="paid">✔ Pagado ({c.via === 'CASH' ? 'efectivo' : 'CoDi'})</span>
+                  <>
+                    <span className="paid">✔ Pagado ({c.via === 'CASH' ? 'efectivo' : 'CoDi'})</span>
+                    <button className="alt" onClick={() => setReceiptFor(receiptFor === c.id ? null : c.id)}>
+                      {receiptFor === c.id ? 'Ocultar comprobante' : 'Ver y enviar comprobante'}
+                    </button>
+                    {receiptFor === c.id && (
+                      <Receipt
+                        tel={c.tel}
+                        onClose={() => setReceiptFor(null)}
+                        data={{
+                          folio: folioOf(c.id),
+                          payerName: c.personName,
+                          concept: c.concept,
+                          amount: c.amount,
+                          via: c.via === 'CASH' ? 'CASH' : 'CODI',
+                          recipient: accounts.find((a) => a.id === c.accountId)?.alias ?? '',
+                          paidAt: c.paidAt ?? new Date().toISOString(),
+                        }}
+                      />
+                    )}
+                  </>
                 ) : (
                   <>
                     <span className="wait">⏳ Falta pagar{c.transactionId ? ' · solicitud enviada' : ''}</span>

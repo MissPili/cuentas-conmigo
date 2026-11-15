@@ -12,3 +12,4 @@ label { display: grid; gap: 4px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .paid { color: var(--ok); font-weight: 700; } .wait { font-weight: 700; }
 .msg { border: 2px dashed var(--line); padding: 10px; border-radius: 10px; }
+a.btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:8px 14px; border:2px solid var(--ink); border-radius:10px; background:var(--ink); color:#fff; text-decoration:none; }
