@@ -233,6 +233,14 @@ a.choice { text-decoration: none; box-sizing: border-box; }
   line-height: 1.5;
   padding: 24px 16px;
 }
+[data-amplify-authenticator] .top {
+  margin: 4px auto 12px;
+  max-width: 18rem;
+}
+[data-amplify-authenticator] .top img {
+  height: 52px;
+  margin: 0 auto;
+}
 [data-amplify-authenticator] button,
 [data-amplify-authenticator] input {
   min-height: 3rem;
