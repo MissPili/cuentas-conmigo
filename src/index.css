@@ -283,7 +283,8 @@ a.choice { text-decoration: none; box-sizing: border-box; }
 .costs .ask { margin: 0 0 4px; }
 .cost-row { margin: 0; display: grid; gap: 2px; font-size: 1.25rem; line-height: 1.5; }
 .cost-row strong { font-size: 1.5rem; }
-.cost-total { margin: 4px 0 0; padding-top: 8px; border-top: 3px solid #4E1A6E; font-size: 1.5rem; }
+.cost-total { margin: 0; font-size: 1.25rem; font-weight: 400; color: var(--soft); }
+.cost-note { font-size: 1.25rem; font-weight: 400; color: var(--soft); }
 
 /* Picture that identifies a person. */
 .avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; display: inline-grid; place-items: center; font-size: 2rem; line-height: 1; background: #fff; border: 3px solid #4E1A6E; }

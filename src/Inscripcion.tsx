@@ -42,12 +42,15 @@ function Costs({ plans }: { plans: PublicPlan[] }) {
             {p.kind === 'ONCE'
               ? 'Se paga una sola vez.'
               : p.start && p.months
-                ? `Se paga cada mes, ${p.months} meses (de ${label(p.start)} a ${label(shiftMonth(p.start, p.months - 1))}).`
+                ? 'Se paga cada mes.'
                 : 'Se paga cada mes.'}
           </span>
+          {p.kind === 'MONTHLY' && p.start && p.months ? (
+            <span className="cost-note">{p.months} meses, de {label(p.start)} a {label(shiftMonth(p.start, p.months - 1))}.</span>
+          ) : null}
         </p>
       ))}
-      {plans.length > 1 || plans[0]?.kind === 'MONTHLY' ? <p className="cost-total"><strong>En total: {money(total)}</strong></p> : null}
+      {plans.length > 1 || plans[0]?.kind === 'MONTHLY' ? <p className="cost-total">Suma de todo el ciclo: {money(total)}</p> : null}
     </div>
   );
 }
