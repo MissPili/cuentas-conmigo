@@ -1,5 +1,5 @@
 // Demo harness: the real screens with INVENTED data and no server. Used for screenshots and design work.
-// Run `npm run dev` and open /demo/index.html?v=home. Views: home, more, who, person, charge, cash, wait, qr, paid,
+// Run `npm run dev` and open /demo/index.html?v=home. Views: home, more, who, person, charge, cash, wait, qr, send-qr, paid,
 // receipt, people, add-person, new-charge, accounts, account, add-account, report, places, seats, review, seat,
 // seat-late, reg-qr, places-settings, problem, and the public signup page: signup1 ... signup4, signup-done, signup-full.
 import React, { useState } from 'react';
@@ -24,7 +24,7 @@ const people: Per[] = [
   { id: 'p6', name: 'Marta Díaz', tel: '5500000006', status: 'PENDING', via: 'QR', helpers: ['5500000016', '5500000026'], regAt: daysAgo(0) },
   { id: 'p7', name: 'Hugo Ramírez', tel: '5500000007', status: 'WAITLIST', via: 'QR', helpers: ['5500000017'], regAt: daysAgo(1) },
 ];
-const project: Proj = { id: 'j1', name: 'Taller', open: true, token: 'demo-token-demo-token-demo', capacity: 6, holdDays: 5 };
+const project: Proj = { id: 'j1', name: 'Taller', open: true, token: 'demo-token-demo-token-demo', capacity: 6, holdDays: 5, monthlyConcept: 'Mensualidad', monthlyAmount: 130, accountId: 'a1' };
 const m = thisMonth();
 const base = { month: m, accountId: 'a1', concept: 'Mensualidad', amount: 130, confirmsPlace: true };
 const now = new Date().toISOString();
@@ -74,6 +74,7 @@ function start(): View {
     case 'cash': return { id: 'cash', chargeId: 'c3' };
     case 'wait': return { id: 'wait', chargeId: 'c2' };
     case 'qr': return { id: 'qr', chargeId: 'c3', img: fakeQr() };
+    case 'send-qr': return { id: 'send-qr', chargeId: 'c3', img: fakeQr() };
     case 'paid': return { id: 'paid', chargeId: 'c1' };
     case 'receipt': return { id: 'receipt', chargeId: 'c1' };
     case 'people': return { id: 'people' };

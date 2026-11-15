@@ -35,6 +35,10 @@ const schema = a
       token: a.string().required(), // random, rotatable; lives in the signup QR
       capacity: a.integer().required(), // 0 = places switched off
       holdDays: a.integer().required(),
+      // Optional: the usual monthly fee, so a new person can be charged in one tap after approval.
+      monthlyConcept: a.string(),
+      monthlyAmount: a.float(),
+      accountId: a.string(), // account that receives the monthly fee
     }).secondaryIndexes((i) => [i('token')]).authorization((allow) => [allow.owner()]),
     // Rate limit counters for the public signup. Only the signup function can touch them.
     RegAttempt: a.model({

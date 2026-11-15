@@ -42,6 +42,7 @@ Lugares, inscripciones y el reporte (pantallas 13 a 19), y la página pública d
 | ![Aprobar](docs/pantallas/16-aprobar-una-inscripcion.png)<br>**16. Aprobar una inscripción** | ![Apartado vencido](docs/pantallas/17-apartado-vencido.png)<br>**17. Apartado vencido** | ![Código para inscribir](docs/pantallas/18-codigo-para-inscribir.png)<br>**18. Código para inscribir** |
 | ![Ajustes](docs/pantallas/19-ajustes-de-lugares.png)<br>**19. Ajustes de lugares** | ![Paso 1](docs/pantallas/20-inscripcion-paso-1.png)<br>**20. Inscripción, paso 1** | ![Paso 2](docs/pantallas/21-inscripcion-paso-2.png)<br>**21. Inscripción, paso 2** |
 | ![Paso 3](docs/pantallas/22-inscripcion-paso-3.png)<br>**22. Inscripción, paso 3** | ![Paso 4](docs/pantallas/23-inscripcion-paso-4.png)<br>**23. Inscripción, paso 4** | ![Lista](docs/pantallas/24-inscripcion-lista.png)<br>**24. Inscripción enviada** |
+| ![Mandar el código](docs/pantallas/25-mandar-el-codigo.png)<br>**25. Mandar el código como imagen** | | |
 
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color). El comprobante es una imagen de 1080×1350 con **PAGADO**, el monto grande y los datos del pago.
 

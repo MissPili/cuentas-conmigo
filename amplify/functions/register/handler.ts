@@ -21,6 +21,12 @@ const PER_IP_PER_HOUR = 6;
 
 type Client = ReturnType<typeof generateClient<Schema>>;
 
+/** A GraphQL call that fails returns errors instead of throwing; turn that into a real error with its message. */
+function must<T>(res: { data: T | null; errors?: readonly { message: string }[] }, what: string): T {
+  if (res.errors?.length || res.data == null) throw new Error(`${what}: ${res.errors?.[0]?.message ?? 'sin datos'}`);
+  return res.data;
+}
+
 /** Counts one attempt in a stored counter (survives cold starts). Returns false when over the limit. */
 async function allow(client: Client, key: string, max: number): Promise<boolean> {
   const { data } = await client.models.RegAttempt.get({ key });
@@ -35,7 +41,7 @@ async function everyPerson(client: Client) {
   let nextToken: string | null | undefined;
   do {
     const page = await client.models.Person.list({ nextToken, limit: 500 });
-    out.push(...page.data);
+    out.push(...must(page, 'leer personas'));
     nextToken = page.nextToken;
   } while (nextToken);
   return out;
@@ -103,21 +109,22 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
       status: full ? 'WAITLIST' : 'PENDING',
       owner: project.owner, // the row belongs to the collector, who is not the one calling
     });
-    const me = created.data;
-    if (!me) return json(200, { status: 'error' });
+    const me = must(created, 'guardar inscripción');
 
     // Two signups can both see the last free place. Settle it by arrival order: those beyond capacity wait.
     let status = me.status;
     if (project.capacity > 0 && status === 'PENDING') {
       const after = (await everyPerson(client)).filter((p) => p.owner === project.owner && takesPlaceByStatus(p.status));
       if (overflowIds(after.map((p) => ({ id: p.id, regAt: p.regAt })), project.capacity).includes(me.id)) {
-        await client.models.Person.update({ id: me.id, status: 'WAITLIST' });
+        must(await client.models.Person.update({ id: me.id, status: 'WAITLIST' }), 'poner en espera');
         status = 'WAITLIST';
       }
     }
     return json(200, { status: status === 'WAITLIST' ? 'waitlist' : 'registered' });
   } catch (e) {
-    console.error('register failed', (e as Error).name); // never log names or phone numbers
-    return json(200, { status: 'error' });
+    // The message names the failing step and never contains names or phone numbers; the page shows it for now.
+    const detail = (e as Error).message.slice(0, 200);
+    console.error('register failed', detail);
+    return json(200, { status: 'error', detail });
   }
 };

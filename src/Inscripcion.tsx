@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Alert, Choice, Field, IcoCheck, IcoClock, IcoPeople, IcoPhone, IcoAlert, Shell } from './ui';
 
-type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean };
+type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean; detail?: string };
 type Done = 'registered' | 'waitlist' | 'already' | 'closed' | 'limit' | 'invalid' | 'error';
 
 const digits = (s: string) => s.replace(/\D/g, '');
@@ -37,6 +37,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
+  const [detail, setDetail] = useState(''); // technical reason from the server, shown small so a failure can be diagnosed
 
   useEffect(() => {
     if (!registerUrl) { setInfo({ status: 'error' }); return; }
@@ -72,9 +73,11 @@ export default function Inscripcion({ token, registerUrl, initial }: {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ token, name: name.trim(), tel: digits(tel), helpers: cleanHelpers, consent: true }),
       });
-      const j = (await r.json()) as { status?: Done };
+      const j = (await r.json()) as { status?: Done; detail?: string };
+      setDetail(j.detail ?? '');
       setDone(j.status ?? 'error');
-    } catch {
+    } catch (e) {
+      setDetail(`sin respuesta (${(e as Error).message})`);
       setDone('error');
     } finally {
       setBusy(false);
@@ -131,7 +134,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
     return (
       <Shell canBack={false} onBack={() => {}}>
         <section className="stack">
-          <div className="result"><div className="seal bad"><IcoAlert /></div><h1>No se pudo</h1><p>Revisa tus datos e inténtalo de nuevo.</p></div>
+          <div className="result"><div className="seal bad"><IcoAlert /></div><h1>No se pudo</h1><p>Revisa tus datos e inténtalo de nuevo.</p>{detail || info.detail ? <p className="hint">Detalle: {detail || info.detail}</p> : null}</div>
           <Choice primary icon={<IcoClock />} label="Intentar de nuevo" onClick={() => { setStep(1); again(); }} />
         </section>
       </Shell>

@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import type { StageProps } from './screens';
-import { pageOf, type Kind, type Per } from './model';
+import { money, monthName, pageOf, parseAmount, thisMonth, ready, type Kind, type Per } from './model';
 import { Alert, Choice, Field, IcoCash, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
 import {
   confirmedCount, freeSpots, isFull, occupied, placeState, placesOn, toApprove, waitlisted, type PlaceState,
@@ -87,7 +87,7 @@ export function Seats({ project, people, charges, page, only, onView }: StagePro
   );
 }
 
-export function SeatDetail({ project, people, charges, personId, busy, onSeat, onView }: StageProps & { personId: string }) {
+export function SeatDetail({ project, people, charges, accounts, personId, busy, onSeat, onCreateCharge, onView }: StageProps & { personId: string }) {
   const person = people.find((p) => p.id === personId);
   if (!person || !placesOn(project)) {
     return (
@@ -100,6 +100,12 @@ export function SeatDetail({ project, people, charges, personId, busy, onSeat, o
   const state = placeState(person, project, charges, new Date());
   const words = WORDS[state];
   const free = freeSpots(people, project, charges, new Date());
+  const fee = project.monthlyAmount ?? 0;
+  const feeAccount = accounts.find((a) => a.id === project.accountId);
+  const feeConcept = project.monthlyConcept || 'Mensualidad';
+  const month = thisMonth();
+  const feeCharge = charges.find((c) => c.personId === person.id && c.month === month && c.confirmsPlace);
+  const canQuick = (state === 'held' || state === 'confirmed' || state === 'overdue') && fee > 0 && !!feeAccount && !feeCharge;
   return (
     <section className="stack">
       <h1>{person.name}</h1>
@@ -108,6 +114,12 @@ export function SeatDetail({ project, people, charges, personId, busy, onSeat, o
         <p><strong>Su WhatsApp:</strong> {fmtTel(person.tel)}</p>
         {person.helpers?.length ? <p><strong>Quien le ayuda a pagar:</strong> {person.helpers.map(fmtTel).join(', ')}</p> : null}
       </div>
+      {canQuick ? (
+        <Choice primary icon={<IcoPhone />} label={`Cobrarle ${money(fee)}`} hint={`${feeConcept} de ${monthName(month).toLowerCase()}`} onClick={() => onCreateCharge(person.id, feeConcept, fee, feeAccount.id, true)} />
+      ) : null}
+      {feeCharge ? (
+        <Choice primary icon={<IcoPhone />} label={feeCharge.status === 'PAID' ? 'Ver su pago' : 'Ver su cobro'} hint={feeCharge.status === 'PAID' ? 'Enviar comprobante' : 'Mostrar el código para pagar'} onClick={() => onView({ id: feeCharge.status === 'PAID' ? 'receipt' : 'charge', chargeId: feeCharge.id })} />
+      ) : null}
       {state === 'pending' ? (
         <>
           <p className="hint">Hasta que lo apruebes no se le manda ningún cobro ni mensaje.</p>
@@ -168,7 +180,8 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
   );
 }
 
-export function PlacesSettings({ project, busy, formError, onSaveProject }: StageProps) {
+export function PlacesSettings({ project, accounts, busy, formError, onSaveProject }: StageProps) {
+  const usable = accounts.filter((a) => ready(a));
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const d = new FormData(e.currentTarget);
@@ -176,6 +189,9 @@ export function PlacesSettings({ project, busy, formError, onSaveProject }: Stag
       name: String(d.get('name') || '').trim(),
       capacity: Number(String(d.get('capacity') || '0').replace(/\D/g, '')),
       holdDays: Number(String(d.get('hold') || '5').replace(/\D/g, '')),
+      monthlyAmount: parseAmount(String(d.get('fee') || '')),
+      monthlyConcept: String(d.get('feeName') || '').trim(),
+      accountId: String(d.get('account') || ''),
     });
   };
   return (
@@ -186,6 +202,15 @@ export function PlacesSettings({ project, busy, formError, onSaveProject }: Stag
         <Field label="Nombre del taller"><input name="name" defaultValue={project?.name ?? ''} autoComplete="off" placeholder="Taller" /></Field>
         <Field label="¿Cuántos lugares hay?"><input name="capacity" required inputMode="numeric" defaultValue={project?.capacity ? String(project.capacity) : '12'} /></Field>
         <Field label="¿Cuántos días se aparta un lugar?"><input name="hold" required inputMode="numeric" defaultValue={String(project?.holdDays ?? 5)} /></Field>
+        <Field label="¿Cuánto cuesta la mensualidad? (pesos)"><input name="fee" inputMode="decimal" defaultValue={project?.monthlyAmount ? String(project.monthlyAmount) : ''} placeholder="130" /></Field>
+        <Field label="¿Cómo se llama el cobro?"><input name="feeName" defaultValue={project?.monthlyConcept ?? 'Mensualidad'} autoComplete="off" /></Field>
+        <Field label="¿A qué cuenta llega?">
+          <select name="account" defaultValue={project?.accountId ?? ''}>
+            <option value="">Elige la cuenta</option>
+            {usable.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
+          </select>
+        </Field>
+        <p className="hint">Con esto, al aprobar a alguien le cobras con un solo botón.</p>
         <p className="hint">El apartado solo vence para quien se inscribió por el código, ya lo aprobaste y aún no paga.</p>
         <Choice primary type="submit" label={busy ? busyLabel : 'Guardar'} />
       </form>

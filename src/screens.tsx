@@ -5,7 +5,8 @@ import {
 } from './model';
 import { Alert, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
 import ReceiptView from './Receipt';
-import { folioOf } from './comprobante';
+import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprobante';
+import { PictureSend } from './Receipt';
 import { More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
 import { canCharge, isFull, placesOn, toApprove } from './places';
@@ -25,7 +26,7 @@ export type StageProps = {
   onAddPerson: (name: string, tel: string) => void;
   onAddAccount: (input: { alias: string; legalName: string; clabe: string; entity: 'PERSON' | 'BUSINESS' }) => void;
   onCreateCharge: (personId: string, concept: string, amount: number, accountId: string, confirmsPlace: boolean) => void;
-  onSaveProject: (input: { name: string; capacity: number; holdDays: number }) => void;
+  onSaveProject: (input: { name: string; capacity: number; holdDays: number; monthlyAmount: number; monthlyConcept: string; accountId: string }) => void;
   onToggleOpen: () => void;
   onRotateToken: () => void;
   onSeat: (personId: string, action: 'approve' | 'give' | 'extend' | 'release') => void;
@@ -81,6 +82,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'cash') return <CashStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'wait') return <WaitStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'qr') return <QrStep {...p} charge={findCharge(p.charges, v.chargeId)} img={v.img} />;
+  if (v.id === 'send-qr') return <SendQr {...p} charge={findCharge(p.charges, v.chargeId)} img={v.img} />;
   if (v.id === 'paid') return <PaidStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'receipt') return <ReceiptStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'more') return <More {...p} />;
@@ -281,20 +283,50 @@ function QrStep({ charge, img, busy, onCheck, onView }: StageProps & { charge: C
       <img className="shot" alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`} src={`data:image/png;base64,${img}`} />
       <p className="lead">Escanéalo con la app del banco. Cuando pague, aquí se marca solo.</p>
       <Status kind="wait">Esperando el pago</Status>
+      <Choice primary icon={<IcoPhone />} label="Mandar el código por WhatsApp" hint="Imagen para quien ayuda a pagar" onClick={() => onView({ id: 'send-qr', chargeId: charge.id, img })} />
       <Choice icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya pagó'} hint="Le preguntamos a Pey" onClick={() => onCheck(charge.id)} />
       <Choice icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Si no fue con el código" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
     </section>
   );
 }
 
-function ReceiptStep({ charge, accounts, onView }: StageProps & { charge: Chg | undefined }) {
+function destsFor(people: Per[], tel: string, personId: string): Dest[] {
+  const person = people.find((x) => x.id === personId) ?? people.find((x) => x.tel === tel);
+  return destinations(tel, person?.helpers ?? []);
+}
+
+function SendQr({ charge, img, accounts, people, project, onView }: StageProps & { charge: Chg | undefined; img: string }) {
+  if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
+  const card = {
+    projectName: project?.name || findAccount(accounts, charge.accountId)?.alias || 'Cuentas conmigo',
+    payerName: charge.personName,
+    concept: charge.concept,
+    amount: charge.amount,
+    qrPng: img,
+  };
+  return (
+    <PictureSend
+      title="Mandar el código"
+      alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`}
+      svg={payCardSvg(card)}
+      filename={`codigo-${folioOf(charge.id)}.png`}
+      msg={payText(card)}
+      dests={destsFor(people, charge.tel, charge.personId)}
+    >
+      <Choice icon={<IcoQr />} label="Volver al código" onClick={() => onView({ id: 'qr', chargeId: charge.id, img })} />
+    </PictureSend>
+  );
+}
+
+function ReceiptStep({ charge, accounts, people, project, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   const account = findAccount(accounts, charge.accountId);
   return (
     <ReceiptView
-      tel={charge.tel}
+      dests={destsFor(people, charge.tel, charge.personId)}
       data={{
         folio: folioOf(charge.id),
+        projectName: project?.name || account?.alias || 'Cuentas conmigo',
         payerName: charge.personName,
         concept: charge.concept,
         amount: charge.amount,

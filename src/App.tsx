@@ -15,7 +15,7 @@ type Project = Schema['Project']['type'];
 
 function mapProject(p: Project): Proj | null {
   if (!p.id || !p.token || p.open == null || p.capacity == null || p.holdDays == null) return null;
-  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays };
+  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays, monthlyConcept: p.monthlyConcept, monthlyAmount: p.monthlyAmount, accountId: p.accountId };
 }
 
 function newToken(): string {
@@ -293,10 +293,18 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onSaveProject={(input) => {
           if (!(input.capacity >= 1 && input.capacity <= 200)) { setFormError('Escribe cuántos lugares hay, de 1 a 200.'); return; }
           if (!(input.holdDays >= 1 && input.holdDays <= 60)) { setFormError('Los días de apartado van de 1 a 60.'); return; }
+          const fields = {
+            name: input.name,
+            capacity: input.capacity,
+            holdDays: input.holdDays,
+            monthlyAmount: input.monthlyAmount > 0 ? input.monthlyAmount : null,
+            monthlyConcept: input.monthlyConcept || null,
+            accountId: input.accountId || null,
+          };
           void run(async () => {
             const r = project
-              ? await client.models.Project.update({ id: project.id, name: input.name, capacity: input.capacity, holdDays: input.holdDays })
-              : await client.models.Project.create({ name: input.name, capacity: input.capacity, holdDays: input.holdDays, open: true, token: newToken() });
+              ? await client.models.Project.update({ id: project.id, ...fields })
+              : await client.models.Project.create({ ...fields, open: true, token: newToken() });
             if (r.errors?.length) throw new Error('project');
             await load();
           }, () => land({ id: 'places' }, 'Listo. Ya quedó guardado.'));
@@ -335,7 +343,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
             const r = await client.models.Person.update({ id: personId, ...patch });
             if (r.errors?.length) throw new Error('seat');
             await load();
-          }, () => land({ id: 'places' }, message));
+          }, () => land(action === 'release' || action === 'extend' ? { id: 'places' } : { id: 'seat', personId }, message));
         }}
         onCheck={(id) => {
           void run(async () => {

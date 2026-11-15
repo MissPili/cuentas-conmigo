@@ -24,7 +24,17 @@ export type Per = {
 };
 
 /** One row per collector: settings for places and the signup QR. */
-export type Proj = { id: string; name?: string | null; open: boolean; token: string; capacity: number; holdDays: number };
+export type Proj = {
+  id: string;
+  name?: string | null;
+  open: boolean;
+  token: string;
+  capacity: number;
+  holdDays: number;
+  monthlyConcept?: string | null;
+  monthlyAmount?: number | null;
+  accountId?: string | null;
+};
 
 export type Chg = {
   id: string;
@@ -60,6 +70,7 @@ export type View =
   | { id: 'account'; accountId: string }
   | { id: 'add-account' }
   | { id: 'more' }
+  | { id: 'send-qr'; chargeId: string; img: string }
   | { id: 'places' }
   | { id: 'seats'; page: number; only?: 'review' }
   | { id: 'seat'; personId: string }
