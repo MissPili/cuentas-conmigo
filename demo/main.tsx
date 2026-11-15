@@ -89,6 +89,7 @@ function start(): View {
     case 'seats': return { id: 'seats', page: 0 };
     case 'review': return { id: 'seats', page: 0, only: 'review' };
     case 'seat': return { id: 'seat', personId: 'p6' };
+    case 'seat-leave': return { id: 'seat', personId: 'p3' };
     case 'seat-late': return { id: 'seat', personId: 'p5' };
     case 'reg-qr': return { id: 'reg-qr' };
     case 'places-settings': return { id: 'places-settings' };
