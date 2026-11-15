@@ -104,7 +104,7 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
     const helpers = helperList.map((h) => h.tel);
     const sendTo = typeof body.sendTo === 'string' ? body.sendTo.replace(/\D/g, '') : '';
     if (
-      name.length < 2 || name.length > 60 || !TEL10.test(tel) || helperList.length < 1 || helperList.length > 3 ||
+      name.length < 2 || name.length > 60 || !TEL10.test(tel) || helperList.length > 3 ||
       !helperList.every((h) => TEL10.test(h.tel) && h.name.length >= 2 && h.rel.length >= 2) ||
       (sendTo !== '' && sendTo !== tel && !helpers.includes(sendTo)) || body.consent !== true
     ) {
@@ -126,7 +126,7 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
       helpers,
       helperNames: helperList.map((h) => h.name),
       helperRels: helperList.map((h) => h.rel),
-      sendTo: sendTo || helpers[0],
+      sendTo: sendTo || helpers[0] || tel, // with no helper, codes go to the person
       projectId: project.id,
       consentShared: true,
       ...(photo ? { photo, photoConsent: true } : { emblem }),

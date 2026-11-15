@@ -44,7 +44,7 @@ Capturas hechas con el modo de demostración (datos inventados, sin servidor), a
 | ![](docs/pantallas/01-proyectos.png)<br>**1. Tus proyectos** | ![](docs/pantallas/02-inicio-del-proyecto.png)<br>**2. Inicio de un proyecto** | ![](docs/pantallas/03-quien-paga.png)<br>**3. A quién cobrar** |
 | ![](docs/pantallas/04-cobros-de-una-persona.png)<br>**4. Cobros de una persona** | ![](docs/pantallas/05-como-cobrar.png)<br>**5. Cómo cobrar** | ![](docs/pantallas/06-codigo-qr.png)<br>**6. Código QR de CoDi** |
 | ![](docs/pantallas/07-mandar-el-codigo.png)<br>**7. Mandar el código como imagen** | ![](docs/pantallas/08-esperando-el-pago.png)<br>**8. Esperando el pago** | ![](docs/pantallas/09-ya-pago.png)<br>**9. Ya pagó** |
-| ![](docs/pantallas/10-comprobante.png)<br>**10. Comprobante** | ![](docs/pantallas/11-nuevo-cobro.png)<br>**11. Nuevo cobro** | ![](docs/pantallas/12-agregar-persona.png)<br>**12. Agregar persona** |
+| ![](docs/pantallas/10-comprobante.png)<br>**10. Comprobante** | ![](docs/pantallas/11-nuevo-cobro.png)<br>**11. Cobro extraordinario** | ![](docs/pantallas/12-agregar-persona.png)<br>**12. Agregar persona** |
 
 ### Más opciones, personas y reporte
 
@@ -66,7 +66,8 @@ Capturas hechas con el modo de demostración (datos inventados, sin servidor), a
 | | | |
 | --- | --- | --- |
 | ![](docs/pantallas/28-inscripcion-paso-1.png)<br>**28. Inscripción, paso 1: nombre** | ![](docs/pantallas/29-inscripcion-paso-2-imagen.png)<br>**29. Paso 2: su imagen** | ![](docs/pantallas/30-inscripcion-elegir-dibujo.png)<br>**30. Elegir un dibujo** |
-| ![](docs/pantallas/31-inscripcion-paso-3.png)<br>**31. Paso 3: WhatsApp y quién ayuda** | ![](docs/pantallas/32-inscripcion-paso-4.png)<br>**32. Paso 4: revisar y a quién mandar** | ![](docs/pantallas/33-inscripcion-enviada.png)<br>**33. Inscripción enviada** |
+| ![](docs/pantallas/31-inscripcion-paso-3-como-pagas.png)<br>**31. Paso 3: su WhatsApp y cómo paga** | ![](docs/pantallas/32-inscripcion-paso-3.png)<br>**32. Paso 3: con ayuda de un familiar** | ![](docs/pantallas/33-inscripcion-paso-4.png)<br>**33. Paso 4: revisar y a quién mandar** |
+| ![](docs/pantallas/34-inscripcion-enviada.png)<br>**34. Inscripción enviada** |  |  |
 
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color).
 
@@ -92,7 +93,7 @@ Cada cobro manda a Pey el `bankAccountId` de su cuenta, así una sola llave de P
 ## Lugares e inscripción por QR
 
 1. En **Lugares → Ajustes** quien cobra pone el nombre del taller, cuántos lugares hay, cuántos días se aparta uno (5 por defecto) y los **cobros** del proyecto (hasta 2). El **Cobro 1** es el inicial (al pagarlo, el lugar queda confirmado) y un botón **"Añadir otro cobro"** agrega el segundo. Cada cobro lleva nombre, monto, cuenta que recibe y se marca como **una sola vez** o **cada mes**; si es mensual se indica cuántos meses dura y desde qué mes. Ejemplo del caso de estudio: **Cobro 1: Inscripción $40, una sola vez**, y **Cobro 2: Mensualidad $130, cada mes, 10 meses desde agosto** (termina en mayo, el fin del ciclo escolar).
-2. **Código para inscribir** muestra un QR que abre una página pública (sin cuenta) en 4 pasos: nombre, **imagen que la identifica**, WhatsApp propio y de **una** persona que le ayuda a pagar (con su **nombre y qué es suya**, por ejemplo "mi hija"; un botón permite agregar hasta 3), y revisar. En el último paso la persona **elige a quién quiere que le mandemos su código de pago y su comprobante** entre las que registró, y da su consentimiento.
+2. **Código para inscribir** muestra un QR que abre una página pública (sin cuenta) en 4 pasos: nombre, **imagen que la identifica**, WhatsApp propio y **cómo va a pagar**: **"Yo, desde mi celular"** (con CoDi, en la app de su banco) o **"Me ayuda un familiar"**. La ayuda es opcional: solo si elige al familiar se despliegan los datos de quien ayuda (**nombre, qué es suya**, por ejemplo "mi hija", y WhatsApp; un botón permite agregar hasta 3), y revisar. En el último paso la persona **elige a quién quiere que le mandemos su código de pago y su comprobante** entre las que registró, y da su consentimiento.
 3. **Imagen que la identifica:** un **dibujo** de un banco de 28 (con su nombre escrito, y nunca uno que ya tenga otra persona con lugar) o **su foto**, con casilla de autorización obligatoria. La foto se reduce a unos 320 px y se guarda en su registro.
 4. La inscripción **solo registra**. No se manda ningún cobro ni mensaje hasta que quien cobra **apruebe**. Si el taller está lleno, la persona queda en lista de espera.
 5. Tras aprobar, la ficha ofrece un botón por cada cobro que le toca: **"Cobrarle $40"** (la inscripción, una sola vez, y deja de ofrecerse cuando ya se cobró) y **"Cobrarle $130"** (la mensualidad, "mes 4 de 10"). Fuera del ciclo, por ejemplo antes de agosto o después de mayo, la mensualidad no se ofrece.

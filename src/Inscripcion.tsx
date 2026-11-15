@@ -29,7 +29,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   token: string;
   registerUrl: string;
   /** Only for the demo harness (screenshots): start on a given step with sample values. */
-  initial?: { step: number; name?: string; tel?: string; helpers?: Helper[]; emblem?: string; pic?: 'menu' | 'pick' };
+  initial?: { pay?: 'self' | 'helper'; step: number; name?: string; tel?: string; helpers?: Helper[]; emblem?: string; pic?: 'menu' | 'pick' };
 }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [step, setStep] = useState(initial?.step ?? 1);
@@ -37,6 +37,8 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   const [tel, setTel] = useState(initial?.tel ?? '');
   const [helpers, setHelpers] = useState<Helper[]>(initial?.helpers ?? [{ name: '', rel: '', tel: '' }]);
   const [sendTo, setSendTo] = useState('');
+  // How the person pays: from their own phone with CoDi, or with a relative who helps. Help is optional.
+  const [payMode, setPayMode] = useState<'' | 'self' | 'helper'>(initial?.pay ?? (initial?.helpers?.some((h) => h.tel) ? 'helper' : ''));
   const [consent, setConsent] = useState(false);
   const [emblem, setEmblem] = useState(initial?.emblem ?? '');
   const [photo, setPhoto] = useState('');
@@ -84,11 +86,11 @@ export default function Inscripcion({ token, registerUrl, initial }: {
     }
   }
 
-  const cleanHelpers: Helper[] = helpers
+  const cleanHelpers: Helper[] = payMode !== 'helper' ? [] : helpers
     .map((h) => ({ name: h.name.trim().replace(/\s+/g, ' '), rel: h.rel.trim().replace(/\s+/g, ' '), tel: digits(h.tel) }))
     .filter((h) => h.name || h.rel || h.tel)
     .filter((h, i, all) => all.findIndex((x) => x.tel === h.tel) === i || !h.tel);
-  const sendTel = cleanHelpers.some((h) => h.tel === sendTo) || sendTo === digits(tel) ? sendTo : (cleanHelpers[0]?.tel ?? '');
+  const sendTel = cleanHelpers.some((h) => h.tel === sendTo) || sendTo === digits(tel) ? sendTo : (cleanHelpers[0]?.tel ?? digits(tel));
 
   function next(e?: FormEvent) {
     e?.preventDefault();
@@ -97,7 +99,8 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       if (name.trim().length < 2) { setError('Escribe tu nombre.'); return; }
     } else if (step === 3) {
       if (digits(tel).length !== 10) { setError('Tu WhatsApp debe tener 10 números.'); return; }
-      if (!cleanHelpers.length) { setError('Escribe quién te ayuda a pagar.'); return; }
+      if (!payMode) { setError('Elige cómo vas a pagar.'); return; }
+      if (payMode === 'helper' && !cleanHelpers.length) { setError('Escribe quién te ayuda a pagar.'); return; }
       if (cleanHelpers.some((h) => h.name.length < 2)) { setError('Escribe el nombre de quien te ayuda.'); return; }
       if (cleanHelpers.some((h) => h.rel.length < 2)) { setError('Escribe qué es tuyo, por ejemplo: mi hija.'); return; }
       if (cleanHelpers.some((h) => h.tel.length !== 10)) { setError('Cada WhatsApp debe tener 10 números.'); return; }
@@ -262,19 +265,38 @@ export default function Inscripcion({ token, registerUrl, initial }: {
 
         {step === 3 ? (
           <form className="stack" onSubmit={next}>
-            <h1>Los WhatsApp</h1>
+            <h1>Tu WhatsApp</h1>
             <Field label="Tu WhatsApp (10 números)"><input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="numeric" autoComplete="tel" required /></Field>
-            <p className="lead">¿Quién te ayuda a pagar?</p>
-            {helpers.map((h, i) => (
-              <div key={i} className="stack">
-                {helpers.length > 1 ? <p className="who-line">Persona {i + 1}</p> : null}
-                <Field label="Su nombre"><input value={h.name} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} autoComplete="off" required={i === 0} /></Field>
-                <Field label="¿Qué es tuyo? (mi hija, mi vecino…)"><input value={h.rel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, rel: e.target.value } : x)))} autoComplete="off" required={i === 0} /></Field>
-                <Field label="Su WhatsApp (10 números)"><input value={h.tel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, tel: e.target.value } : x)))} inputMode="numeric" autoComplete="off" required={i === 0} /></Field>
-              </div>
-            ))}
+
+            <h2 className="ask">¿Cómo vas a pagar?</h2>
+            <p className="lead">Se paga con CoDi, desde la app de un banco.</p>
+            <div className="emblems">
+              <button type="button" className={payMode === 'self' ? 'emblem-btn on' : 'emblem-btn'} aria-pressed={payMode === 'self'} onClick={() => setPayMode('self')}>
+                <span className="emblem-glyph" aria-hidden="true">📱</span>
+                <span>Yo, desde mi celular{payMode === 'self' ? ' ✔ Elegido' : ''}</span>
+              </button>
+              <button type="button" className={payMode === 'helper' ? 'emblem-btn on' : 'emblem-btn'} aria-pressed={payMode === 'helper'} onClick={() => setPayMode('helper')}>
+                <span className="emblem-glyph" aria-hidden="true">👪</span>
+                <span>Me ayuda un familiar{payMode === 'helper' ? ' ✔ Elegido' : ''}</span>
+              </button>
+            </div>
+
+            {payMode === 'helper' ? (
+              <>
+                <h2 className="ask">¿Quién te ayuda a pagar?</h2>
+                <p className="lead">Escribe sus datos. Si no entiende de qué se trata, le explicaremos por WhatsApp.</p>
+                {helpers.map((h, i) => (
+                  <div key={i} className="stack plan">
+                    {helpers.length > 1 ? <p className="who-line">Persona {i + 1}</p> : null}
+                    <Field label="Su nombre"><input value={h.name} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} autoComplete="off" /></Field>
+                    <Field label="¿Qué es tuyo? (mi hija, mi vecino…)"><input value={h.rel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, rel: e.target.value } : x)))} autoComplete="off" /></Field>
+                    <Field label="Su WhatsApp (10 números)"><input value={h.tel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, tel: e.target.value } : x)))} inputMode="numeric" autoComplete="off" /></Field>
+                  </div>
+                ))}
+                {helpers.length < 3 ? <Choice icon={<IcoPeople />} label="Agregar a otra persona" onClick={() => setHelpers([...helpers, { name: '', rel: '', tel: '' }])} /> : null}
+              </>
+            ) : null}
             <Choice primary type="submit" icon={<IcoPhone />} label="Siguiente" />
-            {helpers.length < 3 ? <Choice icon={<IcoPeople />} label="Agregar a otra persona" onClick={() => setHelpers([...helpers, { name: '', rel: '', tel: '' }])} /> : null}
           </form>
         ) : null}
 
@@ -285,10 +307,12 @@ export default function Inscripcion({ token, registerUrl, initial }: {
               <p><strong>Nombre:</strong> {name.trim()}</p>
               <p><strong>Tu imagen:</strong> {photo ? 'tu foto' : `${emblemOf(emblem)?.glyph ?? ''} ${emblemOf(emblem)?.name ?? ''}`}</p>
               <p><strong>Tu WhatsApp:</strong> {fmtTel(digits(tel))}</p>
+              <p><strong>Cómo pagas:</strong> {cleanHelpers.length ? 'con ayuda' : 'tú, desde tu celular'}</p>
               {cleanHelpers.map((h) => (
                 <p key={h.tel}><strong>{h.name} ({h.rel}):</strong> {fmtTel(h.tel)}</p>
               ))}
             </div>
+            {cleanHelpers.length ? (
             <fieldset className="stack choose">
               <legend className="who-line">¿A quién le mandamos tu código de pago y tu comprobante?</legend>
               {[...cleanHelpers.map((h) => ({ tel: h.tel, text: `${h.name} (${h.rel})` })), { tel: digits(tel), text: 'A mí, a mi WhatsApp' }].map((o) => (
@@ -298,6 +322,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
                 </label>
               ))}
             </fieldset>
+            ) : null}
             <label className="check">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
               <span>Acepto que estos teléfonos se compartan con quien da el taller.</span>
