@@ -79,7 +79,7 @@ El inicio de un proyecto es deliberadamente corto: el dato de **cuánto se ha co
 ## Cómo funciona un cobro
 
 1. Quien cobra registra la **cuenta que recibe** (nombre legal del titular y CLABE). Pey la activa con Banxico en hasta 5 días hábiles; mientras tanto solo se puede cobrar en efectivo.
-2. Elige a la persona (se reconoce por su foto o dibujo) y crea el cobro (monto libre y concepto).
+2. Elige a la persona (se reconoce por su foto o dibujo). Su página ofrece lo que ya está esperando pago, **los cobros que configuraste** (por ejemplo "Cobrar $130, Mensualidad, mes 4 de 10") y **"Cobro extraordinario"** para algo fuera de lo normal, como la cooperación para el cumpleaños de una alumna: nombre y monto libres, y nunca confirma lugar.
 3. Cobra por **código QR de CoDi** (la vía principal), por **solicitud CoDi** al celular o en **efectivo**.
 4. Si quien paga necesita ayuda, **"Mandar el código por WhatsApp"** arma una imagen con el nombre del taller, quién paga, el monto, el QR grande y tres pasos. Se comparte desde el menú del celular. El mensaje que acompaña dice a quién está ayudando, cuánto y de qué, y pide que le pregunte a esa persona antes de pagar si tiene dudas.
 5. Cuando la persona paga, Pey avisa al servidor con un mensaje firmado. El servidor verifica la firma, marca el cobro como **Pagado** una sola vez y la pantalla se actualiza sola. Si un aviso se pierde, **"Revisar si ya pagó"** consulta a Pey.
@@ -91,12 +91,12 @@ Cada cobro manda a Pey el `bankAccountId` de su cuenta, así una sola llave de P
 
 ## Lugares e inscripción por QR
 
-1. En **Lugares → Ajustes** quien cobra pone el nombre del taller, cuántos lugares hay, cuántos días se aparta uno (5 por defecto) y los **cobros** del proyecto (hasta 2). Cada cobro lleva nombre, monto, cuenta que recibe y se marca como **una sola vez** o **cada mes**; si es mensual se indica cuántos meses dura y desde qué mes. Ejemplo del caso de estudio: **Inscripción $40, una sola vez**, y **Mensualidad $130, cada mes, 10 meses desde agosto** (termina en mayo, el fin del ciclo escolar).
+1. En **Lugares → Ajustes** quien cobra pone el nombre del taller, cuántos lugares hay, cuántos días se aparta uno (5 por defecto) y los **cobros** del proyecto (hasta 2). El **Cobro 1** es el inicial (al pagarlo, el lugar queda confirmado) y un botón **"Añadir otro cobro"** agrega el segundo. Cada cobro lleva nombre, monto, cuenta que recibe y se marca como **una sola vez** o **cada mes**; si es mensual se indica cuántos meses dura y desde qué mes. Ejemplo del caso de estudio: **Cobro 1: Inscripción $40, una sola vez**, y **Cobro 2: Mensualidad $130, cada mes, 10 meses desde agosto** (termina en mayo, el fin del ciclo escolar).
 2. **Código para inscribir** muestra un QR que abre una página pública (sin cuenta) en 4 pasos: nombre, **imagen que la identifica**, WhatsApp propio y de **una** persona que le ayuda a pagar (con su **nombre y qué es suya**, por ejemplo "mi hija"; un botón permite agregar hasta 3), y revisar. En el último paso la persona **elige a quién quiere que le mandemos su código de pago y su comprobante** entre las que registró, y da su consentimiento.
 3. **Imagen que la identifica:** un **dibujo** de un banco de 28 (con su nombre escrito, y nunca uno que ya tenga otra persona con lugar) o **su foto**, con casilla de autorización obligatoria. La foto se reduce a unos 320 px y se guarda en su registro.
 4. La inscripción **solo registra**. No se manda ningún cobro ni mensaje hasta que quien cobra **apruebe**. Si el taller está lleno, la persona queda en lista de espera.
 5. Tras aprobar, la ficha ofrece un botón por cada cobro que le toca: **"Cobrarle $40"** (la inscripción, una sola vez, y deja de ofrecerse cuando ya se cobró) y **"Cobrarle $130"** (la mensualidad, "mes 4 de 10"). Fuera del ciclo, por ejemplo antes de agosto o después de mayo, la mensualidad no se ofrece.
-6. Solo la mensualidad confirma el lugar. El cobro anual del DIF no.
+6. Solo el **cobro inicial** (el Cobro 1, normalmente la inscripción) confirma el lugar. La mensualidad, otros cobros y los extraordinarios no.
 7. El apartado vence **solo** para quien se inscribió por QR, ya fue aprobado y todavía no paga. Quien cobra decide dejarlo más días o darlo de baja. Quien ya pagó, o fue agregado a mano, no vence.
 8. El servidor limita los intentos por dirección y por código. Cada proyecto tiene sus propios lugares y dibujos. Si dos personas se inscriben a la vez por el último lugar, o eligen el mismo dibujo, gana quien llegó primero (se ordena por hora de llegada después de guardar, no con una escritura condicional).
 

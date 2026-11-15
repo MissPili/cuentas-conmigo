@@ -187,3 +187,13 @@ test('plans: a one-time enrolment and a monthly fee for the 10 months of the sch
   assert.equal(legacyPlan(130, null, 'x', new Date(2026, 10, 1))[0].months, 10);
   assert.deepEqual(legacyPlan(0, null, 'x', new Date()), []);
 });
+
+test('plans: only the first (initial) charge confirms the place', async () => {
+  const { duePlans } = await import('../src/plans.ts');
+  const plans = [
+    { id: 'a', kind: 'ONCE' as const, concept: 'Inscripción', amount: 40, accountId: 'x' },
+    { id: 'b', kind: 'MONTHLY' as const, concept: 'Mensualidad', amount: 130, accountId: 'x', start: '2026-08', months: 10 },
+  ];
+  const due = duePlans(plans, 'p', [], '2026-11');
+  assert.deepEqual(due.map((d) => [d.plan.id, d.confirms]), [['a', true], ['b', false]]);
+});

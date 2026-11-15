@@ -108,7 +108,7 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
   const due = (state === 'held' || state === 'confirmed' || state === 'overdue')
     ? duePlans(project.plans, person.id, charges, month).filter((d) => accounts.some((a) => a.id === d.plan.accountId)).slice(0, 2)
     : [];
-  const feeCharge = charges.find((c) => c.personId === person.id && c.month === month && c.confirmsPlace);
+  const feeCharge = charges.find((c) => c.personId === person.id && c.month === month);
   return (
     <section className="stack">
       <WhoLine name={person.name} person={person} />
@@ -129,7 +129,7 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
           icon={<IcoPhone />}
           label={`Cobrarle ${money(d.plan.amount)}`}
           hint={d.plan.kind === 'ONCE' ? `${d.plan.concept} (una sola vez)` : `${d.plan.concept} de ${monthName(month).toLowerCase()}, mes ${d.nth} de ${d.total}`}
-          onClick={() => onCreateCharge(person.id, d.plan.concept, d.plan.amount, d.plan.accountId, d.plan.kind === 'MONTHLY')}
+          onClick={() => onCreateCharge(person.id, d.plan.concept, d.plan.amount, d.plan.accountId, d.confirms)}
         />
       ))}
       {feeCharge && !due.length ? (
@@ -214,14 +214,15 @@ function toSlot(p: Plan): Slot {
 export function PlacesSettings({ project, accounts, busy, formError, onSaveProject }: StageProps) {
   const usable = accounts.filter((a) => ready(a));
   const firstAccount = usable[0]?.id ?? '';
-  // Nothing saved yet: suggest the usual case (a one-time enrolment and a monthly fee for the school cycle).
+  // Nothing saved yet: suggest the usual first charge (a one-time enrolment). A second one is added on request.
   const initial: Slot[] = project?.plans.length
     ? [...project.plans.map(toSlot), emptySlot(firstAccount)].slice(0, MAX_PLANS)
     : [
         { kind: 'ONCE', concept: 'Inscripción', amount: '40', accountId: firstAccount, start: cycleStart(new Date()), months: '10' },
-        { kind: 'MONTHLY', concept: 'Mensualidad', amount: '130', accountId: firstAccount, start: cycleStart(new Date()), months: '10' },
+        emptySlot(firstAccount),
       ];
   const [slots, setSlots] = useState<Slot[]>(initial);
+  const [shown, setShown] = useState(project?.plans.length ? Math.max(1, project.plans.length) : 1);
   const [error, setError] = useState('');
   const set = (i: number, patch: Partial<Slot>) => setSlots(slots.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   const base = cycleStart(new Date());
@@ -231,7 +232,7 @@ export function PlacesSettings({ project, accounts, busy, formError, onSaveProje
     e.preventDefault();
     const d = new FormData(e.currentTarget);
     const plans: Plan[] = [];
-    for (let i = 0; i < slots.length; i++) {
+    for (let i = 0; i < shown; i++) {
       const s = slots[i];
       const amount = parseAmount(s.amount);
       if (!(amount > 0)) continue; // an empty slot is simply not used
@@ -263,9 +264,10 @@ export function PlacesSettings({ project, accounts, busy, formError, onSaveProje
         <Field label="¿Cuántos días se aparta un lugar?"><input name="hold" required inputMode="numeric" defaultValue={String(project?.holdDays ?? 5)} /></Field>
         <p className="hint">El apartado solo vence para quien se inscribió por el código, ya lo aprobaste y aún no paga.</p>
 
-        {slots.map((s, i) => (
+        {slots.slice(0, shown).map((s, i) => (
           <fieldset key={i} className="stack plan">
-            <legend className="who-line">Cobro {i + 1}{i > 0 ? ' (opcional)' : ''}</legend>
+            <legend className="who-line">Cobro {i + 1}</legend>
+            {i === 0 ? <p className="hint">Es el cobro inicial: cuando lo paguen, el lugar queda confirmado.</p> : null}
             <Field label="¿Cómo se llama?"><input value={s.concept} onChange={(e) => set(i, { concept: e.target.value })} autoComplete="off" placeholder={s.kind === 'ONCE' ? 'Inscripción' : 'Mensualidad'} /></Field>
             <Field label="¿Cuánto es? (pesos)"><input value={s.amount} onChange={(e) => set(i, { amount: e.target.value })} inputMode="decimal" placeholder="Déjalo vacío si no lo usas" /></Field>
             <p className="who-line">¿Cuándo se cobra?</p>
@@ -288,9 +290,22 @@ export function PlacesSettings({ project, accounts, busy, formError, onSaveProje
                 {usable.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
               </select>
             </Field>
+            {i > 0 ? <Choice label="Quitar este cobro" onClick={() => { set(i, { amount: '' }); setShown(i); }} /> : null}
           </fieldset>
         ))}
-        <p className="hint">Al aprobar a alguien, su ficha te ofrece cobrarle lo que le toque con un solo botón. Solo la mensualidad confirma el lugar.</p>
+        {shown < MAX_PLANS ? (
+          <Choice
+            icon={<IcoCash />}
+            label="Añadir otro cobro"
+            hint="Por ejemplo, la mensualidad"
+            onClick={() => {
+              // Suggest the usual second charge: monthly for the school cycle.
+              if (!slots[shown].amount) set(shown, { kind: 'MONTHLY', concept: 'Mensualidad', amount: '130', months: '10', accountId: slots[shown].accountId || firstAccount });
+              setShown(shown + 1);
+            }}
+          />
+        ) : null}
+        <p className="hint">Al aprobar a alguien, su ficha te ofrece cobrarle lo que le toque con un solo botón. Los pagos extraordinarios se cobran desde Cobrar.</p>
         <Choice primary type="submit" label={busy ? busyLabel : 'Guardar'} />
       </form>
     </section>

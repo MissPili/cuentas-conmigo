@@ -58,6 +58,8 @@ export function legacyPlan(amount: number | null | undefined, concept: string | 
 
 export interface Due {
   plan: Plan;
+  /** The first plan is the initial charge: paying it confirms the place. */
+  confirms: boolean;
   /** For recurring plans: which month of the cycle this is ("4 de 10"). */
   nth?: number;
   total?: number;
@@ -78,11 +80,12 @@ export function duePlans(plans: Plan[], personId: string, charges: Chg[], month:
   const mine = charges.filter((c) => c.personId === personId);
   const out: Due[] = [];
   for (const plan of plans) {
+    const confirms = plans[0]?.id === plan.id;
     if (plan.kind === 'ONCE') {
-      if (!mine.some((c) => c.concept === plan.concept)) out.push({ plan });
+      if (!mine.some((c) => c.concept === plan.concept)) out.push({ plan, confirms });
     } else {
       const nth = cycleMonth(plan, month);
-      if (nth && !mine.some((c) => c.concept === plan.concept && c.month === month)) out.push({ plan, nth, total: plan.months });
+      if (nth && !mine.some((c) => c.concept === plan.concept && c.month === month)) out.push({ plan, confirms, nth, total: plan.months });
     }
   }
   return out;

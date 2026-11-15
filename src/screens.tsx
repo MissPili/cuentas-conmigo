@@ -9,7 +9,7 @@ import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprob
 import { PictureSend } from './Receipt';
 import { DangerZone, More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
-import type { Plan } from './plans';
+import { duePlans, type Plan } from './plans';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
 export type StageProps = {
@@ -220,13 +220,13 @@ function Who({ people, charges, onOpenPerson, onView, page }: StageProps & { pag
   );
 }
 
-function PersonCharges({ people, charges, onView, personId, page }: StageProps & { personId: string; page: number }) {
+function PersonCharges({ people, charges, accounts, project, onCreateCharge, onView, personId, page }: StageProps & { personId: string; page: number }) {
   const person = findPerson(people, personId);
   if (!person) return <Missing onHome={() => onView({ id: 'home' })} />;
   const month = thisMonth();
   const mine = charges.filter((c) => c.personId === personId && c.month === month);
   type Row = { key: string; node: ReactNode };
-  const rows: Row[] = mine.map((c) => ({
+  const chargeRow = (c: Chg): Row => ({
     key: c.id,
     node: (
       <button type="button" className="person" onClick={() => onView(chargeKind(c) === 'paid' ? { id: 'paid', chargeId: c.id } : { id: 'charge', chargeId: c.id })}>
@@ -235,11 +235,29 @@ function PersonCharges({ people, charges, onView, personId, page }: StageProps &
         <Status kind={chargeKind(c)}>{chargeWords(c)}</Status>
       </button>
     ),
-  }));
-  rows.push({
-    key: 'new',
-    node: <Choice icon={<IcoCash />} label="Crear otro cobro" hint="Un monto libre" onClick={() => onView({ id: 'new-charge', personId })} />,
   });
+  // Order: what is waiting for payment, what the project charges (set in its settings), an extraordinary one, then what is already paid.
+  const due = duePlans(project?.plans ?? [], personId, charges, month).filter((d) => accounts.some((x) => x.id === d.plan.accountId));
+  const rows: Row[] = [
+    ...mine.filter((c) => chargeKind(c) !== 'paid').map(chargeRow),
+    ...due.map((d): Row => ({
+      key: 'plan-' + d.plan.id,
+      node: (
+        <Choice
+          primary={!mine.some((c) => chargeKind(c) !== 'paid') && due[0] === d}
+          icon={<IcoCash />}
+          label={`Cobrar ${money(d.plan.amount)}`}
+          hint={d.plan.kind === 'ONCE' ? `${d.plan.concept} (una sola vez)` : `${d.plan.concept}, mes ${d.nth} de ${d.total}`}
+          onClick={() => onCreateCharge(personId, d.plan.concept, d.plan.amount, d.plan.accountId, d.confirms)}
+        />
+      ),
+    })),
+    {
+      key: 'extra',
+      node: <Choice icon={<IcoCash />} label="Cobro extraordinario" hint="Por ejemplo, una cooperación" onClick={() => onView({ id: 'new-charge', personId })} />,
+    },
+    ...mine.filter((c) => chargeKind(c) === 'paid').map(chargeRow),
+  ];
   const slice = pageOf(rows, page);
   return (
     <section className="stack">
@@ -511,7 +529,7 @@ function AddAccount({ busy, formError, onAddAccount }: StageProps) {
   );
 }
 
-function NewCharge({ people, accounts, personId, project, busy, formError, onCreateCharge, onView }: StageProps & { personId: string }) {
+function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge, onView }: StageProps & { personId: string }) {
   const person = findPerson(people, personId);
   if (!person) return <Missing onHome={() => onView({ id: 'home' })} />;
   if (!accounts.length) {
@@ -528,21 +546,19 @@ function NewCharge({ people, accounts, personId, project, busy, formError, onCre
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const accountId = only ? only.id : String(data.get('account') || '');
-    onCreateCharge(person.id, String(data.get('concept') || ''), parseAmount(String(data.get('amount') || '')), accountId, data.get('monthly') === 'on');
+    onCreateCharge(person.id, String(data.get('concept') || ''), parseAmount(String(data.get('amount') || '')), accountId, false); // an extraordinary charge never confirms a place
   };
   return (
     <section className="stack">
       <WhoLine name={person.name} person={person} />
-      <h1>Nuevo cobro</h1>
+      <h1>Cobro extraordinario</h1>
+      <p className="lead">Para algo que no es el cobro de siempre, por ejemplo una cooperación para un evento.</p>
       <form className="stack" onSubmit={submit}>
         {formError ? <Alert>{formError}</Alert> : null}
-        <Field label="¿De qué es el cobro?"><input name="concept" placeholder="Cuota" autoComplete="off" /></Field>
+        <Field label="¿Para qué es?"><input name="concept" placeholder="Cooperación para el cumpleaños" autoComplete="off" required /></Field>
         <Field label="¿Cuánto?">
           <input name="amount" required inputMode="decimal" autoComplete="off" placeholder="0.00" />
         </Field>
-        {placesOn(project) ? (
-          <label className="check"><input type="checkbox" name="monthly" defaultChecked /><span>Es la mensualidad (confirma el lugar)</span></label>
-        ) : null}
         {only ? <p className="lead">El dinero llega a {only.alias}.</p> : (
           <Field label="¿A qué cuenta llega?">
             <select name="account" required defaultValue="">

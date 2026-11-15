@@ -214,15 +214,8 @@ export default function App({ signOut }: { signOut?: () => void }) {
   }
 
   function openPerson(personId: string) {
-    const month = thisMonth();
-    const mine = charges.filter((c) => c.personId === personId && c.month === month);
-    if (mine.length === 0) go({ id: 'new-charge', personId });
-    else if (mine.length === 1) {
-      const c = mine[0];
-      if (chargeKind(c) === 'paid') go({ id: 'paid', chargeId: c.id });
-      else if (chargeKind(c) === 'wait') go({ id: 'wait', chargeId: c.id });
-      else go({ id: 'charge', chargeId: c.id });
-    } else go({ id: 'person', personId, page: 0 });
+    // Always show the person's page: what the project charges, an extraordinary charge, and what is waiting.
+    go({ id: 'person', personId, page: 0 });
   }
 
   return (
