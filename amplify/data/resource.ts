@@ -40,7 +40,9 @@ const schema = a
     RegAttempt: a.model({
       key: a.string().required(),
       count: a.integer().required(),
-    }).identifier(['key']),
+    }).identifier(['key'])
+      // No row ever gets an owner, so no signed-in person can read these; only the signup function (schema-level rule) can.
+      .authorization((allow) => [allow.owner()]),
     Charge: a.model({
       personId: a.id().required(),
       personName: a.string().required(),
