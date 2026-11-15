@@ -18,6 +18,14 @@ export const IcoCash = () => <Icon><rect x="2.5" y="6" width="19" height="12" rx
 export const IcoPeople = () => <Icon><circle cx="9" cy="9" r="3" /><path d="M3.5 19c.6-3 2.6-4.5 5.5-4.5s4.9 1.5 5.5 4.5" /><circle cx="17" cy="9.5" r="2.2" /><path d="M16 14.6c2.2.3 3.6 1.4 4.3 3.4" /></Icon>;
 export const IcoBank = () => <Icon><path d="M4 10h16M6 10v7M10 10v7M14 10v7M18 10v7M3 17h18M4 10l8-5 8 5" /></Icon>;
 export const IcoPhone = () => <Icon><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M11 18h2" /></Icon>;
+export const IcoQr = () => (
+  <Icon>
+    <rect x="4" y="4" width="6" height="6" />
+    <rect x="14" y="4" width="6" height="6" />
+    <rect x="4" y="14" width="6" height="6" />
+    <path d="M14 14h2v2h-2zM18 14v6h-4M14 18h2" />
+  </Icon>
+);
 export const IcoBack = () => <Icon><path d="M15 5l-7 7 7 7" /></Icon>;
 export const IcoOut = () => <Icon><path d="M10 5H6v14h4M10 12h9M16 8l4 4-4 4" /></Icon>;
 

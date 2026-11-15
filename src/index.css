@@ -204,6 +204,15 @@ input, select {
   font-weight: 700;
 }
 .ico { width: 1.75rem; height: 1.75rem; flex: none; }
+a.choice { text-decoration: none; box-sizing: border-box; }
+.shot {
+  width: min(100%, 280px);
+  height: auto;
+  justify-self: center;
+  border: 3px solid var(--brand);
+  border-radius: 20px;
+  background: #fff;
+}
 
 .plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .plain li {

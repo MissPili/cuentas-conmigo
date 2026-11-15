@@ -3,7 +3,9 @@ import {
   accountWords, chargeKind, chargeWords, money, monthName, pageOf, parseAmount, personWords, ready, thisMonth,
   type Acc, type Chg, type Per, type View,
 } from './model';
-import { Alert, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, Result, Status } from './ui';
+import { Alert, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
+import ReceiptView from './Receipt';
+import { folioOf } from './comprobante';
 
 export type StageProps = {
   view: View;
@@ -20,6 +22,7 @@ export type StageProps = {
   onAddAccount: (input: { alias: string; legalName: string; clabe: string; entity: 'PERSON' | 'BUSINESS' }) => void;
   onCreateCharge: (personId: string, concept: string, amount: number, accountId: string) => void;
   onRequest: (chargeId: string) => void;
+  onShowQr: (chargeId: string) => void;
   onCash: (chargeId: string) => void;
   onRegister: (accountId: string) => void;
   onRefresh: (accountId: string) => void;
@@ -68,7 +71,9 @@ export function Stage(p: StageProps) {
   if (v.id === 'charge') return <ChargeStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'cash') return <CashStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'wait') return <WaitStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
+  if (v.id === 'qr') return <QrStep {...p} charge={findCharge(p.charges, v.chargeId)} img={v.img} />;
   if (v.id === 'paid') return <PaidStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
+  if (v.id === 'receipt') return <ReceiptStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'people') return <People {...p} />;
   if (v.id === 'add-person') return <AddPerson {...p} />;
   if (v.id === 'accounts') return <Accounts {...p} page={v.page} />;
@@ -178,7 +183,7 @@ function PersonCharges({ people, charges, onView, personId, page }: StageProps &
   );
 }
 
-function ChargeStep({ charge, accounts, people, busy, onRequest, onView }: StageProps & { charge: Chg | undefined }) {
+function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   const account = findAccount(accounts, charge.accountId);
   const canCell = ready(account);
@@ -193,6 +198,9 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onView }: Stage
       {!canCell ? <Alert>Esta cuenta aún no está lista. Por ahora solo puedes anotar efectivo.</Alert> : null}
       {canCell ? (
         <Choice primary icon={<IcoPhone />} label={busy ? busyLabel : 'Pedir el pago a su celular'} hint="Le llega un aviso" onClick={() => onRequest(charge.id)} />
+      ) : null}
+      {canCell ? (
+        <Choice icon={<IcoQr />} label={busy ? busyLabel : 'Mostrar código para pagar'} hint="Lo escanea con su banco" onClick={() => onShowQr(charge.id)} />
       ) : null}
       <Choice primary={!canCell} icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Tú guardas el dinero" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
       <Choice label="Crear otro cobro" onClick={() => onView({ id: 'new-charge', personId: charge.personId })} />
@@ -226,15 +234,49 @@ function WaitStep({ charge, onView }: StageProps & { charge: Chg | undefined }) 
   );
 }
 
-function PaidStep({ charge, people, onReset }: StageProps & { charge: Chg | undefined }) {
+function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onReset({ id: 'home' })} />;
   const name = findPerson(people, charge.personId)?.name || charge.personName;
   return (
     <section className="stack">
       <Result kind="paid" title="Ya pagó" text={`${name} pagó ${money(charge.amount)}. ${charge.concept}.`} />
       <Status kind="paid">{chargeWords(charge)}</Status>
-      <Choice primary icon={<IcoPeople />} label="Siguiente persona" onClick={() => onReset({ id: 'who', page: 0 })} />
+      <Choice primary icon={<IcoPhone />} label="Enviar comprobante" hint="Por WhatsApp" onClick={() => onView({ id: 'receipt', chargeId: charge.id })} />
+      <Choice icon={<IcoPeople />} label="Siguiente persona" onClick={() => onReset({ id: 'who', page: 0 })} />
     </section>
+  );
+}
+
+function QrStep({ charge, img, onView }: StageProps & { charge: Chg | undefined; img: string }) {
+  if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
+  return (
+    <section className="stack">
+      <p className="who-line">{charge.personName}</p>
+      <h1>Muestra el código</h1>
+      <img className="shot" alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`} src={`data:image/png;base64,${img}`} />
+      <p className="lead">Escanéalo con la app del banco. Cuando pague, aquí se marca solo.</p>
+      <Status kind="wait">Esperando el pago</Status>
+      <Choice icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Si no fue con el código" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
+    </section>
+  );
+}
+
+function ReceiptStep({ charge, accounts, onView }: StageProps & { charge: Chg | undefined }) {
+  if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
+  const account = findAccount(accounts, charge.accountId);
+  return (
+    <ReceiptView
+      tel={charge.tel}
+      data={{
+        folio: folioOf(charge.id),
+        payerName: charge.personName,
+        concept: charge.concept,
+        amount: charge.amount,
+        via: charge.via === 'CASH' ? 'CASH' : 'CODI',
+        recipient: account?.alias ?? '',
+        paidAt: charge.paidAt ?? new Date().toISOString(),
+      }}
+    />
   );
 }
 

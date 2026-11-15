@@ -23,6 +23,7 @@ export type Chg = {
   via?: 'CODI' | 'CASH' | null;
   status?: 'PENDING' | 'PAID' | null;
   transactionId?: string | null;
+  paidAt?: string | null;
 };
 
 export type View =
@@ -32,7 +33,9 @@ export type View =
   | { id: 'charge'; chargeId: string }
   | { id: 'cash'; chargeId: string }
   | { id: 'wait'; chargeId: string }
+  | { id: 'qr'; chargeId: string; img: string }
   | { id: 'paid'; chargeId: string }
+  | { id: 'receipt'; chargeId: string }
   | { id: 'people' }
   | { id: 'add-person' }
   | { id: 'new-charge'; personId: string }

@@ -44,6 +44,7 @@ function mapCharge(c: Charge): Chg | null {
     via: c.via,
     status: c.status,
     transactionId: c.transactionId,
+    paidAt: c.paidAt,
   };
 }
 
@@ -97,7 +98,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
   }, [load]);
 
   useEffect(() => {
-    if (view.id !== 'wait') return;
+    if (view.id !== 'wait' && view.id !== 'qr') return;
     const c = charges.find((x) => x.id === view.chargeId);
     if (c && chargeKind(c) === 'paid') setView({ id: 'paid', chargeId: c.id });
   }, [charges, view]);
@@ -232,6 +233,16 @@ export default function App({ signOut }: { signOut?: () => void }) {
             if (r.errors?.length) throw new Error('pey');
             await load();
           }, () => setView({ id: 'wait', chargeId: id }));
+        }}
+        onShowQr={(id) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'requestQr', id });
+            if (r.errors?.length || !r.data) throw new Error('qr');
+            const parsed = JSON.parse(r.data) as { qrImage?: string | null };
+            if (!parsed.qrImage) throw new Error('qr');
+            await load();
+            setView({ id: 'qr', chargeId: id, img: parsed.qrImage });
+          });
         }}
         onCash={(id) => {
           void run(async () => {
