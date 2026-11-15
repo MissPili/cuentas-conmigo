@@ -150,11 +150,20 @@ export function payCardSvg(d: PayCardData): string {
 export const svgDataUrl = (svg: string) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 
 export function receiptText(d: ReceiptData) {
-  return `Hola. Comprobante de pago de ${d.projectName}. ${d.payerName} pagó ${money(d.amount)} por ${d.concept}, ${viaName(d.via).toLowerCase()}, el ${dateLabel(d.paidAt)}. Folio ${d.folio}.`;
+  return `Hola. Comprobante de pago de ${d.projectName}: ${d.payerName} pagó ${money(d.amount)} por ${d.concept}, ${viaName(d.via).toLowerCase()}, el ${dateLabel(d.paidAt)}. Folio ${d.folio}. Gracias por ayudar a pagar. Si tienes dudas, comunícate con ${d.payerName}.`;
 }
 
+/** Message sent with the code to whoever helps pay: says who they are helping, what for, and to ask first if in doubt. */
 export function payText(d: PayCardData) {
-  return `Hola. Para pagar ${money(d.amount)} de ${d.concept} (${d.projectName}) por ${d.payerName}: abre la app de tu banco, elige CoDi y escanea el código de la imagen.`;
+  return (
+    `Hola. Estás ayudando a ${d.payerName} a pagar ${money(d.amount)} de ${d.concept} en ${d.projectName}.
+
+` +
+    'Para pagar: abre la app de tu banco, elige CoDi y escanea el código de la imagen.
+
+' +
+    `Si tienes dudas, comunícate con ${d.payerName} antes de aprobar o hacer el pago.`
+  );
 }
 
 // Option A: WhatsApp opens with the message ready; the person still taps Send. We cannot know it arrived.
