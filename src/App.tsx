@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
-import type { Acc, Chg, Per, View } from './model';
+import type { Acc, Chg, Per, Proj, View } from './model';
+import { freeSpots, isFull } from './places';
 import { chargeKind, thisMonth } from './model';
 import { Stage } from './screens';
 import { Shell } from './ui';
@@ -10,6 +11,17 @@ const client = generateClient<Schema>();
 type Account = Schema['Account']['type'];
 type Person = Schema['Person']['type'];
 type Charge = Schema['Charge']['type'];
+type Project = Schema['Project']['type'];
+
+function mapProject(p: Project): Proj | null {
+  if (!p.id || !p.token || p.open == null || p.capacity == null || p.holdDays == null) return null;
+  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays };
+}
+
+function newToken(): string {
+  const b = crypto.getRandomValues(new Uint8Array(24));
+  return btoa(String.fromCharCode(...b)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+}
 
 function mapAccount(a: Account): Acc | null {
   if (!a.id || !a.alias || !a.legalName || !a.clabe) return null;
@@ -27,7 +39,16 @@ function mapAccount(a: Account): Acc | null {
 
 function mapPerson(p: Person): Per | null {
   if (!p.id || !p.name || !p.tel) return null;
-  return { id: p.id, name: p.name, tel: p.tel };
+  return {
+    id: p.id,
+    name: p.name,
+    tel: p.tel,
+    status: p.status,
+    heldOn: p.heldOn,
+    via: p.via,
+    helpers: (p.helpers ?? []).filter((h): h is string => !!h),
+    regAt: p.regAt,
+  };
 }
 
 function mapCharge(c: Charge): Chg | null {
@@ -45,6 +66,7 @@ function mapCharge(c: Charge): Chg | null {
     status: c.status,
     transactionId: c.transactionId,
     paidAt: c.paidAt,
+    confirmsPlace: c.confirmsPlace,
   };
 }
 
@@ -52,6 +74,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
   const [accounts, setAccounts] = useState<Acc[]>([]);
   const [people, setPeople] = useState<Per[]>([]);
   const [charges, setCharges] = useState<Chg[]>([]);
+  const [project, setProject] = useState<Proj | null>(null);
   const [view, setView] = useState<View>({ id: 'loading' });
   const [hist, setHist] = useState<View[]>([]);
   const [busy, setBusy] = useState(false);
@@ -63,17 +86,19 @@ export default function App({ signOut }: { signOut?: () => void }) {
   viewRef.current = view;
 
   const load = useCallback(async () => {
-    const [a, p, c] = await Promise.all([
+    const [a, p, c, j] = await Promise.all([
       client.models.Account.list(),
       client.models.Person.list(),
       client.models.Charge.list(),
+      client.models.Project.list(),
     ]);
-    if (a.errors?.length || p.errors?.length || c.errors?.length) {
+    if (a.errors?.length || p.errors?.length || c.errors?.length || j.errors?.length) {
       throw new Error('list');
     }
     setAccounts(a.data.map(mapAccount).filter((x): x is Acc => !!x));
     setPeople(p.data.map(mapPerson).filter((x): x is Per => !!x));
     setCharges(c.data.map(mapCharge).filter((x): x is Chg => !!x));
+    setProject(j.data.map(mapProject).find((x): x is Proj => !!x) ?? null);
   }, []);
 
   useEffect(() => {
@@ -172,6 +197,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
         accounts={accounts}
         people={people}
         charges={charges}
+        project={project}
         signOut={signOut}
         problem={problem}
         onView={go}
@@ -188,7 +214,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
           const digits = tel.replace(/\D/g, '');
           if (digits.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
           void run(async () => {
-            await client.models.Person.create({ name: name.trim(), tel: digits });
+            await client.models.Person.create({ name: name.trim(), tel: digits, via: 'MANUAL', status: 'ENROLLED', heldOn: new Date().toISOString() });
             await load();
           }, () => land({ id: 'people' }, 'Persona guardada.'));
         }}
@@ -206,7 +232,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
             await load();
           }, () => land({ id: 'accounts', page: 0 }, 'Cuenta guardada.'));
         }}
-        onCreateCharge={(personId, concept, amount, accountId) => {
+        onCreateCharge={(personId, concept, amount, accountId, confirmsPlace) => {
           const person = people.find((x) => x.id === personId);
           if (!person) return;
           if (!(amount > 0)) { setFormError('Escribe el monto.'); return; }
@@ -221,6 +247,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
               amount,
               month: thisMonth(),
               status: 'PENDING',
+              confirmsPlace,
             });
             if (created.errors?.length || !created.data?.id) throw new Error('create');
             await load();
@@ -262,6 +289,53 @@ export default function App({ signOut }: { signOut?: () => void }) {
             if (r.errors?.length) throw new Error('pey');
             await load();
           }, () => land({ id: 'account', accountId: id }, 'Listo. Ya la mandamos a revisar.'));
+        }}
+        onSaveProject={(input) => {
+          if (!(input.capacity >= 1 && input.capacity <= 200)) { setFormError('Escribe cuántos lugares hay, de 1 a 200.'); return; }
+          if (!(input.holdDays >= 1 && input.holdDays <= 60)) { setFormError('Los días de apartado van de 1 a 60.'); return; }
+          void run(async () => {
+            const r = project
+              ? await client.models.Project.update({ id: project.id, name: input.name, capacity: input.capacity, holdDays: input.holdDays })
+              : await client.models.Project.create({ name: input.name, capacity: input.capacity, holdDays: input.holdDays, open: true, token: newToken() });
+            if (r.errors?.length) throw new Error('project');
+            await load();
+          }, () => land({ id: 'places' }, 'Listo. Ya quedó guardado.'));
+        }}
+        onToggleOpen={() => {
+          if (!project) return;
+          void run(async () => {
+            const r = await client.models.Project.update({ id: project.id, open: !project.open });
+            if (r.errors?.length) throw new Error('project');
+            await load();
+          }, () => setNote(project.open ? 'Inscripciones cerradas.' : 'Inscripciones abiertas.'));
+        }}
+        onRotateToken={() => {
+          if (!project) return;
+          void run(async () => {
+            const r = await client.models.Project.update({ id: project.id, token: newToken() });
+            if (r.errors?.length) throw new Error('project');
+            await load();
+          }, () => setNote('Listo. El código anterior ya no sirve.'));
+        }}
+        onSeat={(personId, action) => {
+          if (action === 'give' && project && isFull(people, project, charges, new Date()) && freeSpots(people, project, charges, new Date()) === 0) {
+            setNote('No hay lugar libre. Libera uno primero.');
+            return;
+          }
+          const now = new Date().toISOString();
+          const patch =
+            action === 'release' ? { status: 'RELEASED' as const }
+            : action === 'extend' ? { heldOn: now }
+            : { status: 'ENROLLED' as const, heldOn: now };
+          const message =
+            action === 'release' ? 'Listo. Ese lugar quedó libre.'
+            : action === 'extend' ? 'Listo. Se apartó más días.'
+            : 'Listo. Ya tiene lugar. Ya le puedes cobrar.';
+          void run(async () => {
+            const r = await client.models.Person.update({ id: personId, ...patch });
+            if (r.errors?.length) throw new Error('seat');
+            await load();
+          }, () => land({ id: 'places' }, message));
         }}
         onRefresh={(id) => {
           void run(async () => {

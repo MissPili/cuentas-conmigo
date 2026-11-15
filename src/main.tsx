@@ -6,6 +6,7 @@ import { Authenticator, translations } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import outputs from '../amplify_outputs.json';
 import App from './App';
+import Inscripcion from './Inscripcion';
 import favicon from './assets/favicon.png';
 import logo from './assets/logo-cuentas-conmigo.png';
 import './index.css';
@@ -27,8 +28,16 @@ if (icon) icon.href = favicon;
 
 Amplify.configure(outputs);
 
+// The signup QR opens /?i=TOKEN: a public page, no account, outside the login.
+const signupToken = new URLSearchParams(location.search).get('i');
+const registerUrl = (outputs as { custom?: { registerUrl?: string } }).custom?.registerUrl ?? '';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Authenticator components={{ Header: AuthLogo }}>{({ signOut }) => <App signOut={signOut} />}</Authenticator>
+    {signupToken ? (
+      <Inscripcion token={signupToken} registerUrl={registerUrl} />
+    ) : (
+      <Authenticator components={{ Header: AuthLogo }}>{({ signOut }) => <App signOut={signOut} />}</Authenticator>
+    )}
   </React.StrictMode>,
 );

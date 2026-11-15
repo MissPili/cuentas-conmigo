@@ -1,11 +1,14 @@
 import type { FormEvent, ReactNode } from 'react';
 import {
   accountWords, chargeKind, chargeWords, money, monthName, pageOf, parseAmount, personWords, ready, thisMonth,
-  type Acc, type Chg, type Per, type View,
+  type Acc, type Chg, type Per, type Proj, type View,
 } from './model';
 import { Alert, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
 import ReceiptView from './Receipt';
 import { folioOf } from './comprobante';
+import { More, ReportView } from './screens2';
+import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
+import { canCharge, isFull, placesOn, toApprove } from './places';
 
 export type StageProps = {
   view: View;
@@ -14,13 +17,18 @@ export type StageProps = {
   accounts: Acc[];
   people: Per[];
   charges: Chg[];
+  project: Proj | null;
   signOut?: () => void;
   onView: (next: View) => void;
   onReset: (next: View) => void;
   onOpenPerson: (personId: string) => void;
   onAddPerson: (name: string, tel: string) => void;
   onAddAccount: (input: { alias: string; legalName: string; clabe: string; entity: 'PERSON' | 'BUSINESS' }) => void;
-  onCreateCharge: (personId: string, concept: string, amount: number, accountId: string) => void;
+  onCreateCharge: (personId: string, concept: string, amount: number, accountId: string, confirmsPlace: boolean) => void;
+  onSaveProject: (input: { name: string; capacity: number; holdDays: number }) => void;
+  onToggleOpen: () => void;
+  onRotateToken: () => void;
+  onSeat: (personId: string, action: 'approve' | 'give' | 'extend' | 'release') => void;
   onRequest: (chargeId: string) => void;
   onShowQr: (chargeId: string) => void;
   onCash: (chargeId: string) => void;
@@ -74,6 +82,13 @@ export function Stage(p: StageProps) {
   if (v.id === 'qr') return <QrStep {...p} charge={findCharge(p.charges, v.chargeId)} img={v.img} />;
   if (v.id === 'paid') return <PaidStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'receipt') return <ReceiptStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
+  if (v.id === 'more') return <More {...p} />;
+  if (v.id === 'places') return <PlacesHub {...p} />;
+  if (v.id === 'seats') return <Seats {...p} page={v.page} only={v.only} />;
+  if (v.id === 'seat') return <SeatDetail {...p} personId={v.personId} />;
+  if (v.id === 'reg-qr') return <RegQr {...p} />;
+  if (v.id === 'places-settings') return <PlacesSettings {...p} />;
+  if (v.id === 'report') return <ReportView {...p} month={v.month} />;
   if (v.id === 'people') return <People {...p} />;
   if (v.id === 'add-person') return <AddPerson {...p} />;
   if (v.id === 'accounts') return <Accounts {...p} page={v.page} />;
@@ -82,7 +97,7 @@ export function Stage(p: StageProps) {
   return <NewCharge {...p} personId={v.personId} />;
 }
 
-function Home({ accounts, people, charges, signOut, onView }: StageProps) {
+function Home({ accounts, people, charges, project, onView }: StageProps) {
   const month = thisMonth();
   const now = charges.filter((c) => c.month === month);
   const paid = now.filter((c) => c.status === 'PAID').length;
@@ -101,11 +116,11 @@ function Home({ accounts, people, charges, signOut, onView }: StageProps) {
     primary = <Choice primary icon={<IcoCash />} label="Cobrar" hint="Elegir a quién" onClick={() => onView({ id: 'who', page: 0 })} />;
   }
 
-  const extras: ReactNode[] = [];
-  if (hasAccount && hasPeople) extras.push(<Choice key="people" icon={<IcoPeople />} label="Personas" hint="Nombres y teléfonos" onClick={() => onView({ id: 'people' })} />);
-  if (hasAccount) extras.push(<Choice key="bank" icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />);
-  else extras.push(<Choice key="people" icon={<IcoPeople />} label="Personas" hint="Nombres y teléfonos" onClick={() => onView({ id: 'people' })} />);
-  if (signOut) extras.push(<Choice key="out" icon={<IcoOut />} label="Salir" onClick={signOut} />);
+  const extras: ReactNode[] = [
+    <Choice key="people" icon={<IcoPeople />} label="Personas" hint="Nombres y teléfonos" onClick={() => onView({ id: 'people' })} />,
+    ...(placesOn(project) ? [<Choice key="places" icon={<IcoPeople />} label="Lugares" hint={placesHint(people, charges, project)} onClick={() => onView({ id: 'places' })} />] : []),
+    <Choice key="more" icon={<IcoBank />} label="Más opciones" hint="Reporte, cuenta y salir" onClick={() => onView({ id: 'more' })} />,
+  ];
 
   return (
     <section className="stack">
@@ -124,9 +139,16 @@ function Home({ accounts, people, charges, signOut, onView }: StageProps) {
   );
 }
 
+function placesHint(people: Per[], charges: Chg[], project: Proj): string {
+  const review = toApprove(people).length;
+  if (review) return review === 1 ? '1 inscripción por revisar' : `${review} inscripciones por revisar`;
+  return isFull(people, project, charges, new Date()) ? 'Taller lleno' : 'Cupos e inscripciones';
+}
+
 function Who({ people, charges, onOpenPerson, onView, page }: StageProps & { page: number }) {
   const month = thisMonth();
   const ranked = people
+    .filter(canCharge)
     .map((person) => {
       const mine = charges.filter((c) => c.personId === person.id && c.month === month);
       const words = personWords(mine);
@@ -398,7 +420,7 @@ function AddAccount({ busy, formError, onAddAccount }: StageProps) {
   );
 }
 
-function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge, onView }: StageProps & { personId: string }) {
+function NewCharge({ people, accounts, personId, project, busy, formError, onCreateCharge, onView }: StageProps & { personId: string }) {
   const person = findPerson(people, personId);
   if (!person) return <Missing onHome={() => onView({ id: 'home' })} />;
   if (!accounts.length) {
@@ -415,7 +437,7 @@ function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const accountId = only ? only.id : String(data.get('account') || '');
-    onCreateCharge(person.id, String(data.get('concept') || ''), parseAmount(String(data.get('amount') || '')), accountId);
+    onCreateCharge(person.id, String(data.get('concept') || ''), parseAmount(String(data.get('amount') || '')), accountId, data.get('monthly') === 'on');
   };
   return (
     <section className="stack">
@@ -427,6 +449,9 @@ function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge
         <Field label="¿Cuánto?">
           <input name="amount" required inputMode="decimal" autoComplete="off" placeholder="0.00" />
         </Field>
+        {placesOn(project) ? (
+          <label className="check"><input type="checkbox" name="monthly" defaultChecked /><span>Es la mensualidad (confirma el lugar)</span></label>
+        ) : null}
         {only ? <p className="lead">El dinero llega a {only.alias}.</p> : (
           <Field label="¿A qué cuenta llega?">
             <select name="account" required defaultValue="">

@@ -9,7 +9,22 @@ export type Acc = {
   errorMessage?: string | null;
 };
 
-export type Per = { id: string; name: string; tel: string };
+export type PersonStatus = 'PENDING' | 'ENROLLED' | 'WAITLIST' | 'RELEASED';
+
+export type Per = {
+  id: string;
+  name: string;
+  tel: string;
+  /** Places: null means added by hand (counts as enrolled and never expires). */
+  status?: PersonStatus | null;
+  heldOn?: string | null; // ISO date the place was held or last extended
+  via?: 'QR' | 'MANUAL' | null;
+  helpers?: string[]; // 10-digit WhatsApp numbers of the people who help pay (1 to 3)
+  regAt?: string | null; // when they signed up through the QR
+};
+
+/** One row per collector: settings for places and the signup QR. */
+export type Proj = { id: string; name?: string | null; open: boolean; token: string; capacity: number; holdDays: number };
 
 export type Chg = {
   id: string;
@@ -24,6 +39,8 @@ export type Chg = {
   status?: 'PENDING' | 'PAID' | null;
   transactionId?: string | null;
   paidAt?: string | null;
+  /** True for the monthly fee: only that payment confirms a place. */
+  confirmsPlace?: boolean | null;
 };
 
 export type View =
@@ -42,11 +59,28 @@ export type View =
   | { id: 'accounts'; page: number }
   | { id: 'account'; accountId: string }
   | { id: 'add-account' }
+  | { id: 'more' }
+  | { id: 'places' }
+  | { id: 'seats'; page: number; only?: 'review' }
+  | { id: 'seat'; personId: string }
+  | { id: 'reg-qr' }
+  | { id: 'places-settings' }
+  | { id: 'report'; month: string }
   | { id: 'loading' };
 
 export type Kind = 'paid' | 'wait' | 'due' | 'bad';
 
-export const thisMonth = () => new Date().toISOString().slice(0, 7);
+/** Local month (Mexico), not UTC: with UTC the month flips at 6 pm on the last day. */
+export const thisMonth = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+};
+
+export function shiftMonth(ym: string, delta: number): string {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, (m || 1) - 1 + delta, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
 
 export function monthName(ym: string): string {
   const [y, m] = ym.split('-').map(Number);

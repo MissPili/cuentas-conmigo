@@ -19,6 +19,18 @@ const SHOTS = [
   ['account', '10-cuenta-en-espera-de-pey'],
   ['add-person', '11-agregar-persona'],
   ['new-charge', '12-nuevo-cobro'],
+  ['report', '13-reporte-del-mes'],
+  ['places', '14-lugares'],
+  ['review', '15-inscripciones-por-revisar'],
+  ['seat', '16-aprobar-una-inscripcion'],
+  ['seat-late', '17-apartado-vencido'],
+  ['reg-qr', '18-codigo-para-inscribir'],
+  ['places-settings', '19-ajustes-de-lugares'],
+  ['signup1', '20-inscripcion-paso-1'],
+  ['signup2', '21-inscripcion-paso-2'],
+  ['signup3', '22-inscripcion-paso-3'],
+  ['signup4', '23-inscripcion-paso-4'],
+  ['signup-done', '24-inscripcion-lista'],
 ];
 
 (async () => {
@@ -29,6 +41,12 @@ const SHOTS = [
     await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true });
     await p.goto(BASE + '?v=' + v, { waitUntil: 'networkidle0' });
     await new Promise((r) => setTimeout(r, 400));
+    if (v === 'signup-done') {
+      await p.click('.check input');
+      const buttons = await p.$$('button.choice');
+      await buttons[0].click();
+      await new Promise((r) => setTimeout(r, 500));
+    }
     await p.screenshot({ path: path.join(OUT, name + '.png'), fullPage: true });
     await p.close();
     console.log('ok', name);
