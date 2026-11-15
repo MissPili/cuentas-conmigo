@@ -68,6 +68,8 @@ function fakeQr(): string {
 }
 
 const first = new URLSearchParams(location.search).get('v') ?? 'home';
+// ?empty=1: a brand new user with no project, no account and no people.
+const empty = new URLSearchParams(location.search).has('empty');
 
 function start(): View {
   switch (first) {
@@ -151,12 +153,12 @@ function Demo() {
         view={view}
         busy={false}
         formError=""
-        accounts={accounts}
-        people={people}
-        charges={charges}
-        project={project}
-        projects={projects}
-        totals={totals}
+        accounts={empty ? [] : accounts}
+        people={empty ? [] : people}
+        charges={empty ? [] : charges}
+        project={empty ? null : project}
+        projects={empty ? [] : projects}
+        totals={empty ? {} : totals}
         onPickProject={noop}
         onCreateProject={noop}
         signOut={noop}

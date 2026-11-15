@@ -102,8 +102,9 @@ export function Stage(p: StageProps) {
   const v = p.view;
   // What a keychain tap shows when it cannot open a charge: it must not depend on having chosen a project.
   if (v.id === 'key-tap') return <KeyTap {...p} kind={v.kind} personId={v.personId} />;
-  if (v.id === 'projects' || !p.project) return <ProjectsView {...p} />;
+  // Creating a project must work with NO project yet (a brand new user), so it comes before the "no project" welcome.
   if (v.id === 'new-project') return <NewProject {...p} />;
+  if (v.id === 'projects' || !p.project) return <ProjectsView {...p} />;
   if (v.id === 'home') return <Home {...p} />;
   if (v.id === 'who') return <Who {...p} page={v.page} />;
   if (v.id === 'person') return <PersonCharges {...p} personId={v.personId} page={v.page} />;
