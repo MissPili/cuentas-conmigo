@@ -11,3 +11,7 @@ out/
 # Notas de trabajo y PDF: se quedan en la máquina, no en el repo público.
 /CLAUDE.md
 /*.pdf
+node_modules/
+.amplify/
+amplify_outputs*
+/*.zip
