@@ -392,6 +392,22 @@ export default function App({ signOut }: { signOut?: () => void }) {
             setProjectId(r.data.id);
           }, () => land({ id: 'home' }, 'Listo. Ya puedes empezar.'));
         }}
+        onDeleteAccount={(id) => {
+          // A charge already sent to Pey and still unpaid could be paid into this account: do not lose track of it.
+          if (allCharges.some((c) => c.accountId === id && c.status !== 'PAID' && c.transactionId)) {
+            setNote('Esta cuenta tiene cobros esperando pago. Espera a que paguen y vuelve a intentarlo.');
+            return;
+          }
+          void run(async () => {
+            for (const j of projects.filter((x) => x.accountId === id)) {
+              const u = await client.models.Project.update({ id: j.id, accountId: null });
+              if (u.errors?.length) throw new Error('project');
+            }
+            const d = await client.models.Account.delete({ id });
+            if (d.errors?.length) throw new Error('account');
+            await load();
+          }, () => land({ id: 'accounts', page: 0 }, 'Listo. La cuenta se eliminó.'));
+        }}
         onToggleOpen={() => {
           if (!project) return;
           void run(async () => {

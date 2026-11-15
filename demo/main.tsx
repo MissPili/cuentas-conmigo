@@ -147,6 +147,7 @@ function Demo() {
         onAddAccount={noop}
         onCreateCharge={noop}
         onSaveProject={noop}
+        onDeleteAccount={noop}
         onToggleOpen={noop}
         onSendCode={async () => ''}
         onWipe={async () => ''}

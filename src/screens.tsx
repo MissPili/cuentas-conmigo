@@ -1,4 +1,4 @@
-import type { FormEvent, ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   accountWords, chargeKind, chargeWords, money, monthName, pageOf, parseAmount, personWords, ready, thisMonth,
   type Acc, type Chg, type Per, type Proj, type View,
@@ -32,6 +32,7 @@ export type StageProps = {
   totals?: Record<string, number>;
   onPickProject: (id: string) => void;
   onCreateProject: (name: string) => void;
+  onDeleteAccount: (id: string) => void;
   onToggleOpen: () => void;
   /** Sends a code to the collector's email. Returns an error message, or '' when it went out. */
   onSendCode: () => Promise<string>;
@@ -446,7 +447,8 @@ function Accounts({ accounts, page, onView }: StageProps & { page: number }) {
   );
 }
 
-function AccountStep({ account, busy, onRegister, onRefresh, onView }: StageProps & { account: Acc | undefined }) {
+function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, onView }: StageProps & { account: Acc | undefined }) {
+  const [asking, setAsking] = useState(false);
   if (!account) return <Missing onHome={() => onView({ id: 'home' })} />;
   const words = accountWords(account);
   const active = account.codiStatus === 'ACTIVE';
@@ -463,6 +465,15 @@ function AccountStep({ account, busy, onRegister, onRefresh, onView }: StageProp
         <Choice primary icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya está lista'} onClick={() => onRefresh(account.id)} />
       ) : null}
       {active ? <Choice primary icon={<IcoCash />} label="Cobrar" onClick={() => onView({ id: 'who', page: 0 })} /> : null}
+      {!asking ? (
+        <Choice danger label="Eliminar cuenta" hint={account.codiStatus === 'ERROR' ? 'Tiene un error' : 'Ya no la necesito'} onClick={() => setAsking(true)} />
+      ) : (
+        <div className="stack">
+          <Alert>Se quita de esta app. Los cobros que ya hiciste se conservan, pero sin el nombre de la cuenta. En Pey la cuenta sigue registrada.</Alert>
+          <Choice danger label={busy ? busyLabel : 'Sí, eliminar'} onClick={() => onDeleteAccount(account.id)} />
+          <Choice label="No, volver" onClick={() => setAsking(false)} />
+        </div>
+      )}
     </section>
   );
 }
