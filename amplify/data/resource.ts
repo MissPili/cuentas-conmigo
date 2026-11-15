@@ -2,6 +2,7 @@ import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
 import { pey } from '../functions/pey/resource';
 import { peyWebhook } from '../functions/pey-webhook/resource';
 import { register } from '../functions/register/resource';
+import { share } from '../functions/share/resource';
 
 const schema = a
   .schema({
@@ -52,6 +53,16 @@ const schema = a
       // Charge plans (src/plans.ts) as JSON: up to two, each paid once or monthly for N months. Replaces the fields above.
       plansJson: a.string(),
     }).secondaryIndexes((i) => [i('token')]).authorization((allow) => [allow.owner()]),
+    // A payment code or receipt (as a small picture) behind a link sent by WhatsApp. The long random token is the secret.
+    Share: a.model({
+      token: a.string().required(),
+      kind: a.enum(['PAY', 'RECEIPT']),
+      title: a.string().required(),
+      description: a.string().required(),
+      image: a.string().required(), // PNG data URL, about 720x900
+      expiresAt: a.string().required(),
+    }).secondaryIndexes((i) => [i('token')]).authorization((allow) => [allow.owner()]),
+
     // Rate limit counters for the public signup. Only the signup function can touch them.
     RegAttempt: a.model({
       key: a.string().required(),
@@ -87,7 +98,7 @@ const schema = a
       .authorization((allow) => [allow.authenticated()])
       .handler(a.handler.function(pey)),
   })
-  .authorization((allow) => [allow.resource(pey), allow.resource(peyWebhook), allow.resource(register)]);
+  .authorization((allow) => [allow.resource(pey), allow.resource(peyWebhook), allow.resource(register), allow.resource(share)]);
 
 export type Schema = ClientSchema<typeof schema>;
 

@@ -9,6 +9,9 @@ import { legacyPlan, parsePlans, serializePlans } from './plans';
 import { chargeKind, thisMonth } from './model';
 import { Stage } from './screens';
 import { Shell } from './ui';
+import outputs from '../amplify_outputs.json';
+
+const shareUrl = (outputs as { custom?: { shareUrl?: string } }).custom?.shareUrl ?? '';
 
 const client = generateClient<Schema>();
 type Account = Schema['Account']['type'];
@@ -404,6 +407,18 @@ export default function App({ signOut }: { signOut?: () => void }) {
             if (d.errors?.length) throw new Error('account');
             await load();
           }, () => land({ id: 'accounts', page: 0 }, 'Listo. La cuenta se eliminó.'));
+        }}
+        onShareLink={async ({ kind, title, description, image }) => {
+          if (!shareUrl) throw new Error('share');
+          // The long random token is the only secret of the link; the code to pay lasts a week, a receipt much longer.
+          const token = newToken();
+          const days = kind === 'PAY' ? 7 : 180;
+          const r = await client.models.Share.create({
+            token, kind, title, description, image,
+            expiresAt: new Date(Date.now() + days * 86400000).toISOString(),
+          });
+          if (r.errors?.length) throw new Error('share');
+          return `${shareUrl}?t=${token}`;
         }}
         onToggleOpen={() => {
           if (!project) return;

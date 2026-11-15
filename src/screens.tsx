@@ -34,6 +34,8 @@ export type StageProps = {
   onPickProject: (id: string) => void;
   onCreateProject: (name: string) => void;
   onDeleteAccount: (id: string) => void;
+  /** Stores a picture behind a link and returns the link (to send by WhatsApp). */
+  onShareLink: (input: { kind: 'PAY' | 'RECEIPT'; title: string; description: string; image: string }) => Promise<string>;
   onToggleOpen: () => void;
   /** Sends a code to the collector's email. Returns an error message, or '' when it went out. */
   onSendCode: () => Promise<string>;
@@ -357,7 +359,7 @@ function destsFor(people: Per[], tel: string, personId: string): Dest[] {
   return destinations(tel, helpers, person?.sendTo);
 }
 
-function SendQr({ charge, img, accounts, people, project, onView }: StageProps & { charge: Chg | undefined; img: string }) {
+function SendQr({ charge, img, accounts, people, project, onShareLink, onView }: StageProps & { charge: Chg | undefined; img: string }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   const card = {
     projectName: project?.name || findAccount(accounts, charge.accountId)?.alias || 'Cuentas conmigo',
@@ -373,6 +375,7 @@ function SendQr({ charge, img, accounts, people, project, onView }: StageProps &
       svg={payCardSvg(card)}
       filename={`codigo-${folioOf(charge.id)}.png`}
       msg={payText(card, destsFor(people, charge.tel, charge.personId)[0]?.name ?? '')}
+      link={{ kind: 'PAY', title: `Código para pagar · ${card.projectName}`, description: `Para pagar ${money(card.amount)} de ${card.concept} por ${card.payerName}. Abre la app de tu banco, elige CoDi y escanea el código.`, onShareLink }}
       dests={destsFor(people, charge.tel, charge.personId)}
     >
       <Choice icon={<IcoQr />} label="Volver al código" onClick={() => onView({ id: 'qr', chargeId: charge.id, img })} />
@@ -380,11 +383,12 @@ function SendQr({ charge, img, accounts, people, project, onView }: StageProps &
   );
 }
 
-function ReceiptStep({ charge, accounts, people, project, onView }: StageProps & { charge: Chg | undefined }) {
+function ReceiptStep({ charge, accounts, people, project, onShareLink, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   const account = findAccount(accounts, charge.accountId);
   return (
     <ReceiptView
+      onShareLink={onShareLink}
       dests={destsFor(people, charge.tel, charge.personId)}
       data={{
         folio: folioOf(charge.id),

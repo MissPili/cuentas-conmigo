@@ -193,18 +193,29 @@ export function destinations(personTel: string, helpers: Helper[] = [], sendTo?:
   return out.slice(0, 3);
 }
 
-export function svgToPng(svg: string): Promise<Blob> {
+export function svgToPng(svg: string, width = 1080, height = 1350): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const c = document.createElement('canvas');
-      c.width = 1080;
-      c.height = 1350;
-      c.getContext('2d')!.drawImage(img, 0, 0);
+      c.width = width;
+      c.height = height;
+      c.getContext('2d')!.drawImage(img, 0, 0, width, height);
       c.toBlob((b) => (b ? resolve(b) : reject(new Error('png'))), 'image/png');
     };
     img.onerror = () => reject(new Error('image'));
     img.src = svgDataUrl(svg);
+  });
+}
+
+/** A small PNG (720x900) as a data URL, light enough to store behind a link. */
+export async function svgToSmallDataUrl(svg: string): Promise<string> {
+  const blob = await svgToPng(svg, 720, 900);
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error('read'));
+    r.readAsDataURL(blob);
   });
 }
 

@@ -88,7 +88,7 @@ El inicio de un proyecto es deliberadamente corto: el dato de **cuánto se ha co
 
 Cada cobro manda a Pey el `bankAccountId` de su cuenta, así una sola llave de Pey sirve para varios cobradores (por ejemplo el taller y el DIF).
 
-**Sobre WhatsApp:** un enlace `wa.me` solo puede llevar texto, nunca una imagen. Por eso las imágenes se mandan con el menú de compartir del celular (se elige WhatsApp y el contacto) o se guardan para mandarlas desde la galería. Nada se envía solo.
+**Sobre WhatsApp:** un enlace `wa.me` abre el chat de un número aunque no esté en los contactos, pero solo puede llevar texto, nunca una imagen. Por eso el botón principal de **Mandar el código** y de **Comprobante** guarda la imagen detrás de un **enlace con una clave larga y aleatoria** (la clave es el único secreto; el código dura 7 días y el comprobante 180) y abre el chat del número elegido por la persona con el mensaje y ese enlace; WhatsApp muestra la imagen como vista previa y al tocar el enlace se ve completa. La página del enlace no muestra la cuenta que recibe. Como respaldo siguen **Compartir imagen** (menú del celular, hay que elegir el contacto) y **Guardar imagen**. Nada se envía solo: quien cobra toca Enviar en WhatsApp.
 
 ## Lugares e inscripción por QR
 
@@ -109,10 +109,11 @@ Cada cobro manda a Pey el `bankAccountId` de su cuenta, así una sola llave de P
 
 ```
 src/                  app real (pantallas, comprobante, banco de dibujos, modelo de datos)
-amplify/              servidor: acceso (Cognito), datos (DynamoDB) y tres funciones
+amplify/              servidor: acceso (Cognito), datos (DynamoDB) y cuatro funciones
   functions/pey/        llama a Pey: registrar cuenta, solicitud CoDi, QR, revisar pago
   functions/pey-webhook/  recibe el aviso de pago de Pey y verifica la firma
   functions/register/     inscripción pública por QR (solo registra, con límite de intentos)
+  functions/share/        página pública del enlace que se manda por WhatsApp (imagen del código o del comprobante)
 tests/                pruebas de la lógica de lugares, reporte y dibujos (npm test)
 demo/                 modo de demostración con datos inventados (para capturas y diseño)
 scripts/              prueba firmada del webhook y capturas de pantalla

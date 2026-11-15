@@ -1,18 +1,33 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   type Dest,
   type ReceiptData,
+  money,
   receiptSvg,
-  svgDataUrl,
   receiptText,
-  shareSvg,
   saveSvg,
+  shareSvg,
+  svgDataUrl,
+  svgToSmallDataUrl,
+  whatsappUrl,
 } from './comprobante';
 import { Alert, Choice, IcoPhone } from './ui';
 
-/** A picture plus the ways to send it: WhatsApp to a number, the phone's share sheet, or save it. */
+type ShareLink = {
+  kind: 'PAY' | 'RECEIPT';
+  title: string;
+  description: string;
+  /** Stores the picture behind a link and returns the link. */
+  onShareLink: (input: { kind: 'PAY' | 'RECEIPT'; title: string; description: string; image: string }) => Promise<string>;
+};
+
+/**
+ * A picture plus the ways to send it. The main way opens the WhatsApp chat OF THE CHOSEN NUMBER (no need to have it
+ * in the contacts) with the message and a link: the link shows the picture, and WhatsApp previews it in the chat.
+ * An image itself cannot travel inside a wa.me link, hence the link. The phone's share sheet and saving stay as backups.
+ */
 export function PictureSend({
-  title, alt, svg, filename, msg, dests, children,
+  title, alt, svg, filename, msg, dests, link, children,
 }: {
   title: string;
   alt: string;
@@ -20,9 +35,30 @@ export function PictureSend({
   filename: string;
   msg: string;
   dests: Dest[];
+  link?: ShareLink;
   children?: ReactNode;
 }) {
   const [note, setNote] = useState('');
+  const [url, setUrl] = useState('');
+  const [state, setState] = useState<'idle' | 'preparing' | 'ready' | 'failed'>(link ? 'preparing' : 'idle');
+
+  // Prepare the link as soon as the picture is on screen, so sending is ONE tap (a tap that opens WhatsApp).
+  useEffect(() => {
+    if (!link) return;
+    let alive = true;
+    setState('preparing');
+    (async () => {
+      try {
+        const image = await svgToSmallDataUrl(svg);
+        const made = await link.onShareLink({ kind: link.kind, title: link.title, description: link.description, image });
+        if (alive) { setUrl(made); setState('ready'); }
+      } catch {
+        if (alive) setState('failed');
+      }
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svg]);
 
   const share = async () => {
     try {
@@ -42,26 +78,40 @@ export function PictureSend({
     }
   };
 
+  const text = url ? `${msg}\n\n${url}` : msg;
+
   return (
     <section className="stack">
       <h1>{title}</h1>
       <img className="shot" alt={alt} src={svgDataUrl(svg)} />
       {note ? <Alert>{note}</Alert> : null}
-      {dests.length ? (
-        <p className="hint">
-          {dests[0].chosen ? 'Pidió que se lo mandes a ' : 'Elige WhatsApp y después a '}
-          <strong>{dests[0].label} ({dests[0].sub})</strong>
-          {dests.length > 1 ? `. También: ${dests.slice(1).map((d) => `${d.label} (${d.sub})`).join(', ')}` : ''}.
-        </p>
-      ) : null}
-      <Choice primary icon={<IcoPhone />} label="Compartir imagen" hint="Se abre WhatsApp con la imagen" onClick={() => { void share(); }} />
+      {link && state === 'failed' ? <Alert>No se pudo preparar el enlace. Usa Compartir imagen o Guardar imagen.</Alert> : null}
+      {link && state === 'preparing' ? <p className="lead" role="status">Preparando el envío…</p> : null}
+      {link && state === 'ready'
+        ? dests.slice(0, 2).map((d, i) => (
+          <a key={d.tel} className={i === 0 ? 'choice primary' : 'choice'} href={whatsappUrl(d.tel, text)} target="_blank" rel="noopener noreferrer">
+            <IcoPhone />
+            <span className="choice-text">
+              <span className="choice-label">WhatsApp a {d.label === 'Su celular' ? 'su celular' : d.label}</span>
+              <small>{d.sub}{d.chosen ? ' · el que pidió' : ''}. Abre su chat sin guardar el contacto.</small>
+            </span>
+          </a>
+        ))
+        : null}
+      <Choice primary={!link} icon={<IcoPhone />} label="Compartir imagen" hint="Eliges el contacto en WhatsApp" onClick={() => { void share(); }} />
       <Choice label="Guardar imagen" hint="Para mandarla después" onClick={() => { void save(); }} />
       {children}
     </section>
   );
 }
 
-export default function Receipt({ data, dests }: { data: ReceiptData; dests: Dest[] }) {
+export default function Receipt({
+  data, dests, onShareLink,
+}: {
+  data: ReceiptData;
+  dests: Dest[];
+  onShareLink: ShareLink['onShareLink'];
+}) {
   return (
     <PictureSend
       title="Comprobante"
@@ -70,6 +120,12 @@ export default function Receipt({ data, dests }: { data: ReceiptData; dests: Des
       filename={`comprobante-${data.folio}.png`}
       msg={receiptText(data)}
       dests={dests}
+      link={{
+        kind: 'RECEIPT',
+        title: `Comprobante de pago · ${data.projectName}`,
+        description: `${data.payerName} pagó ${money(data.amount)} por ${data.concept}. Folio ${data.folio}.`,
+        onShareLink,
+      }}
     />
   );
 }
