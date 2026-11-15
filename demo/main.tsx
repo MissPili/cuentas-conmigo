@@ -10,6 +10,7 @@ import { Shell } from '../src/ui';
 import Inscripcion from '../src/Inscripcion';
 import { thisMonth, type Acc, type Chg, type Per, type Proj, type View } from '../src/model';
 import { explainProblem } from '../src/problems';
+import type { AddPersonInitial } from '../src/AddPerson';
 
 const accounts: Acc[] = [
   { id: 'a1', alias: 'Taller', legalName: 'Titular de ejemplo', clabe: '012180015826225713', entity: 'PERSON', peyId: 'p1', codiStatus: 'ACTIVE' },
@@ -85,7 +86,7 @@ function start(): View {
     case 'paid': return { id: 'paid', chargeId: 'c1' };
     case 'receipt': return { id: 'receipt', chargeId: 'c1' };
     case 'people': return { id: 'people' };
-    case 'add-person': return { id: 'add-person' };
+    case 'add-person': case 'add-person-pic': case 'add-person-pick': case 'add-person-pay': case 'add-person-review': return { id: 'add-person' };
     case 'new-charge': return { id: 'new-charge', personId: 'p5' };
     case 'accounts': return { id: 'accounts', page: 0 };
     case 'account': return { id: 'account', accountId: 'a2' };
@@ -102,6 +103,15 @@ function start(): View {
     default: return { id: 'home' };
   }
 }
+
+// "Add person" opened on a later step, for the screenshots.
+const helperDemo = { name: 'Marta Ruiz', rel: 'su hija', tel: '5500000011' };
+const addSteps: Record<string, AddPersonInitial> = {
+  'add-person-pic': { step: 2, name: 'Juana López', tel: '5500000010' },
+  'add-person-pick': { step: 2, name: 'Juana López', tel: '5500000010', pic: 'pick' },
+  'add-person-pay': { step: 3, name: 'Juana López', tel: '5500000010', emblem: 'girasol', mode: 'helper', helpers: [helperDemo, { name: '', rel: '', tel: '' }] },
+  'add-person-review': { step: 4, name: 'Juana López', tel: '5500000010', emblem: 'girasol', mode: 'helper', helpers: [helperDemo] },
+};
 
 const signupSteps: Record<string, { step: number; name?: string; tel?: string; helpers?: string[] }> = {
   signup1: { step: 1 },
@@ -146,6 +156,8 @@ function Demo() {
         onReset={setView}
         onOpenPerson={(personId) => setView({ id: 'person', personId, page: 0 })}
         onAddPerson={noop}
+        onInterceptBack={noop}
+        addPersonInitial={addSteps[first]}
         onAddAccount={noop}
         onCreateCharge={noop}
         onSaveProject={noop}

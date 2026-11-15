@@ -8,6 +8,7 @@ import {
 import { buildReport, reportCsv } from '../src/report.ts';
 import { parseAmount, shiftMonth } from '../src/model.ts';
 import { explainProblem } from '../src/problems.ts';
+import { chooseSendTo, cleanHelpers, payProblem } from '../src/payers.ts';
 import { isProbe, parseShareRequest, shareLink, shortLinksWork, signupMessage, whatsappShareUrl } from '../src/links.ts';
 
 const proj: Proj = { id: 'j', open: true, token: 't', capacity: 3, holdDays: 5 };
@@ -279,4 +280,49 @@ test('signup message and WhatsApp link without a number', () => {
   assert.ok(u.startsWith('https://wa.me/?text='));
   assert.ok(!/wa\.me\/\d/.test(u));
   assert.match(decodeURIComponent(u), /https:\/\/app\.example\.mx\/\?i=abc/);
+});
+
+const marta = { name: 'Marta Ruiz', rel: 'su hija', tel: '55 0000 0011' };
+const blank = { name: '', rel: '', tel: '' };
+
+test('paying with help: person 1 is required, persons 2 and 3 are optional', () => {
+  // nobody chose yet
+  assert.match(payProblem('', [blank], 'self'), /Elige cómo vas a pagar/);
+  assert.match(payProblem('', [blank], 'other'), /Elige cómo va a pagar/);
+  // paying alone needs no helper at all
+  assert.equal(payProblem('self', [blank], 'self'), '');
+  // with help, an empty person 1 is refused even if person 2 is filled
+  assert.match(payProblem('helper', [blank], 'self'), /quién te ayuda/);
+  assert.match(payProblem('helper', [blank, marta], 'other'), /quién le ayuda/);
+  // person 1 filled, persons 2 and 3 left empty: fine
+  assert.equal(payProblem('helper', [marta, blank, blank], 'self'), '');
+});
+
+test('paying with help: an optional person filled halfway asks to be completed or removed', () => {
+  assert.match(payProblem('helper', [marta, { name: 'Luis', rel: '', tel: '' }], 'self'), /otra persona, o quítala/);
+  assert.match(payProblem('helper', [marta, { name: 'Luis', rel: 'su hijo', tel: '123' }], 'other'), /otra persona, o quítala/);
+  assert.equal(payProblem('helper', [marta, { name: 'Luis', rel: 'su hijo', tel: '5500000012' }], 'other'), '');
+});
+
+test('paying with help: person 1 needs name, relation and ten digits', () => {
+  assert.match(payProblem('helper', [{ ...marta, name: '' }], 'self'), /nombre/);
+  assert.match(payProblem('helper', [{ ...marta, rel: '' }], 'self'), /qué es tuyo/);
+  assert.match(payProblem('helper', [{ ...marta, rel: '' }], 'other'), /qué es de la persona/);
+  assert.match(payProblem('helper', [{ ...marta, tel: '123' }], 'self'), /10 números/);
+});
+
+test('the helpers saved: none when paying alone, empty optional blocks dropped, repeated numbers merged', () => {
+  const luis = { name: 'Luis', rel: 'su hijo', tel: '5500000012' };
+  assert.deepEqual(cleanHelpers('self', [marta]), []);
+  assert.deepEqual(cleanHelpers('', [marta]), []);
+  assert.deepEqual(cleanHelpers('helper', [marta, blank, blank]).map((h) => h.tel), ['5500000011']);
+  assert.deepEqual(cleanHelpers('helper', [marta, luis, { ...luis, name: 'Luis otra vez' }]).map((h) => h.name), ['Marta Ruiz', 'Luis']);
+});
+
+test('where codes and receipts go: the chosen number if still valid, else the first helper, else the person', () => {
+  const clean = cleanHelpers('helper', [marta]);
+  assert.equal(chooseSendTo(clean, '', '5500000010'), '5500000011');
+  assert.equal(chooseSendTo(clean, '5500000010', '5500000010'), '5500000010');
+  assert.equal(chooseSendTo(clean, '5599999999', '5500000010'), '5500000011');
+  assert.equal(chooseSendTo([], '', '5500000010'), '5500000010');
 });

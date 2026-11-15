@@ -1,9 +1,13 @@
 // Public signup page: opens from the QR, no account. It only REGISTERS the person; the collector approves later.
 // Four steps: name, picture that identifies them (own photo with consent, or one from a bank), WhatsApp numbers
-// (their own, and whoever helps pay with name and relation, 1 to 3), review, choose where codes go, and confirm.
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { emblemOf, pickEmblems, type Emblem } from './emblems';
+// (their own, and whoever helps pay with name and relation: person 1 required, 2 and 3 optional), review,
+// choose where codes go, and confirm. The picture and "how do you pay" pieces are shared with the collector's
+// "add person" flow (see pickers.tsx), so both ask the same things in the same way.
+import { useEffect, useState, type FormEvent } from 'react';
+import { emblemOf } from './emblems';
 import { money, monthName, shiftMonth, type Helper } from './model';
+import { digits, fmtTel, payProblem, type PayMode } from './payers';
+import { PayersFields, PictureStep, SendToChoice, Steps, usePayers, usePicture } from './pickers';
 import { Alert, Choice, Field, IcoCheck, IcoClock, IcoPeople, IcoPhone, IcoAlert, Shell } from './ui';
 
 /** What the project charges, as the signup page receives it. */
@@ -11,22 +15,6 @@ type PublicPlan = { concept: string; amount: number; kind: 'ONCE' | 'MONTHLY'; m
 
 type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean; detail?: string; taken?: string[]; plans?: PublicPlan[] };
 type Done = 'registered' | 'waitlist' | 'already' | 'closed' | 'limit' | 'invalid' | 'error';
-
-const digits = (s: string) => s.replace(/\D/g, '');
-const fmtTel = (t: string) => (t.length === 10 ? `${t.slice(0, 2)} ${t.slice(2, 6)} ${t.slice(6)}` : t);
-
-function Steps({ n }: { n: number }) {
-  return (
-    <div className="steps" role="group" aria-label={`Paso ${n} de 4`}>
-      {[1, 2, 3, 4].map((i) => (
-        <span key={i} className={i === n ? 'step now' : i < n ? 'step past' : 'step'} aria-current={i === n ? 'step' : undefined}>
-          {i < n ? <IcoCheck /> : i}
-        </span>
-      ))}
-      <span className="steps-text">Paso {n} de 4</span>
-    </div>
-  );
-}
 
 /** The costs, in plain words, before asking how the person will pay. */
 function Costs({ plans }: { plans: PublicPlan[] }) {
@@ -38,13 +26,7 @@ function Costs({ plans }: { plans: PublicPlan[] }) {
       {plans.map((p) => (
         <p key={p.concept} className="cost-row">
           <strong>{p.concept}: {money(p.amount)}</strong>
-          <span>
-            {p.kind === 'ONCE'
-              ? 'Se paga una sola vez.'
-              : p.start && p.months
-                ? 'Se paga cada mes.'
-                : 'Se paga cada mes.'}
-          </span>
+          <span>{p.kind === 'ONCE' ? 'Se paga una sola vez.' : 'Se paga cada mes.'}</span>
           {p.kind === 'MONTHLY' && p.start && p.months ? (
             <span className="cost-note">{p.months} meses, de {label(p.start)} a {label(shiftMonth(p.start, p.months - 1))}.</span>
           ) : null}
@@ -65,21 +47,15 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   const [step, setStep] = useState(initial?.step ?? 1);
   const [name, setName] = useState(initial?.name ?? '');
   const [tel, setTel] = useState(initial?.tel ?? '');
-  const [helpers, setHelpers] = useState<Helper[]>(initial?.helpers ?? [{ name: '', rel: '', tel: '' }]);
-  const [sendTo, setSendTo] = useState('');
-  // How the person pays: from their own phone with CoDi, or with a relative who helps. Help is optional.
-  const [payMode, setPayMode] = useState<'' | 'self' | 'helper'>(initial?.pay ?? (initial?.helpers?.some((h) => h.tel) ? 'helper' : ''));
   const [consent, setConsent] = useState(false);
-  const [emblem, setEmblem] = useState(initial?.emblem ?? '');
-  const [photo, setPhoto] = useState('');
-  const [photoOk, setPhotoOk] = useState(false);
-  const [pic, setPic] = useState<'menu' | 'pick' | 'photo'>(initial?.pic ?? 'menu');
-  const [offered, setOffered] = useState<Emblem[]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
   const [detail, setDetail] = useState(''); // technical reason from the server, shown small so a failure can be diagnosed
+
+  const picture = usePicture(info?.taken ?? [], setError, { emblem: initial?.emblem, pic: initial?.pic });
+  const pay = usePayers({ mode: initial?.pay as PayMode | undefined, helpers: initial?.helpers });
+  const sendTel = pay.sendTel(digits(tel));
 
   const loadInfo = () =>
     fetch(`${registerUrl}?token=${encodeURIComponent(token)}`)
@@ -90,37 +66,10 @@ export default function Inscripcion({ token, registerUrl, initial }: {
     if (!registerUrl) { setInfo({ status: 'error' }); return; }
     void loadInfo().then((i) => {
       setInfo(i);
-      if (initial?.pic === 'pick') setOffered(pickEmblems(i.taken ?? [], 3));
+      if (initial?.pic === 'pick') picture.offer(i.taken ?? []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, registerUrl]);
-
-  const offer = (i: Info | null = info) => setOffered(pickEmblems(i?.taken ?? [], 3));
-
-  /** Shrinks the photo to a small JPEG so it is light to send and store. */
-  async function takePhoto(file: File | undefined) {
-    if (!file) return;
-    try {
-      const bmp = await createImageBitmap(file);
-      const k = Math.min(1, 320 / Math.max(bmp.width, bmp.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(bmp.width * k);
-      c.height = Math.round(bmp.height * k);
-      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
-      setPhoto(c.toDataURL('image/jpeg', 0.75));
-      setEmblem('');
-      setPhotoOk(false);
-      setError('');
-    } catch {
-      setError('No se pudo usar esa foto. Prueba con otra.');
-    }
-  }
-
-  const cleanHelpers: Helper[] = payMode !== 'helper' ? [] : helpers
-    .map((h) => ({ name: h.name.trim().replace(/\s+/g, ' '), rel: h.rel.trim().replace(/\s+/g, ' '), tel: digits(h.tel) }))
-    .filter((h) => h.name || h.rel || h.tel)
-    .filter((h, i, all) => all.findIndex((x) => x.tel === h.tel) === i || !h.tel);
-  const sendTel = cleanHelpers.some((h) => h.tel === sendTo) || sendTo === digits(tel) ? sendTo : (cleanHelpers[0]?.tel ?? digits(tel));
 
   function next(e?: FormEvent) {
     e?.preventDefault();
@@ -129,11 +78,8 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       if (name.trim().length < 2) { setError('Escribe tu nombre.'); return; }
     } else if (step === 3) {
       if (digits(tel).length !== 10) { setError('Tu WhatsApp debe tener 10 números.'); return; }
-      if (!payMode) { setError('Elige cómo vas a pagar.'); return; }
-      if (payMode === 'helper' && !cleanHelpers.length) { setError('Escribe quién te ayuda a pagar.'); return; }
-      if (cleanHelpers.some((h) => h.name.length < 2)) { setError('Escribe el nombre de quien te ayuda.'); return; }
-      if (cleanHelpers.some((h) => h.rel.length < 2)) { setError('Escribe qué es tuyo, por ejemplo: mi hija.'); return; }
-      if (cleanHelpers.some((h) => h.tel.length !== 10)) { setError('Cada WhatsApp debe tener 10 números.'); return; }
+      const problem = payProblem(pay.mode, pay.helpers, 'self');
+      if (problem) { setError(problem); return; }
     }
     setStep((s) => s + 1);
   }
@@ -146,7 +92,10 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       const r = await fetch(registerUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token, name: name.trim(), tel: digits(tel), helpers: cleanHelpers, sendTo: sendTel, consent: true, ...(photo ? { photo, photoConsent: true } : { emblem }) }),
+        body: JSON.stringify({
+          token, name: name.trim(), tel: digits(tel), helpers: pay.clean, sendTo: sendTel, consent: true,
+          ...(picture.photo ? { photo: picture.photo, photoConsent: true } : { emblem: picture.emblem }),
+        }),
       });
       const j = (await r.json()) as { status?: Done | 'taken'; detail?: string };
       setDetail(j.detail ?? '');
@@ -154,9 +103,9 @@ export default function Inscripcion({ token, registerUrl, initial }: {
         // Someone chose that picture a moment ago: refresh what is free and ask again.
         const fresh = await loadInfo();
         setInfo(fresh);
-        setEmblem('');
-        setPic('pick');
-        offer(fresh);
+        picture.setEmblem('');
+        picture.setPic('pick');
+        picture.offer(fresh.taken ?? []);
         setStep(2);
         setError('Esa imagen ya la eligió otra persona. Elige otra.');
         return;
@@ -172,7 +121,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
 
   const back = () => {
     setError('');
-    if (step === 2 && pic !== 'menu') { setPic('menu'); return; }
+    if (step === 2 && picture.pic !== 'menu') { picture.setPic('menu'); return; }
     setStep((s) => Math.max(1, s - 1));
   };
   const again = () => { setDone(null); setError(''); };
@@ -247,51 +196,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
           </form>
         ) : null}
 
-        {step === 2 && pic === 'menu' ? (
-          <div className="stack">
-            <h1>Tu imagen</h1>
-            <p className="lead">Con ella te reconoce quien da el taller.</p>
-            <Choice primary icon={<IcoPeople />} label="Elegir un dibujo" hint="Uno que nadie más tenga" onClick={() => { offer(); setPic('pick'); }} />
-            <Choice icon={<IcoPhone />} label="Usar mi foto" hint="Si tú quieres" onClick={() => setPic('photo')} />
-          </div>
-        ) : null}
-
-        {step === 2 && pic === 'pick' ? (
-          <div className="stack">
-            <h1>Elige tu dibujo</h1>
-            {offered.length ? (
-              <div className="emblems">
-                {offered.map((e) => (
-                  <button key={e.id} type="button" className="emblem-btn" onClick={() => { setEmblem(e.id); setPhoto(''); setError(''); setStep(3); }}>
-                    <span className="emblem-glyph" aria-hidden="true">{e.glyph}</span>
-                    <span>{e.name}</span>
-                  </button>
-                ))}
-              </div>
-            ) : <p className="lead">Ya no quedan dibujos libres. Usa tu foto.</p>}
-            {offered.length ? <Choice icon={<IcoClock />} label="Ver otros" onClick={() => offer()} /> : null}
-          </div>
-        ) : null}
-
-        {step === 2 && pic === 'photo' ? (
-          <div className="stack">
-            <h1>Tu foto</h1>
-            <input ref={fileRef} type="file" accept="image/*" capture="user" hidden onChange={(e) => { void takePhoto(e.target.files?.[0]); e.target.value = ''; }} />
-            {photo ? (
-              <>
-                <img className="shot" alt="Tu foto" src={photo} />
-                <label className="check">
-                  <input type="checkbox" checked={photoOk} onChange={(e) => setPhotoOk(e.target.checked)} />
-                  <span>Autorizo que quien da el taller guarde mi foto para reconocerme.</span>
-                </label>
-                <Choice primary icon={<IcoCheck />} label="Usar esta foto" onClick={() => { if (!photoOk) { setError('Marca la casilla para usar tu foto.'); return; } setError(''); setStep(3); }} />
-                <Choice icon={<IcoPhone />} label="Tomar otra" onClick={() => fileRef.current?.click()} />
-              </>
-            ) : (
-              <Choice primary icon={<IcoPhone />} label="Tomar mi foto" hint="Se abre la cámara" onClick={() => fileRef.current?.click()} />
-            )}
-          </div>
-        ) : null}
+        {step === 2 ? <PictureStep p={picture} who="self" setError={setError} onChosen={() => setStep(3)} /> : null}
 
         {step === 3 ? (
           <form className="stack" onSubmit={next}>
@@ -301,34 +206,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
 
             {info.plans?.length ? <Costs plans={info.plans} /> : null}
 
-            <h2 className="ask">¿Cómo vas a pagar?</h2>
-            <p className="lead">Se paga con CoDi, desde la app de un banco.</p>
-            <div className="emblems">
-              <button type="button" className={payMode === 'self' ? 'emblem-btn on' : 'emblem-btn'} aria-pressed={payMode === 'self'} onClick={() => setPayMode('self')}>
-                <span className="emblem-glyph" aria-hidden="true">📱</span>
-                <span>Yo, desde mi celular{payMode === 'self' ? ' ✔ Elegido' : ''}</span>
-              </button>
-              <button type="button" className={payMode === 'helper' ? 'emblem-btn on' : 'emblem-btn'} aria-pressed={payMode === 'helper'} onClick={() => setPayMode('helper')}>
-                <span className="emblem-glyph" aria-hidden="true">👪</span>
-                <span>Me ayuda un familiar{payMode === 'helper' ? ' ✔ Elegido' : ''}</span>
-              </button>
-            </div>
-
-            {payMode === 'helper' ? (
-              <>
-                <h2 className="ask">¿Quién te ayuda a pagar?</h2>
-                <p className="lead">Escribe sus datos. Si no entiende de qué se trata, le explicaremos por WhatsApp.</p>
-                {helpers.map((h, i) => (
-                  <div key={i} className="stack plan">
-                    {helpers.length > 1 ? <p className="who-line">Persona {i + 1}</p> : null}
-                    <Field label="Su nombre"><input value={h.name} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} autoComplete="off" /></Field>
-                    <Field label="¿Qué es tuyo? (mi hija, mi vecino…)"><input value={h.rel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, rel: e.target.value } : x)))} autoComplete="off" /></Field>
-                    <Field label="Su WhatsApp (10 números)"><input value={h.tel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, tel: e.target.value } : x)))} inputMode="numeric" autoComplete="off" /></Field>
-                  </div>
-                ))}
-                {helpers.length < 3 ? <Choice icon={<IcoPeople />} label="Agregar a otra persona" onClick={() => setHelpers([...helpers, { name: '', rel: '', tel: '' }])} /> : null}
-              </>
-            ) : null}
+            <PayersFields p={pay} who="self" />
             <Choice primary type="submit" icon={<IcoPhone />} label="Siguiente" />
           </form>
         ) : null}
@@ -338,24 +216,14 @@ export default function Inscripcion({ token, registerUrl, initial }: {
             <h1>Revisa y confirma</h1>
             <div className="stat">
               <p><strong>Nombre:</strong> {name.trim()}</p>
-              <p><strong>Tu imagen:</strong> {photo ? 'tu foto' : `${emblemOf(emblem)?.glyph ?? ''} ${emblemOf(emblem)?.name ?? ''}`}</p>
+              <p><strong>Tu imagen:</strong> {picture.photo ? 'tu foto' : `${emblemOf(picture.emblem)?.glyph ?? ''} ${emblemOf(picture.emblem)?.name ?? ''}`}</p>
               <p><strong>Tu WhatsApp:</strong> {fmtTel(digits(tel))}</p>
-              <p><strong>Cómo pagas:</strong> {cleanHelpers.length ? 'con ayuda' : 'tú, desde tu celular'}</p>
-              {cleanHelpers.map((h) => (
+              <p><strong>Cómo pagas:</strong> {pay.clean.length ? 'con ayuda' : 'tú, desde tu celular'}</p>
+              {pay.clean.map((h) => (
                 <p key={h.tel}><strong>{h.name} ({h.rel}):</strong> {fmtTel(h.tel)}</p>
               ))}
             </div>
-            {cleanHelpers.length ? (
-            <fieldset className="stack choose">
-              <legend className="ask">¿A quién le mandamos tu código de pago y tu comprobante?</legend>
-              {[...cleanHelpers.map((h) => ({ tel: h.tel, text: `${h.name} (${h.rel})` })), { tel: digits(tel), text: 'A mí, a mi WhatsApp' }].map((o) => (
-                <label key={o.tel} className={sendTel === o.tel ? 'opt on' : 'opt'}>
-                  <input type="radio" name="sendTo" checked={sendTel === o.tel} onChange={() => setSendTo(o.tel)} />
-                  <span>{o.text}{sendTel === o.tel ? ' ✔' : ''}</span>
-                </label>
-              ))}
-            </fieldset>
-            ) : null}
+            {pay.clean.length ? <SendToChoice p={pay} own={digits(tel)} who="self" /> : null}
             <div className="consent">
               <h2 className="ask">Antes de enviar</h2>
               <label className="check">

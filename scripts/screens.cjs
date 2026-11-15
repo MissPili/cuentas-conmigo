@@ -42,6 +42,10 @@ const SHOTS = [
   ['signup4', '33-inscripcion-paso-4'],
   ['signup-done', '34-inscripcion-enviada'],
   ['problem', '35-no-se-pudo-pedir-el-pago'],
+  ['add-person-pic', '36-agregar-persona-su-imagen'],
+  ['add-person-pick', '37-agregar-persona-elegir-dibujo'],
+  ['add-person-pay', '38-agregar-persona-como-paga'],
+  ['add-person-review', '39-agregar-persona-revisar'],
 ];
 // Screens that need a tap to reach (text of the button to press).
 const TAP = { 'seat-leave': 'Dar de baja' };

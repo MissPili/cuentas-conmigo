@@ -33,6 +33,17 @@ export type Per = {
   photo?: string | null; // small JPEG as a data URL, only with consent
 };
 
+/** What the collector types to add a person by hand (same data the person gives in the signup). */
+export type NewPerson = {
+  name: string;
+  tel: string; // 10 digits
+  emblem: string; // id of the drawing, or '' when a photo is used
+  photo: string; // small JPEG data URL, only taken with permission; '' when none
+  helpers: Helper[]; // 0 to 3, person 1 first
+  sendTo: string; // number that receives codes and receipts
+  consentShared: boolean; // the person agreed that the helpers' phones are kept
+};
+
 /** One row per collector: settings for places and the signup QR. */
 export type Proj = {
   id: string;

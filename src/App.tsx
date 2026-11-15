@@ -119,6 +119,8 @@ export default function App({ signOut }: { signOut?: () => void }) {
   const [note, setNote] = useState('');
   const [problem, setProblem] = useState<Problem | null>(null);
   const retryRef = useRef<(() => void) | null>(null);
+  // A screen with steps of its own (add person) takes the bar's "Atrás" first; it returns true when it went back inside itself.
+  const interceptRef = useRef<(() => boolean) | null>(null);
   const viewRef = useRef(view);
   viewRef.current = view;
 
@@ -186,6 +188,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
 
   function back() {
     if (problem) { setProblem(null); return; }
+    if (interceptRef.current?.()) return;
     setFormError('');
     setNote('');
     setHist((h) => {
@@ -252,12 +255,30 @@ export default function App({ signOut }: { signOut?: () => void }) {
         onOpenPerson={openPerson}
         onRetry={() => retryRef.current?.()}
         onDismiss={() => setProblem(null)}
-        onAddPerson={(name, tel) => {
-          const digits = tel.replace(/\D/g, '');
-          if (digits.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
+        onInterceptBack={(fn) => { interceptRef.current = fn; }}
+        onAddPerson={(input) => {
+          const tel = input.tel.replace(/\D/g, '');
+          if (tel.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
           void run(async () => {
-            const emblem = pickEmblems(people.filter((x) => x.status !== 'RELEASED').map((x) => x.emblem ?? ''), 1)[0]?.id;
-            await client.models.Person.create({ name: name.trim(), tel: digits, via: 'MANUAL', status: 'ENROLLED', heldOn: new Date().toISOString(), emblem, projectId: project?.id });
+            // A photo is only kept with permission (asked in the form); otherwise a drawing nobody else in the project has.
+            const emblem = input.photo
+              ? undefined
+              : input.emblem || pickEmblems(people.filter((x) => x.status !== 'RELEASED').map((x) => x.emblem ?? ''), 1)[0]?.id;
+            const r = await client.models.Person.create({
+              name: input.name.trim(),
+              tel,
+              via: 'MANUAL',
+              status: 'ENROLLED',
+              heldOn: new Date().toISOString(),
+              projectId: project?.id,
+              ...(input.photo ? { photo: input.photo, photoConsent: true } : { emblem }),
+              helpers: input.helpers.map((h) => h.tel),
+              helperNames: input.helpers.map((h) => h.name),
+              helperRels: input.helpers.map((h) => h.rel),
+              sendTo: input.sendTo || input.helpers[0]?.tel || tel, // with no helper, codes go to the person
+              consentShared: input.consentShared,
+            });
+            if (r.errors?.length) throw new Error('person');
             await load();
           }, () => land({ id: 'people' }, 'Persona guardada.'));
         }}

@@ -69,6 +69,17 @@ Capturas hechas con el modo de demostración (datos inventados, sin servidor), a
 | ![](docs/pantallas/31-inscripcion-paso-3-como-pagas.png)<br>**31. Paso 3: WhatsApp, costos y cómo paga** | ![](docs/pantallas/32-inscripcion-paso-3.png)<br>**32. Paso 3: con ayuda de un familiar** | ![](docs/pantallas/33-inscripcion-paso-4.png)<br>**33. Paso 4: revisar y a quién mandar** |
 | ![](docs/pantallas/34-inscripcion-enviada.png)<br>**34. Inscripción enviada** | ![](docs/pantallas/35-no-se-pudo-pedir-el-pago.png)<br>**35. Cuando algo falla: el motivo en palabras claras** |  |
 
+### Agregar una persona a mano (Personas → Agregar, o Cobrar → Agregar)
+
+Son los mismos 4 pasos de la inscripción, escritos por quien cobra y en tercera persona ("su imagen", "le ayuda un familiar"). Comparten el código con la inscripción (`src/pickers.tsx`, `src/payers.ts`), así las dos preguntan lo mismo y de la misma forma. El paso 1 (nombre y WhatsApp) es la captura 12.
+
+| | | |
+| --- | --- | --- |
+| ![](docs/pantallas/36-agregar-persona-su-imagen.png)<br>**36. Paso 2: su imagen** (dibujo, foto con permiso, o que la app elija uno) | ![](docs/pantallas/37-agregar-persona-elegir-dibujo.png)<br>**37. Elegir su dibujo** | ![](docs/pantallas/38-agregar-persona-como-paga.png)<br>**38. Paso 3: cómo paga**, con Persona 1 y Persona 2 opcional |
+| ![](docs/pantallas/39-agregar-persona-revisar.png)<br>**39. Paso 4: revisar y guardar** |  |  |
+
+**Ayuda para pagar (en la inscripción y al agregar a mano):** si elige que le ayuda un familiar, solo se abre **Persona 1**, que es obligatoria (nombre, qué es suya y WhatsApp de 10 números). **Persona 2 y Persona 3 son opcionales**: aparecen solo si se toca "Agregar a otra persona" (con "Es opcional"), se pueden quitar, y si se dejan vacías se ignoran; si se llenan a medias se pide completarlas o quitarlas.
+
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color).
 
 ## Proyectos y pantalla de inicio

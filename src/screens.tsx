@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   accountWords, chargeKind, chargeWords, money, monthName, pageOf, parseAmount, personWords, ready, thisMonth,
-  type Acc, type Chg, type Per, type Proj, type View,
+  type Acc, type Chg, type NewPerson, type Per, type Proj, type View,
 } from './model';
 import { Alert, Avatar, WhoLine, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
 import ReceiptView from './Receipt';
@@ -11,6 +11,7 @@ import { DangerZone, More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
 import { duePlans, type Plan } from './plans';
 import type { Problem } from './problems';
+import { AddPerson, type AddPersonInitial } from './AddPerson';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
 export type StageProps = {
@@ -25,7 +26,11 @@ export type StageProps = {
   onView: (next: View) => void;
   onReset: (next: View) => void;
   onOpenPerson: (personId: string) => void;
-  onAddPerson: (name: string, tel: string) => void;
+  onAddPerson: (input: NewPerson) => void;
+  /** A screen with its own steps asks the bar's "Atrás" to go back inside it first (returns true when it did). */
+  onInterceptBack: (fn: (() => boolean) | null) => void;
+  /** Only for the demo harness (screenshots). */
+  addPersonInitial?: AddPersonInitial;
   onAddAccount: (input: { alias: string; legalName: string; clabe: string; entity: 'PERSON' | 'BUSINESS' }) => void;
   onCreateCharge: (personId: string, concept: string, amount: number, accountId: string, confirmsPlace: boolean) => void;
   onSaveProject: (input: { name: string; capacity: number; holdDays: number; plans: Plan[] }) => void;
@@ -423,25 +428,6 @@ function People({ people: all, onView }: StageProps) {
         </ul>
       ) : null}
       <Choice primary icon={<IcoPeople />} label="Agregar persona" hint="Nombre y WhatsApp" onClick={() => onView({ id: 'add-person' })} />
-    </section>
-  );
-}
-
-function AddPerson({ busy, formError, onAddPerson }: StageProps) {
-  const submit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    onAddPerson(String(data.get('name') || ''), String(data.get('tel') || ''));
-  };
-  return (
-    <section className="stack">
-      <h1>Nueva persona</h1>
-      <form className="stack" onSubmit={submit}>
-        {formError ? <Alert>{formError}</Alert> : null}
-        <Field label="Nombre"><input name="name" required autoComplete="name" /></Field>
-        <Field label="WhatsApp, 10 números"><input name="tel" required inputMode="numeric" autoComplete="tel" /></Field>
-        <Choice primary type="submit" label={busy ? busyLabel : 'Guardar'} />
-      </form>
     </section>
   );
 }
