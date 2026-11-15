@@ -140,6 +140,7 @@ function Demo() {
         onRequest={() => setView({ id: 'wait', chargeId: 'c3' })}
         onShowQr={() => setView({ id: 'qr', chargeId: 'c3', img: fakeQr() })}
         onCash={() => setView({ id: 'paid', chargeId: 'c3' })}
+        onCheck={noop}
         onRegister={noop}
         onRefresh={noop}
         onRetry={noop}

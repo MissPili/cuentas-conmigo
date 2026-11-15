@@ -32,6 +32,7 @@ export type StageProps = {
   onRequest: (chargeId: string) => void;
   onShowQr: (chargeId: string) => void;
   onCash: (chargeId: string) => void;
+  onCheck: (chargeId: string) => void;
   onRegister: (accountId: string) => void;
   onRefresh: (accountId: string) => void;
   onRetry: () => void;
@@ -219,10 +220,10 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
       <Status kind={chargeKind(charge)}>{chargeWords(charge)}</Status>
       {!canCell ? <Alert>Esta cuenta aún no está lista. Por ahora solo puedes anotar efectivo.</Alert> : null}
       {canCell ? (
-        <Choice primary icon={<IcoPhone />} label={busy ? busyLabel : 'Pedir el pago a su celular'} hint="Le llega un aviso" onClick={() => onRequest(charge.id)} />
+        <Choice primary icon={<IcoQr />} label={busy ? busyLabel : 'Mostrar código para pagar'} hint="Lo escanea con su banco" onClick={() => onShowQr(charge.id)} />
       ) : null}
       {canCell ? (
-        <Choice icon={<IcoQr />} label={busy ? busyLabel : 'Mostrar código para pagar'} hint="Lo escanea con su banco" onClick={() => onShowQr(charge.id)} />
+        <Choice icon={<IcoPhone />} label={busy ? busyLabel : 'Pedir el pago a su celular'} hint="Puede no llegar a todos los bancos" onClick={() => onRequest(charge.id)} />
       ) : null}
       <Choice primary={!canCell} icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Tú guardas el dinero" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
       <Choice label="Crear otro cobro" onClick={() => onView({ id: 'new-charge', personId: charge.personId })} />
@@ -242,7 +243,7 @@ function CashStep({ charge, busy, onCash, onView }: StageProps & { charge: Chg |
   );
 }
 
-function WaitStep({ charge, onView }: StageProps & { charge: Chg | undefined }) {
+function WaitStep({ charge, busy, onCheck, onShowQr, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   return (
     <section className="stack">
@@ -250,7 +251,9 @@ function WaitStep({ charge, onView }: StageProps & { charge: Chg | undefined }) 
       <h1>Esperando el pago</h1>
       <p className="amount">{money(charge.amount)}</p>
       <Status kind="wait">Esperando el pago</Status>
-      <p className="lead">Se lo pedimos a su celular. Cuando pague, aquí se marca solo.</p>
+      <p className="lead">Cuando pague, aquí se marca solo. Si ya pagó y no cambia, revisa.</p>
+      <Choice primary icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya pagó'} hint="Le preguntamos a Pey" onClick={() => onCheck(charge.id)} />
+      <Choice icon={<IcoQr />} label="Mostrar el código otra vez" hint="Hace uno nuevo" onClick={() => onShowQr(charge.id)} />
       <Choice icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Si no fue por celular" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
     </section>
   );
@@ -269,7 +272,7 @@ function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Ch
   );
 }
 
-function QrStep({ charge, img, onView }: StageProps & { charge: Chg | undefined; img: string }) {
+function QrStep({ charge, img, busy, onCheck, onView }: StageProps & { charge: Chg | undefined; img: string }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   return (
     <section className="stack">
@@ -278,6 +281,7 @@ function QrStep({ charge, img, onView }: StageProps & { charge: Chg | undefined;
       <img className="shot" alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`} src={`data:image/png;base64,${img}`} />
       <p className="lead">Escanéalo con la app del banco. Cuando pague, aquí se marca solo.</p>
       <Status kind="wait">Esperando el pago</Status>
+      <Choice icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya pagó'} hint="Le preguntamos a Pey" onClick={() => onCheck(charge.id)} />
       <Choice icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Si no fue con el código" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
     </section>
   );

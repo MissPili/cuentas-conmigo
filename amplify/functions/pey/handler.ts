@@ -97,5 +97,26 @@ export const handler: Handler = async (event) => {
     return JSON.stringify({ qrImage: r.qrImage ?? null, qrString: r.qrString ?? null });
   }
 
+  // Asks Pey whether a charge was paid. Recovers a payment when the webhook did not arrive (or is not set up yet).
+  if (action === 'checkCharge') {
+    const { data: ch } = await client.models.Charge.get({ id });
+    if (!ch || !mine(ch.owner)) throw new Error('Charge not found');
+    if (ch.status === 'PAID') return 'PAID';
+    if (!ch.transactionId) return 'PENDING';
+    // A CoDi request has a 26-character ULID transaction id; a CoDi QR keeps the short QR id (IDC).
+    let paid: { datePaid?: number } | undefined;
+    if (ch.transactionId.length === 26) {
+      const t = await peyCall(`/transaction/${ch.transactionId}`, 'GET');
+      if (t.status === 'PAID') paid = t;
+    } else {
+      const t = await peyCall(`/transaction/codi/qr/${ch.transactionId}`, 'GET');
+      paid = (t.items ?? []).find((x: { status?: string }) => x.status === 'PAID');
+    }
+    if (!paid) return 'PENDING';
+    const paidAt = paid.datePaid ? new Date(paid.datePaid * 1000).toISOString() : new Date().toISOString();
+    await client.models.Charge.update({ id, status: 'PAID', via: 'CODI', paidAt });
+    return 'PAID';
+  }
+
   throw new Error('Unknown action');
 };

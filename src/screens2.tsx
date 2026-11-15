@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import type { StageProps } from './screens';
 import { money, monthName, shiftMonth, thisMonth } from './model';
-import { Choice, IcoBank, IcoCash, IcoOut, Status } from './ui';
+import { Choice, IcoBank, IcoCash, IcoOut, IcoPeople, Status } from './ui';
 import { canCharge } from './places';
 import { buildReport, reportCsv } from './report';
 
@@ -11,6 +11,7 @@ export function More({ onView, signOut }: StageProps) {
     <section className="stack">
       <h1>Más opciones</h1>
       <Choice primary icon={<IcoCash />} label="Reporte del mes" hint="Quién pagó y quién falta" onClick={() => onView({ id: 'report', month: thisMonth() })} />
+      <Choice icon={<IcoPeople />} label="Lugares e inscripciones" hint="Cupo, código QR y lista de espera" onClick={() => onView({ id: 'places' })} />
       <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
       {signOut ? <Choice icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
     </section>

@@ -337,6 +337,14 @@ export default function App({ signOut }: { signOut?: () => void }) {
             await load();
           }, () => land({ id: 'places' }, message));
         }}
+        onCheck={(id) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'checkCharge', id });
+            if (r.errors?.length) throw new Error('pey');
+            await load();
+            setNote(r.data === 'PAID' ? 'Sí, ya pagó.' : 'Todavía no vemos el pago. Intenta en un momento.');
+          });
+        }}
         onRefresh={(id) => {
           void run(async () => {
             const r = await client.mutations.peyAction({ action: 'refreshAccount', id });
