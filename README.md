@@ -28,7 +28,7 @@ Los datos del prototipo (personas, teléfonos, fotos) son inventados. El prototi
 
 ## Ver el prototipo
 
-Abre `prototype/paga-con-tu-foto.html` en el navegador. Es un solo archivo; pide dos tipografías a Google Fonts, y sin internet usa la del sistema.
+Abre `prototype/paga-con-tu-foto.html` en el navegador. Es un solo archivo; pide Nunito a Google Fonts, y sin internet usa Segoe UI o la letra del sistema. El logo, el favicon y el ícono de inicio están en `prototype/assets/`.
 
 ## Reconstruirlo y probarlo
 
@@ -54,6 +54,7 @@ npm run layout   # mide tamaños, espacios y líneas en Chrome (390×844, 375×6
 ```
 prototype/
   paga-con-tu-foto.html   prototipo terminado (resultado de build.py)
+  assets/                 logo, favicon e ícono de inicio
   source/                 piezas y script para armarlo
   tests/                  pruebas con jsdom y puppeteer-core (solo desarrollo)
   tools/                  cálculo de contraste

@@ -2,8 +2,8 @@
 <div id="v-identidad" class="sheet" hidden>
   <section>
     <h2>Nombre y personalidad</h2>
-    <div class="brand" style="font-size:2.4rem"><svg viewBox="0 0 48 48" aria-hidden="true" style="width:3.6rem;height:3.6rem"><rect width="48" height="48" rx="12" fill="#18213B"/><circle cx="23" cy="22" r="13" fill="#fff"/><circle cx="23" cy="20" r="5" fill="#18213B"/><path d="M13 33c2-6 6-8 10-8s8 2 10 8c-3 3-6 4-10 4s-7-1-10-4z" fill="#18213B"/><circle cx="36" cy="36" r="8" fill="#0F5F28" stroke="#18213B" stroke-width="2.5"/><path d="M32.3 36.2l2.6 2.6 4.4-5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Cuentas conmigo</span></div>
-    <p>Tono de trabajo: claro, cercano y sin prisa. Frases cortas, un verbo por botón y ninguna palabra de banco. La cara de cada persona es lo más grande de la pantalla. Todo lo demás se queda quieto: tinta azul marino, mucho espacio y color solo donde significa algo.</p>
+    <div class="brand"><img src="assets/logo-cuentas-conmigo.png" alt="Cuentas conmigo" width="498" height="96"></div>
+    <p>Tono de trabajo: claro, cercano y sin prisa. Frases cortas, un verbo por botón y ninguna palabra de banco. La cara de cada persona es lo más grande de la pantalla. La marca es morado #4E1A6E y dorado #EDB438, con mucho blanco. El morado es la tinta y el botón principal. El dorado es el acento y también el color de «esperando pago», siempre con reloj, palabras y borde punteado. El verde es solo «ya pagó».</p>
   </section>
 
   <section>
@@ -16,7 +16,7 @@
 
   <section>
     <h2>Estados: ícono, palabras y forma</h2>
-    <p>Verde y amarillo solo existen para "pagado" y "pendiente". Aun así, ningún estado depende del color: en alto contraste el verde y el amarillo casi se confunden por brillo (1.12 a 1), así que cada uno lleva ícono, palabras y un borde distinto.</p>
+    <p>El verde y el dorado marcan «ya pagó» y «esperando pago». Ningún estado depende solo del color: en alto contraste el verde y el amarillo casi se confunden por brillo (1.12 a 1), así que cada uno lleva ícono, palabras y un borde distinto.</p>
     <div class="states">
       <div class="state" style="padding:14px"><span class="stt stt-paid"><span class="ico" id="id-check"></span><span>Ya pagó</span></span><small>Palomita, borde sólido</small></div>
       <div class="state" style="padding:14px"><span class="stt stt-wait"><span class="ico" id="id-clock"></span><span>Esperando pago</span></span><small>Reloj, borde punteado y franjas</small></div>
@@ -24,15 +24,15 @@
     </div>
     <div class="label">Un color por periodo, sin verdes ni amarillos</div>
     <div class="months" id="monthswatches"></div>
-    <p>Los meses llevan texto blanco sobre un fondo más oscuro (7.29 a 1 como mínimo) y la palabra del mes siempre está escrita.</p>
+    <p>Los meses llevan texto blanco sobre un fondo más oscuro (7.2 a 1 como mínimo) y la palabra del mes siempre está escrita.</p>
   </section>
 
   <section>
     <h2>Contraste calculado</h2>
     <p>Cifras sacadas con la fórmula WCAG a partir de los colores exactos. La meta del modo sencillo es 7 a 1 para todo texto.</p>
     <ul class="plain">
-      <li><b>Claro.</b> Tinta sobre blanco 15.9. Texto secundario 9.4. "Ya pagó" 7.8. "Esperando pago" 8.6. Rojo de error 8.1. Meses 7.3. Bordes de controles 4.7 (meta 3).</li>
-      <li><b>Oscuro.</b> Tinta 14.2. Texto secundario 7.3. "Ya pagó" 7.7. "Esperando pago" 9.7. Rojo de error 7.0. Bordes 5.6.</li>
+      <li><b>Claro.</b> Tinta morada sobre blanco 12.4. Texto secundario 9.1. "Ya pagó" 7.8. "Esperando pago" (dorado #EDB438 con texto oscuro) 8.8. Rojo de error 8.1. Meses 7.2. Bordes de controles 6.2 (meta 3). Botón principal, blanco sobre morado, 12.4.</li>
+      <li><b>Oscuro.</b> Tinta 15.5. Texto secundario 11.9. "Ya pagó" 7.7. "Esperando pago" 8.8. Rojo de error 7.2. Bordes 8.8. Botón principal, blanco sobre morado, 7.2.</li>
       <li><b>Alto contraste (fondo negro, se activa en "Ver mejor" o con el ajuste del iPhone).</b> Blanco sobre negro 21. "Ya pagó" 11.8. "Esperando pago" 13.2. Rojo de error 9.2. Foco amarillo 17.2.</li>
     </ul>
   </section>
@@ -40,10 +40,10 @@
   <section>
     <h2>Tipografía y tamaños</h2>
     <div class="spec">
-      <div><div class="sample-ui" style="font-size:2rem;font-weight:800">¿Quién paga?</div><span class="label">Atkinson Hyperlegible 800 · títulos de 32 px</span></div>
-      <div><div class="sample-ui">Toca la foto de quien paga</div><span class="label">Atkinson Hyperlegible 400 y 700 · texto de 22 px</span></div>
+      <div><div class="sample-ui" style="font-size:2rem;font-weight:800">¿Quién paga?</div><span class="label">Nunito 800 · títulos de 32 px</span></div>
+      <div><div class="sample-ui">Toca la foto de quien paga</div><span class="label">Nunito 400, 600 y 700 · texto de 22 px</span></div>
     </div>
-    <p>Atkinson Hyperlegible se diseñó para baja visión: distingue letras y números parecidos. Se usa una sola familia en todo el modo sencillo. Texto de 22 px, botones de 24 px, títulos de 32 px, interlineado de 1.5. Todo lo tocable mide al menos 56 px de alto, el botón principal 88 px y entre botones hay 12 px. Las medidas siguen el tamaño de letra del iPhone y hay un ajuste "Letra extra grande" (25 % más).</p>
+    <p>Nunito es la letra de la marca: redonda y gruesa, como el logo. Si no hay internet, se usa Segoe UI o la letra del sistema. Texto de 22 px, botones de 24 px, títulos de 32 px, interlineado de 1.5. Todo lo tocable mide al menos 56 px de alto, el botón principal 88 px y entre botones hay 12 px. Las medidas siguen el tamaño de letra del iPhone y hay un ajuste "Letra extra grande" (25 % más).</p>
   </section>
 
   <section>
@@ -53,7 +53,11 @@
       <figure><svg id="appicon2" viewBox="0 0 180 180" width="90" height="90" aria-hidden="true"></svg>90</figure>
       <figure><svg id="appicon3" viewBox="0 0 180 180" width="44" height="44" aria-hidden="true"></svg>44</figure>
     </div>
-    <p>Una foto enmarcada con una palomita verde. Para instalarla en iPhone se necesita la versión de 180 × 180 como apple-touch-icon.</p>
+    <div class="iconrow">
+      <figure><img src="assets/favicon.png" alt="" width="64" height="64">Favicon</figure>
+      <figure><img src="assets/apple-touch-icon.png" alt="Ícono para la pantalla de inicio: signo de pesos morado sobre blanco, con una franja dorada" width="180" height="180" style="width:90px;height:90px">Pantalla de inicio</figure>
+    </div>
+    <p>El marco de la foto es morado y la palomita va sobre dorado. El favicon del navegador sale del signo de pesos del logo, sobre blanco, con una franja dorada. Para instalarla en iPhone se usa la imagen de 180 × 180.</p>
   </section>
 
   <section>

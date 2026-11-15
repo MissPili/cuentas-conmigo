@@ -39,7 +39,7 @@
     $('#id-check').innerHTML = ICON.check; $('#id-clock').innerHTML = ICON.clock; $('#id-ring').innerHTML = ICON.ring; $('#nt-ico').innerHTML = ICON.info;
     $('#legend').innerHTML = stt('paid', 'Ya pagó') + stt('wait', 'Esperando pago') + stt('due', 'Falta pagar');
     $('#monthswatches').innerHTML = MON3.map((m, k) => '<div class="tile" style="--h:' + HUES[k] + '">' + m + '</div>').join('');
-    const icon = '<rect width="180" height="180" rx="40" fill="#18213B"/><circle cx="84" cy="82" r="56" fill="#fff"/><circle cx="84" cy="74" r="20" fill="#18213B"/><path d="M42 124c8-24 24-32 42-32s34 8 42 32c-12 12-26 16-42 16s-30-4-42-16z" fill="#18213B"/><circle cx="138" cy="134" r="30" fill="#0F5F28" stroke="#18213B" stroke-width="9"/><path d="M124 135l10 10 17-19" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>';
+    const icon = '<rect width="180" height="180" rx="40" fill="#4E1A6E"/><circle cx="84" cy="82" r="56" fill="#fff"/><circle cx="84" cy="74" r="20" fill="#4E1A6E"/><path d="M42 124c8-24 24-32 42-32s34 8 42 32c-12 12-26 16-42 16s-30-4-42-16z" fill="#4E1A6E"/><circle cx="138" cy="134" r="30" fill="#EDB438" stroke="#4E1A6E" stroke-width="9"/><path d="M124 135l10 10 17-19" fill="none" stroke="#2A1D00" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>';
     ['#appicon', '#appicon2', '#appicon3'].forEach(s => { $(s).innerHTML = icon; });
 
     renderAll(); route();

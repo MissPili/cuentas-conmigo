@@ -1,0 +1,248 @@
+/* Brand layer. Comes last so it restyles the prototype without changing the simple-mode size rules.
+   Purple #4E1A6E is the ink and the main button. Gold #EDB438 is the accent and the "waiting" state.
+   Text pairs stay at 7:1 or better. Motion is removed when the system asks for it. */
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--accent); color: var(--on-wait); }
+
+/* ---- page header ---- */
+.top {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 14px 18px 16px;
+  margin-bottom: 28px;
+  box-shadow: 0 10px 28px rgba(78, 26, 110, .06);
+  overflow: hidden;
+}
+.top::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand) 0 58%, var(--accent) 58% 100%);
+}
+.brand { gap: 0; min-width: 0; }
+.brand img {
+  display: block;
+  height: 48px;
+  width: auto;
+  max-width: min(320px, 70vw);
+  background: #fff;
+  border-radius: 12px;
+}
+#v-identidad .brand img { height: 72px; max-width: min(420px, 100%); }
+.tabs {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+}
+.tabs button {
+  border-radius: 999px;
+  font-weight: 800;
+  padding: 0 18px;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.tabs button[aria-selected="true"] {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+/* ---- stage: phone + side column ---- */
+.stage { max-width: 1080px; gap: 36px; }
+.phone {
+  border: 1px solid var(--line);
+  border-radius: 36px;
+  box-shadow: 0 1px 2px rgba(78, 26, 110, .04), 0 18px 44px rgba(78, 26, 110, .10);
+  background: var(--surface);
+}
+.panel { max-width: 460px; gap: 18px; }
+.card, .sheet section {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(78, 26, 110, .05);
+}
+.card h2, .sheet h2 { color: var(--ink); }
+@media (min-width: 960px) {
+  body { padding: 28px 32px 72px; }
+  .panel { position: sticky; top: 20px; }
+}
+
+/* Gold-to-purple rule under the project name, inside every simple screen. */
+.stephead { position: relative; }
+.stephead::after {
+  content: "";
+  display: block;
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+}
+
+/* ---- controls ---- */
+/* Color is not transitioned: Chrome keeps the old color when a token changes (alto contraste). */
+.cbtn, .pickrow, .barbtn, .btn, .tile, .iconbtn, .feat, .advtabs button, .filebtn {
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.cbtn, .pickrow, .barbtn {
+  border-width: 2px;
+  border-color: var(--edge);
+  box-shadow: 0 1px 0 rgba(78, 26, 110, .04);
+}
+.cbtn.primary, .btn.primary, .advtabs button[aria-selected="true"], .tabs button[aria-selected="true"] {
+  background: var(--brand);
+  color: var(--on-brand);
+  border-color: var(--brand-edge);
+  box-shadow: 0 8px 18px rgba(78, 26, 110, .16);
+}
+.cbtn.primary small { color: inherit; }
+.cbtn.danger, .btn.danger { background: var(--surface); }
+.pickrow .ava, .idstrip .ava, .idcharge .ava {
+  box-shadow: 0 4px 10px rgba(78, 26, 110, .08);
+}
+.bar {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -10px 24px rgba(78, 26, 110, .05);
+}
+.steps li.now {
+  background: var(--brand);
+  color: var(--on-brand);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px var(--surface), 0 0 0 7px var(--brand);
+}
+.steps li.done {
+  background: var(--brand);
+  color: var(--on-brand);
+  border-color: var(--brand);
+}
+
+input[type="text"], input[type="tel"], input[type="number"], input[type="date"], select {
+  border-width: 2px;
+  border-radius: 16px;
+  transition: box-shadow .16s ease;
+}
+.check input, .feat input { accent-color: var(--brand); }
+
+.qrbox, .screen .qrbox {
+  border-color: var(--brand);
+  box-shadow: 0 10px 24px rgba(78, 26, 110, .08);
+}
+.screen .receipt, .screen .rcpt {
+  box-shadow: 0 8px 20px rgba(78, 26, 110, .06);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cbtn:hover, .pickrow:hover, .btn:hover, .barbtn:hover, .tile:hover, .tabs button:hover, .advtabs button:hover {
+    transform: translateY(-1px);
+  }
+  .cbtn.primary:hover, .btn.primary:hover {
+    box-shadow: 0 12px 24px rgba(78, 26, 110, .22);
+  }
+  .cbtn:active, .pickrow:active, .barbtn:active, .btn:active, .tile:active {
+    transform: scale(.98);
+  }
+}
+
+/* ---- success, waiting, error ---- */
+.donehead { padding-top: 6px; }
+.donehead h1.q, .done h1 { color: var(--paid); }
+.donehead .bigcheck, .bigcheck {
+  box-shadow: 0 0 0 8px rgba(15, 95, 40, .14);
+  animation: ccm-pop .42s cubic-bezier(.2, .85, .2, 1);
+}
+.errbig {
+  padding: 8px 4px 4px;
+}
+.errbig h1.q { color: var(--danger); }
+.errbig .badge2 {
+  box-shadow: 0 0 0 8px rgba(156, 28, 21, .12);
+  animation: ccm-pop .42s cubic-bezier(.2, .85, .2, 1);
+}
+.stt.stt-wait.waitbox {
+  width: 100%;
+  justify-content: center;
+  min-height: 4.25rem;
+  border-radius: 18px;
+}
+.waitbox .ico { animation: ccm-wait 1.25s ease-in-out infinite; }
+.notice2 { box-shadow: 0 6px 16px rgba(15, 95, 40, .08); }
+.alertbox { box-shadow: 0 6px 16px rgba(156, 28, 21, .08); }
+
+@keyframes ccm-pop {
+  from { transform: scale(.86); }
+  to { transform: scale(1); }
+}
+@keyframes ccm-wait {
+  0%, 100% { transform: rotate(0deg); }
+  35% { transform: rotate(16deg); }
+  70% { transform: rotate(-10deg); }
+}
+
+/* ---- high contrast keeps thick edges and drops decoration ---- */
+html[data-contrast="high"] .top::after,
+html[data-contrast="high"] .stephead::after { background: var(--ink); }
+html[data-contrast="high"] .phone,
+html[data-contrast="high"] .card,
+html[data-contrast="high"] .top,
+html[data-contrast="high"] .cbtn,
+html[data-contrast="high"] .btn,
+html[data-contrast="high"] .pickrow,
+html[data-contrast="high"] .bar,
+html[data-contrast="high"] .sheet section,
+html[data-contrast="high"] .bigcheck,
+html[data-contrast="high"] .errbig .badge2,
+html[data-contrast="high"] .notice2,
+html[data-contrast="high"] .alertbox,
+html[data-contrast="high"] .qrbox {
+  box-shadow: none;
+}
+html[data-contrast="high"] .bar { border-top-width: 3px; }
+html[data-contrast="high"] .qrbox,
+html[data-contrast="high"] .screen .qrbox { border-color: var(--ink); background: #fff; }
+@media (prefers-contrast: more) {
+  :root:not([data-contrast="normal"]) .phone,
+  :root:not([data-contrast="normal"]) .card,
+  :root:not([data-contrast="normal"]) .top,
+  :root:not([data-contrast="normal"]) .cbtn,
+  :root:not([data-contrast="normal"]) .btn,
+  :root:not([data-contrast="normal"]) .bar,
+  :root:not([data-contrast="normal"]) .bigcheck,
+  :root:not([data-contrast="normal"]) .qrbox { box-shadow: none; }
+  :root:not([data-contrast="normal"]) .top::after,
+  :root:not([data-contrast="normal"]) .stephead::after { background: var(--ink); }
+}
+
+@media (max-width: 720px) {
+  body { padding: 12px 12px 36px; }
+  .top { margin-bottom: 14px; padding: 12px 12px 14px; border-radius: 22px; }
+  .brand img { height: 38px; }
+  .tabs { width: 100%; }
+  .tabs button { flex: 1; }
+  .stage { gap: 18px; }
+  .phone { border-radius: 28px; }
+}
+@media (max-width: 520px) {
+  .phone { border-radius: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .cbtn:hover, .pickrow:hover, .btn:hover, .barbtn:hover, .tile:hover,
+  .cbtn:active, .pickrow:active, .barbtn:active, .btn:active, .tile:active,
+  .tabs button:hover, .advtabs button:hover {
+    transform: none;
+  }
+}

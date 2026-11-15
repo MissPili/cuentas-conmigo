@@ -61,4 +61,6 @@ El modelo que hoy vive en el navegador, y que conviene pasar al servidor:
 
 El modo sencillo es el de siempre: un paso de cuatro, un botón principal, como mucho cuatro opciones, y la barra de Atrás, Escuchar y Cancelar aparte. Letra de 20 px o más, contraste alto, y ningún estado que dependa solo del color. El modo avanzado («Ayuda de un familiar») es para quien configura personas, cuentas y el reporte.
 
+La marca visual usa morado `#4E1A6E` (tinta y botón principal) y dorado `#EDB438` (acento y estado «esperando pago»), con fondo claro y mucho blanco. La letra es Nunito, con Segoe UI o la del sistema si no carga. El logo del encabezado, el favicon y el ícono de inicio viven en `prototype/assets/`. Los tonos claros y oscuros, y el alto contraste, siguen en los tokens del prototipo.
+
 Los colores y el cálculo de contraste están en `prototype/tools/contrast3.py`. Las reglas que la pantalla ya cumple, y lo que falta probar en un teléfono real, están en la pestaña de identidad del prototipo.
