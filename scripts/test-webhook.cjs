@@ -1,7 +1,7 @@
 // Sends a SIGNED, simulated "payment received" event to the deployed webhook, to check that the
 // server verifies the signature and marks the charge as paid. No real money moves.
 // Usage (values come from the environment, never from the repo):
-//   WEBHOOK_URL=https://... WEBHOOK_SECRET=whsec_... CHARGE_ID=<id shown in the app> node scripts/test-webhook.js
+//   WEBHOOK_URL=https://... WEBHOOK_SECRET=whsec_... CHARGE_ID=<id shown in the app> node scripts/test-webhook.cjs
 const { Webhook } = require('standardwebhooks');
 
 const { WEBHOOK_URL, WEBHOOK_SECRET, CHARGE_ID } = process.env;
