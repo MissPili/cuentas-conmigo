@@ -5,7 +5,6 @@ import {
   receiptSvg,
   svgDataUrl,
   receiptText,
-  whatsappUrl,
   shareSvg,
   saveSvg,
 } from './comprobante';
@@ -28,7 +27,7 @@ export function PictureSend({
   const share = async () => {
     try {
       const ok = await shareSvg(svg, filename, msg);
-      setNote(ok ? '' : 'Este celular no permite compartir la imagen. Usa Guardar imagen y mándala por WhatsApp.');
+      setNote(ok ? '' : 'Este celular no permite compartir la imagen. Usa Guardar imagen y mándala desde tu galería en WhatsApp.');
     } catch {
       setNote('No se pudo compartir. Intenta de nuevo.');
     }
@@ -48,16 +47,8 @@ export function PictureSend({
       <h1>{title}</h1>
       <img className="shot" alt={alt} src={svgDataUrl(svg)} />
       {note ? <Alert>{note}</Alert> : null}
-      <Choice primary icon={<IcoPhone />} label="Compartir imagen" hint="Eliges WhatsApp y a quién" onClick={() => { void share(); }} />
-      {dests.slice(0, 2).map((d) => (
-        <a key={d.tel} className="choice" href={whatsappUrl(d.tel, msg)} target="_blank" rel="noopener noreferrer">
-          <IcoPhone />
-          <span className="choice-text">
-            <span className="choice-label">WhatsApp a {d.label.toLowerCase()}</span>
-            <small>{d.sub}. Solo abre el mensaje, sin la imagen.</small>
-          </span>
-        </a>
-      ))}
+      {dests.length ? <p className="hint">Elige WhatsApp y después a: {dests.map((d) => `${d.label.toLowerCase()} (${d.sub})`).join(', ')}.</p> : null}
+      <Choice primary icon={<IcoPhone />} label="Compartir imagen" hint="Se abre WhatsApp con la imagen" onClick={() => { void share(); }} />
       <Choice label="Guardar imagen" hint="Para mandarla después" onClick={() => { void save(); }} />
       {children}
     </section>
