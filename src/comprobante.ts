@@ -156,12 +156,8 @@ export function receiptText(d: ReceiptData) {
 /** Message sent with the code to whoever helps pay: says who they are helping, what for, and to ask first if in doubt. */
 export function payText(d: PayCardData) {
   return (
-    `Hola. Estás ayudando a ${d.payerName} a pagar ${money(d.amount)} de ${d.concept} en ${d.projectName}.
-
-` +
-    'Para pagar: abre la app de tu banco, elige CoDi y escanea el código de la imagen.
-
-' +
+    `Hola. Estás ayudando a ${d.payerName} a pagar ${money(d.amount)} de ${d.concept} en ${d.projectName}.\n\n` +
+    'Para pagar: abre la app de tu banco, elige CoDi y escanea el código de la imagen.\n\n' +
     `Si tienes dudas, comunícate con ${d.payerName} antes de aprobar o hacer el pago.`
   );
 }
