@@ -67,6 +67,7 @@ const first = new URLSearchParams(location.search).get('v') ?? 'home';
 
 function start(): View {
   switch (first) {
+    case 'danger': return { id: 'danger' };
     case 'more': return { id: 'more' };
     case 'who': return { id: 'who', page: 0 };
     case 'person': return { id: 'person', personId: 'p3', page: 0 };
@@ -136,6 +137,8 @@ function Demo() {
         onCreateCharge={noop}
         onSaveProject={noop}
         onToggleOpen={noop}
+        onSendCode={async () => ''}
+        onWipe={async () => ''}
         onRotateToken={noop}
         onSeat={noop}
         onRequest={() => setView({ id: 'wait', chargeId: 'c3' })}

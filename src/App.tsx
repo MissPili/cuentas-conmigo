@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
+import { confirmUserAttribute, sendUserAttributeVerificationCode } from 'aws-amplify/auth';
 import type { Schema } from '../amplify/data/resource';
 import type { Acc, Chg, Per, Proj, View } from './model';
 import { freeSpots, isFull } from './places';
@@ -308,6 +309,34 @@ export default function App({ signOut }: { signOut?: () => void }) {
             if (r.errors?.length) throw new Error('project');
             await load();
           }, () => land({ id: 'places' }, 'Listo. Ya quedó guardado.'));
+        }}
+        onSendCode={async () => {
+          try {
+            await sendUserAttributeVerificationCode({ userAttributeKey: 'email' });
+            return '';
+          } catch {
+            return 'No se pudo mandar el código. Intenta de nuevo en un momento.';
+          }
+        }}
+        onWipe={async (code) => {
+          try {
+            await confirmUserAttribute({ userAttributeKey: 'email', confirmationCode: code.trim() });
+          } catch {
+            return 'El código no es correcto o ya venció.';
+          }
+          try {
+            // The code was right: delete in small groups so a long list does not flood the connection.
+            const jobs: (() => Promise<unknown>)[] = [];
+            for (const c of charges) jobs.push(() => client.models.Charge.delete({ id: c.id }));
+            for (const p of people) jobs.push(() => client.models.Person.delete({ id: p.id }));
+            for (let i = 0; i < jobs.length; i += 10) await Promise.all(jobs.slice(i, i + 10).map((j) => j()));
+            await load();
+            land({ id: 'home' }, 'Listo. Se borraron las personas y los cobros.');
+            return '';
+          } catch {
+            await load();
+            return 'No se pudo borrar todo. Intenta de nuevo.';
+          }
         }}
         onToggleOpen={() => {
           if (!project) return;

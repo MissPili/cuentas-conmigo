@@ -1,12 +1,13 @@
 // Screens added after the first MVP: "more options" and the monthly report.
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import type { StageProps } from './screens';
 import { money, monthName, shiftMonth, thisMonth } from './model';
-import { Choice, IcoBank, IcoCash, IcoOut, IcoPeople, Status } from './ui';
+import { Alert, Choice, Field, IcoBank, IcoCash, IcoOut, IcoPeople, Status } from './ui';
 import { canCharge } from './places';
 import { buildReport, reportCsv } from './report';
 
 export function More({ onView, signOut }: StageProps) {
+  // The danger entry is deliberately plain and last, so it is not tapped by mistake.
   return (
     <section className="stack">
       <h1>Más opciones</h1>
@@ -14,6 +15,7 @@ export function More({ onView, signOut }: StageProps) {
       <Choice icon={<IcoPeople />} label="Lugares e inscripciones" hint="Cupo, código QR y lista de espera" onClick={() => onView({ id: 'places' })} />
       <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
       {signOut ? <Choice icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
+      <button type="button" className="quiet" onClick={() => onView({ id: 'danger' })}>Zona de peligro (solo para quien configura)</button>
     </section>
   );
 }
@@ -75,6 +77,65 @@ export function ReportView({ month, people, charges, accounts, onView }: StagePr
       {r.rows.length ? <Choice primary label="Guardar como hoja de cálculo" hint="Se abre en Excel" onClick={save} /> : null}
       <Choice label="Mes anterior" hint={monthName(shiftMonth(month, -1))} onClick={() => onView({ id: 'report', month: shiftMonth(month, -1) })} />
       {!isNow ? <Choice label="Mes siguiente" hint={monthName(shiftMonth(month, 1))} onClick={() => onView({ id: 'report', month: shiftMonth(month, 1) })} /> : null}
+    </section>
+  );
+}
+
+const WORD = 'BORRAR';
+
+/** Wipes test data. Three deliberate steps: read the warning, type a word, type the code sent to the email. */
+export function DangerZone({ people, charges, onSendCode, onWipe, onView }: StageProps) {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [word, setWord] = useState('');
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function sendCode(e: FormEvent) {
+    e.preventDefault();
+    if (word.trim().toUpperCase() !== WORD) { setError(`Escribe la palabra ${WORD} tal como aparece.`); return; }
+    setBusy(true);
+    setError('');
+    const msg = await onSendCode();
+    setBusy(false);
+    if (msg) setError(msg);
+    else setStep(3);
+  }
+
+  async function wipe(e: FormEvent) {
+    e.preventDefault();
+    if (!code.trim()) { setError('Escribe el código que llegó a tu correo.'); return; }
+    setBusy(true);
+    setError('');
+    const msg = await onWipe(code);
+    setBusy(false);
+    if (msg) setError(msg);
+  }
+
+  return (
+    <section className="stack danger-zone">
+      <h1>Zona de peligro</h1>
+      <Alert>Esto borra a TODAS las personas ({people.length}) y TODOS los cobros ({charges.length}). No se puede deshacer. Úsalo solo con quien te ayuda a configurar la app.</Alert>
+      <p className="hint">No se borran las cuentas que reciben ni los ajustes de lugares. Los cobros que ya se mandaron a Pey no se cancelan allá.</p>
+      {step === 1 ? (
+        <Choice label="Entiendo, continuar" hint="Pide una confirmación más" onClick={() => setStep(2)} />
+      ) : null}
+      {step === 2 ? (
+        <form className="stack" onSubmit={sendCode}>
+          {error ? <Alert>{error}</Alert> : null}
+          <Field label={`Para seguir, escribe ${WORD}`}><input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" autoCapitalize="characters" /></Field>
+          <Choice type="submit" label={busy ? 'Un momento…' : 'Mandar código a mi correo'} hint="Llega al correo con el que entras" />
+        </form>
+      ) : null}
+      {step === 3 ? (
+        <form className="stack" onSubmit={wipe}>
+          <p className="lead">Te mandamos un código al correo. Escríbelo aquí.</p>
+          {error ? <Alert>{error}</Alert> : null}
+          <Field label="Código del correo"><input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" /></Field>
+          <Choice danger type="submit" label={busy ? 'Borrando…' : 'Borrar personas y cobros'} />
+        </form>
+      ) : null}
+      <Choice primary label="No borrar nada, volver" onClick={() => onView({ id: 'more' })} />
     </section>
   );
 }

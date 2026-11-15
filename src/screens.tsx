@@ -7,7 +7,7 @@ import { Alert, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, Ic
 import ReceiptView from './Receipt';
 import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprobante';
 import { PictureSend } from './Receipt';
-import { More, ReportView } from './screens2';
+import { DangerZone, More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
 import { canCharge, isFull, placesOn, toApprove } from './places';
 
@@ -28,6 +28,10 @@ export type StageProps = {
   onCreateCharge: (personId: string, concept: string, amount: number, accountId: string, confirmsPlace: boolean) => void;
   onSaveProject: (input: { name: string; capacity: number; holdDays: number; monthlyAmount: number; monthlyConcept: string; accountId: string }) => void;
   onToggleOpen: () => void;
+  /** Sends a code to the collector's email. Returns an error message, or '' when it went out. */
+  onSendCode: () => Promise<string>;
+  /** Checks the emailed code and, only if right, deletes all people and charges. Returns an error message or ''. */
+  onWipe: (code: string) => Promise<string>;
   onRotateToken: () => void;
   onSeat: (personId: string, action: 'approve' | 'give' | 'extend' | 'release') => void;
   onRequest: (chargeId: string) => void;
@@ -86,6 +90,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'paid') return <PaidStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'receipt') return <ReceiptStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'more') return <More {...p} />;
+  if (v.id === 'danger') return <DangerZone {...p} />;
   if (v.id === 'places') return <PlacesHub {...p} />;
   if (v.id === 'seats') return <Seats {...p} page={v.page} only={v.only} />;
   if (v.id === 'seat') return <SeatDetail {...p} personId={v.personId} />;

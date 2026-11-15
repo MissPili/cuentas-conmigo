@@ -70,6 +70,7 @@ export type View =
   | { id: 'account'; accountId: string }
   | { id: 'add-account' }
   | { id: 'more' }
+  | { id: 'danger' }
   | { id: 'send-qr'; chargeId: string; img: string }
   | { id: 'places' }
   | { id: 'seats'; page: number; only?: 'review' }

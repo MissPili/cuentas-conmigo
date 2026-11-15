@@ -274,3 +274,6 @@ a.choice { text-decoration: none; box-sizing: border-box; }
 .step.now { background: var(--ink); color: #fff; border: 3px solid var(--ink); }
 .step.past { border: 3px solid var(--paid); color: var(--paid); }
 .steps-text { font-weight: 800; font-size: 1.25rem; margin-left: 4px; }
+
+/* Plain, small entry for risky actions: not a big colourful button. Still 48px tall to tap. */
+.quiet { min-height: 48px; margin-top: 16px; background: none; border: 0; color: var(--soft); font: inherit; font-size: 1.05rem; text-decoration: underline; cursor: pointer; text-align: center; }

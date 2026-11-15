@@ -32,6 +32,7 @@ const SHOTS = [
   ['signup4', '23-inscripcion-paso-4'],
   ['signup-done', '24-inscripcion-lista'],
   ['send-qr', '25-mandar-el-codigo'],
+  ['danger', '26-zona-de-peligro'],
 ];
 
 (async () => {
