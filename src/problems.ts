@@ -20,13 +20,15 @@ export function explainProblem(raw: string, topic: Topic = 'charge'): Problem {
   if (/already paid/i.test(text)) {
     return { title: 'Este cobro ya está pagado', detail: 'No hace falta cobrarlo otra vez.' };
   }
-  if (/(charge|account) not found/i.test(text)) {
-    return { title: 'No encontramos ese registro', detail: 'Vuelve al inicio y elígelo otra vez.' };
+  // The server could not read its own data (not the person's session): keep the reason visible.
+  if (/^data error/i.test(text)) {
+    return { title: 'No se pudieron leer los datos', detail: 'Inténtalo de nuevo. Si sigue igual, avísale a quien te ayuda con la app.', tech };
   }
   if (/not signed in|not ?authorized|unauthorized/i.test(text)) {
     return { title: 'Tu sesión terminó', detail: 'Sal de la app y vuelve a entrar.' };
   }
 
+  // Pey's own answers come first: "Pey 404: ... Bank account not found" must not be taken for our own "Account not found".
   const pey = /Pey (\d{3})/.exec(text);
   if (pey) {
     const code = Number(pey[1]);
@@ -36,9 +38,18 @@ export function explainProblem(raw: string, topic: Topic = 'charge'): Problem {
     if (code === 503) {
       return { title: 'Pey no está disponible ahora', detail: topic === 'charge' ? 'Espera unos minutos, o muestra el código para pagar.' : 'Espera unos minutos e inténtalo de nuevo.', tech };
     }
+    // The account was registered with another Pey key (the key was changed): this key does not know it.
+    if (/bank.?account|cuenta/i.test(text) && (code === 404 || /not found|does not exist|no existe/i.test(text))) {
+      return { title: 'Pey no encuentra la cuenta que recibe', detail: 'Si cambiaste la llave de Pey, entra a la cuenta y regístrala otra vez.', tech };
+    }
     return topic === 'charge'
       ? { title: 'Pey no pudo pedir el pago', detail: 'Puede que ese celular o su banco no reciban solicitudes. Prueba con el código para pagar.', tech }
       : { title: 'Pey no aceptó la cuenta', detail: 'Revisa que el nombre y la CLABE estén bien escritos.', tech };
+  }
+
+  // Our own server's answer: the charge or account is not there, or belongs to someone else.
+  if (/(charge|account) not found/i.test(text)) {
+    return { title: 'No encontramos ese registro', detail: 'Vuelve al inicio y elígelo otra vez.', tech };
   }
 
   if (CONNECTION.test(text) || text === '') {

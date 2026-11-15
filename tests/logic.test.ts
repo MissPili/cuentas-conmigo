@@ -217,6 +217,26 @@ test('an account that is not active yet is explained without technical text', ()
   assert.equal(p.tech, undefined);
 });
 
+test('Pey saying the bank account is unknown is not confused with our own "not found"', () => {
+  // Happens when the Pey key is changed: the account was registered with the old key.
+  const p = explainProblem('Pey 404: NOT_FOUND: Bank account not found');
+  assert.equal(p.title, 'Pey no encuentra la cuenta que recibe');
+  assert.match(p.detail, /llave de Pey/);
+  assert.match(p.tech ?? '', /Bank account not found/);
+  assert.equal(explainProblem('Pey 400: INVALID_PARAMETER: bankAccountId does not exist', 'charge').title, 'Pey no encuentra la cuenta que recibe');
+  // ... while a plain 404 about something else keeps the generic Pey wording.
+  assert.equal(explainProblem('Pey 404: NOT_FOUND: route').title, 'Pey no pudo pedir el pago');
+});
+
+test('our own "not found" and data read errors keep the technical line for whoever helps', () => {
+  const nf = explainProblem('Charge not found');
+  assert.equal(nf.title, 'No encontramos ese registro');
+  assert.match(nf.tech ?? '', /Charge not found/);
+  const de = explainProblem('Data error: Unauthorized');
+  assert.equal(de.title, 'No se pudieron leer los datos');
+  assert.match(de.tech ?? '', /Unauthorized/);
+});
+
 test('only real connection failures talk about the connection', () => {
   assert.match(explainProblem('Network error').detail, /conexión/);
   assert.match(explainProblem('Load failed').detail, /conexión/);

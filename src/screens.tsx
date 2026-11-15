@@ -472,9 +472,23 @@ function Accounts({ accounts, page, onView }: StageProps & { page: number }) {
 
 function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, onView }: StageProps & { account: Acc | undefined }) {
   const [asking, setAsking] = useState(false);
+  const [again, setAgain] = useState(false);
   if (!account) return <Missing onHome={() => onView({ id: 'home' })} />;
   const words = accountWords(account);
   const active = account.codiStatus === 'ACTIVE';
+
+  // The Pey key was changed: Pey does not know the account registered with the old key, so it is sent again.
+  if (again) {
+    return (
+      <section className="stack">
+        <h1>¿Registrarla otra vez en Pey?</h1>
+        <p className="lead">{account.alias}</p>
+        <Alert>Hazlo solo si cambiaste la llave de Pey. Una cuenta nueva puede tardar hasta 5 días hábiles en quedar lista; mientras tanto solo se puede cobrar en efectivo.</Alert>
+        <Choice primary icon={<IcoBank />} label={busy ? busyLabel : 'Sí, registrarla otra vez'} onClick={() => { setAgain(false); onRegister(account.id); }} />
+        <Choice label="No, volver" onClick={() => setAgain(false)} />
+      </section>
+    );
+  }
   return (
     <section className="stack">
       <h1>{account.alias}</h1>
@@ -488,6 +502,7 @@ function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, on
         <Choice primary icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya está lista'} onClick={() => onRefresh(account.id)} />
       ) : null}
       {active ? <Choice primary icon={<IcoCash />} label="Cobrar" onClick={() => onView({ id: 'who', page: 0 })} /> : null}
+      {account.peyId && !asking ? <Choice icon={<IcoBank />} label="Registrarla otra vez en Pey" hint="Solo si cambiaste la llave de Pey" onClick={() => setAgain(true)} /> : null}
       {!asking ? (
         <Choice danger label="Eliminar cuenta" hint={account.codiStatus === 'ERROR' ? 'Tiene un error' : 'Ya no la necesito'} onClick={() => setAsking(true)} />
       ) : (

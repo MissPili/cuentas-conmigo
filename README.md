@@ -199,6 +199,8 @@ Amplify Hosting construye y despliega solo cada vez que se sube un cambio a `mai
 - `PEY_API_KEY`: la llave de la API de Pey.
 - `PEY_WEBHOOK_SECRET`: el secreto `whsec_…` que Pey entrega al registrar la URL del webhook (portal.mipey.mx → Developers).
 
+Después de cambiar un secreto hay que volver a desplegar (Amplify → **Redeploy this version**). **Si cambias la llave de Pey por una de otra cuenta de Pey**, las cuentas que reciben y que se registraron con la llave anterior ya no existen para Pey (el cobro falla con "Pey no encuentra la cuenta que recibe"): en **Más opciones → Cuenta que recibe → la cuenta → Registrarla otra vez en Pey**. Una cuenta con CLABE real vuelve a tardar hasta 5 días hábiles en activarse; la CLABE de prueba de Pey queda lista al instante.
+
 Las llaves nunca van en el repositorio ni en el código. Hay un aviso de presupuesto mensual en la cuenta de AWS.
 
 ## Seguridad y privacidad

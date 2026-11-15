@@ -50,9 +50,25 @@ export const handler: Handler = async (event) => {
   if (!sub) throw new Error('Not signed in');
   const mine = (owner?: string | null) => !!owner && owner.startsWith(sub);
 
+  // "Not found" only when the row is really not there or belongs to someone else. A read that FAILS says so,
+  // and every case leaves a line in the logs (ids only, never names or phones).
+  const loadCharge = async (chargeId: string) => {
+    const { data, errors } = await client.models.Charge.get({ id: chargeId });
+    if (errors?.length) { console.error('charge read failed', chargeId, errors[0]?.message); throw new Error(`Data error: ${errors[0]?.message ?? 'unknown'}`.slice(0, 200)); }
+    if (!data) { console.error('charge is not in the table', chargeId); throw new Error('Charge not found'); }
+    if (!mine(data.owner)) { console.error('charge belongs to another user', chargeId); throw new Error('Charge not found'); }
+    return data;
+  };
+  const loadAccount = async (accountId: string) => {
+    const { data, errors } = await client.models.Account.get({ id: accountId });
+    if (errors?.length) { console.error('account read failed', accountId, errors[0]?.message); throw new Error(`Data error: ${errors[0]?.message ?? 'unknown'}`.slice(0, 200)); }
+    if (!data) { console.error('account is not in the table', accountId); throw new Error('Account not found'); }
+    if (!mine(data.owner)) { console.error('account belongs to another user', accountId); throw new Error('Account not found'); }
+    return data;
+  };
+
   if (action === 'registerAccount') {
-    const { data: acc } = await client.models.Account.get({ id });
-    if (!acc || !mine(acc.owner)) throw new Error('Account not found');
+    const acc = await loadAccount(id);
     const r = await peyCall('/bank-account', 'POST', {
       alias: acc.alias, name: acc.legalName, clabe: acc.clabe, entity: acc.entity ?? 'PERSON',
     });
@@ -61,20 +77,19 @@ export const handler: Handler = async (event) => {
   }
 
   if (action === 'refreshAccount') {
-    const { data: acc } = await client.models.Account.get({ id });
-    if (!acc || !mine(acc.owner) || !acc.peyId) throw new Error('Account not found');
+    const acc = await loadAccount(id);
+    if (!acc.peyId) throw new Error('Account not found');
     const r = await peyCall(`/bank-account/${acc.peyId}`, 'GET');
     await client.models.Account.update({ id, codiStatus: r.codiStatus, errorMessage: r.errorMessage ?? null });
     return r.codiStatus;
   }
 
   if (action === 'requestCodi') {
-    const { data: ch } = await client.models.Charge.get({ id });
-    if (!ch || !mine(ch.owner)) throw new Error('Charge not found');
+    const ch = await loadCharge(id);
     if (ch.status === 'PAID') throw new Error('Already paid');
-    const { data: acc } = await client.models.Account.get({ id: ch.accountId });
+    const acc = await loadAccount(ch.accountId);
     // Never send a CoDi request to an account Pey has not activated yet.
-    if (!acc?.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
+    if (!acc.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
     const numRef = newNumRef();
     const r = await peyCall('/codi/pn', 'POST', {
       amount: ch.amount,
@@ -89,11 +104,10 @@ export const handler: Handler = async (event) => {
   }
 
   if (action === 'requestQr') {
-    const { data: ch } = await client.models.Charge.get({ id });
-    if (!ch || !mine(ch.owner)) throw new Error('Charge not found');
+    const ch = await loadCharge(id);
     if (ch.status === 'PAID') throw new Error('Already paid');
-    const { data: acc } = await client.models.Account.get({ id: ch.accountId });
-    if (!acc?.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
+    const acc = await loadAccount(ch.accountId);
+    if (!acc.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
     const numRef = newNumRef();
     const r = await peyCall('/codi/qr', 'POST', {
       amount: ch.amount,
@@ -111,8 +125,7 @@ export const handler: Handler = async (event) => {
 
   // Asks Pey whether a charge was paid. Recovers a payment when the webhook did not arrive (or is not set up yet).
   if (action === 'checkCharge') {
-    const { data: ch } = await client.models.Charge.get({ id });
-    if (!ch || !mine(ch.owner)) throw new Error('Charge not found');
+    const ch = await loadCharge(id);
     if (ch.status === 'PAID') return 'PAID';
     if (!ch.transactionId) return 'PENDING';
     // A CoDi request has a 26-character ULID transaction id; a CoDi QR keeps the short QR id (IDC).
