@@ -3,10 +3,13 @@
 // (their own, and whoever helps pay with name and relation, 1 to 3), review, choose where codes go, and confirm.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { emblemOf, pickEmblems, type Emblem } from './emblems';
-import type { Helper } from './model';
+import { money, monthName, shiftMonth, type Helper } from './model';
 import { Alert, Choice, Field, IcoCheck, IcoClock, IcoPeople, IcoPhone, IcoAlert, Shell } from './ui';
 
-type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean; detail?: string; taken?: string[] };
+/** What the project charges, as the signup page receives it. */
+type PublicPlan = { concept: string; amount: number; kind: 'ONCE' | 'MONTHLY'; months: number | null; start: string | null };
+
+type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean; detail?: string; taken?: string[]; plans?: PublicPlan[] };
 type Done = 'registered' | 'waitlist' | 'already' | 'closed' | 'limit' | 'invalid' | 'error';
 
 const digits = (s: string) => s.replace(/\D/g, '');
@@ -21,6 +24,30 @@ function Steps({ n }: { n: number }) {
         </span>
       ))}
       <span className="steps-text">Paso {n} de 4</span>
+    </div>
+  );
+}
+
+/** The costs, in plain words, before asking how the person will pay. */
+function Costs({ plans }: { plans: PublicPlan[] }) {
+  const total = plans.reduce((n, p) => n + p.amount * (p.kind === 'MONTHLY' ? p.months ?? 1 : 1), 0);
+  const label = (ym: string) => `${monthName(ym).toLowerCase()} ${ym.slice(0, 4)}`;
+  return (
+    <div className="costs" role="group" aria-label="Lo que se paga">
+      <h2 className="ask">Lo que se paga</h2>
+      {plans.map((p) => (
+        <p key={p.concept} className="cost-row">
+          <strong>{p.concept}: {money(p.amount)}</strong>
+          <span>
+            {p.kind === 'ONCE'
+              ? 'Se paga una sola vez.'
+              : p.start && p.months
+                ? `Se paga cada mes, ${p.months} meses (de ${label(p.start)} a ${label(shiftMonth(p.start, p.months - 1))}).`
+                : 'Se paga cada mes.'}
+          </span>
+        </p>
+      ))}
+      {plans.length > 1 || plans[0]?.kind === 'MONTHLY' ? <p className="cost-total"><strong>En total: {money(total)}</strong></p> : null}
     </div>
   );
 }
@@ -266,7 +293,10 @@ export default function Inscripcion({ token, registerUrl, initial }: {
         {step === 3 ? (
           <form className="stack" onSubmit={next}>
             <h1>Tu WhatsApp</h1>
+            <p className="lead">Te escribiremos a este número para todo lo del taller: avisos, cobros y comprobantes.</p>
             <Field label="Tu WhatsApp (10 números)"><input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="numeric" autoComplete="tel" required /></Field>
+
+            {info.plans?.length ? <Costs plans={info.plans} /> : null}
 
             <h2 className="ask">¿Cómo vas a pagar?</h2>
             <p className="lead">Se paga con CoDi, desde la app de un banco.</p>

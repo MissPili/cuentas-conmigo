@@ -278,6 +278,13 @@ a.choice { text-decoration: none; box-sizing: border-box; }
 /* Plain, small entry for risky actions: not a big colourful button. Still 48px tall to tap. */
 .quiet { min-height: 48px; margin-top: 16px; background: none; border: 0; color: var(--soft); font: inherit; font-size: 1.05rem; text-decoration: underline; cursor: pointer; text-align: center; }
 
+/* The costs box on the signup page. */
+.costs { display: grid; gap: 8px; padding: 16px; border: 4px solid #4E1A6E; border-radius: 20px; background: #fff; }
+.costs .ask { margin: 0 0 4px; }
+.cost-row { margin: 0; display: grid; gap: 2px; font-size: 1.25rem; line-height: 1.5; }
+.cost-row strong { font-size: 1.5rem; }
+.cost-total { margin: 4px 0 0; padding-top: 8px; border-top: 3px solid #4E1A6E; font-size: 1.5rem; }
+
 /* Picture that identifies a person. */
 .avatar { flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; display: inline-grid; place-items: center; font-size: 2rem; line-height: 1; background: #fff; border: 3px solid #4E1A6E; }
 .avatar.initial { background: #EFE8F5; color: #4E1A6E; font-size: 1.6rem; font-weight: 800; }

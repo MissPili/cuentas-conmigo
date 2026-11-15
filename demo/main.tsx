@@ -118,7 +118,7 @@ if (first.startsWith('signup')) {
   window.fetch = (async (_url: unknown, init?: RequestInit) => {
     const body = init?.method === 'POST'
       ? { status: 'registered' }
-      : { status: 'open', name: 'Taller de ejemplo', full: first === 'signup-full', taken: ['gato', 'perro', 'sol'] };
+      : { status: 'open', name: 'Taller de ejemplo', full: first === 'signup-full', taken: ['gato', 'perro', 'sol'], plans: [{ concept: 'Inscripción', amount: 40, kind: 'ONCE', months: null, start: null }, { concept: 'Mensualidad', amount: 130, kind: 'MONTHLY', months: 10, start: '2026-08' }] };
     return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
   }) as typeof window.fetch;
 }

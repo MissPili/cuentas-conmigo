@@ -7,6 +7,7 @@ import { env } from '$amplify/env/register';
 import type { Schema } from '../../data/resource';
 import { TEL10, overflowIds, takesPlaceByStatus } from '../../../src/places';
 import { isEmblemId } from '../../../src/emblems';
+import { legacyPlan, parsePlans } from '../../../src/plans';
 
 // Public signup. It only REGISTERS a person. No charge, no CoDi request and no message leaves from here:
 // the collector must approve first. Answers reveal nothing beyond what the person just typed.
@@ -89,7 +90,11 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
 
     // Pictures already held, so the page only offers free ones. Nothing about who holds them.
     const taken = people.filter((p) => p.status !== 'RELEASED' && p.emblem).map((p) => p.emblem as string);
-    if (method === 'GET') return json(200, { status: project.open ? 'open' : 'closed', name: project.name ?? '', full, taken });
+    // What the project charges, shown before the person decides: amounts and timing only (never the account).
+    const saved = parsePlans(project.plansJson);
+    const plans = (saved.length ? saved : legacyPlan(project.monthlyAmount, project.monthlyConcept, project.accountId, new Date()))
+      .map((p) => ({ concept: p.concept, amount: p.amount, kind: p.kind, months: p.months ?? null, start: p.start ?? null }));
+    if (method === 'GET') return json(200, { status: project.open ? 'open' : 'closed', name: project.name ?? '', full, taken, plans });
     if (!project.open) return json(200, { status: 'closed' });
 
     if (!(await allow(client, `tok:${token.slice(0, 16)}:${hour}`, PER_TOKEN_PER_HOUR))) return json(200, { status: 'limit' });
