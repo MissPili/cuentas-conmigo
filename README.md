@@ -4,7 +4,7 @@ Cobros y control de cobros sencillos para adultos mayores, con pagos CoDi a trav
 
 La app es de pocos pasos, con letra grande y alto contraste, pensada para personas con poca experiencia tecnológica o problemas de visión. La primera usuaria es una tallerista del DIF que cobra una mensualidad a unas 12 personas desde un iPhone. La misma idea sirve para quien organiza una tanda o para una tienda que fía.
 
-**App en vivo:** https://main.dj3nitc67fx2s.amplifyapp.com/ (pide crear una cuenta con correo).
+**App en vivo:** https://cuentasconmigo.misspili.com.mx/ (pide crear una cuenta con correo).
 
 ## Estado
 
