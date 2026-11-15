@@ -99,7 +99,7 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
 }
 .stat p { margin: 0; }
 
-.choice, .person, .back {
+.choice, .person, .back, .listen {
   width: 100%;
   display: flex;
   align-items: center;
@@ -156,8 +156,8 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
 .person { flex-wrap: wrap; }
 .person-name { font-size: 1.5rem; line-height: 1.4; overflow-wrap: anywhere; }
 .back, .listen { min-height: 3.5rem; font-size: 1.25rem; justify-content: center; }
-.dock { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.dock .only { grid-column: 1 / -1; }
+.dock { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.listen span { white-space: nowrap; }
 .spoken { margin: 0; color: var(--soft); font-size: 1.25rem; line-height: 1.5; }
 
 .st {

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { Kind } from './model';
 import logo from './assets/logo-cuentas-conmigo.png';
-import { getA11y, helpLine, selectHelp, speak } from './a11y';
+import { getA11y, helpLine, selectHelp, speak, stopSpeak, updateA11y, useA11y } from './a11y';
 import { emblemOf } from './emblems';
 
 export function Icon({ children }: { children: ReactNode }) {
@@ -34,6 +34,7 @@ export const IcoBack = () => <Icon><path d="M15 5l-7 7 7 7" /></Icon>;
 export const IcoOut = () => <Icon><path d="M10 5H6v14h4M10 12h9M16 8l4 4-4 4" /></Icon>;
 export const IcoEye = () => <Icon><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
 export const IcoListen = () => <Icon><path d="M4 10v4h3l4 3V7L7 10z" /><path d="M15 9.2a3.6 3.6 0 010 5.6M17.4 7a6.5 6.5 0 010 10" /></Icon>;
+export const IcoMute = () => <Icon><path d="M4 10v4h3l4 3V7L7 10z" /><path d="M16 9.5l5 5M21 9.5l-5 5" /></Icon>;
 
 const KIND_ICON = { paid: IcoCheck, wait: IcoClock, due: IcoRing, bad: IcoAlert };
 
@@ -76,6 +77,7 @@ export function Alert({ children }: { children: ReactNode }) {
 }
 
 export function Shell({ canBack, onBack, note, children }: { canBack: boolean; onBack: () => void; note?: string; children: ReactNode }) {
+  const voiceOn = useA11y().voice;
   const [spoken, setSpoken] = useState('');
   const screenLast = useRef('');
   const say = (text: string) => {
@@ -83,10 +85,17 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
     setSpoken(text);
     speak(text);
   };
-  // Escuchar works even when the automatic voice is off.
-  const listen = () => {
+  // The bottom button is the switch: it is on every screen, so the voice can be turned off without looking for the setting.
+  const toggleVoice = () => {
+    if (voiceOn) {
+      updateA11y({ voice: false });
+      stopSpeak();
+      return;
+    }
+    updateA11y({ voice: true });
     const active = document.activeElement;
     const text = active instanceof HTMLSelectElement && active.closest('main') ? selectHelp(active) : helpLine();
+    screenLast.current = text;
     say(text);
   };
   useEffect(() => {
@@ -145,9 +154,9 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
             <span>Atrás</span>
           </button>
         ) : null}
-        <button type="button" className={canBack ? 'listen' : 'listen only'} onClick={listen}>
-          <IcoListen />
-          <span>Escuchar</span>
+        <button type="button" className={canBack ? 'listen' : 'listen only'} role="switch" aria-checked={voiceOn} onClick={toggleVoice}>
+          {voiceOn ? <IcoMute /> : <IcoListen />}
+          <span>{voiceOn ? 'Apagar voz' : 'Prender voz'}</span>
         </button>
       </div>
     </div>
