@@ -6,7 +6,7 @@ import {
 import { Alert, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
 import ReceiptView from './Receipt';
 import { folioOf } from './comprobante';
-import { More, ReportView } from './screens2';
+import { More, ReportView, Access } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
 import { canCharge, isFull, placesOn, toApprove } from './places';
 
@@ -83,6 +83,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'paid') return <PaidStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'receipt') return <ReceiptStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'more') return <More {...p} />;
+  if (v.id === 'access') return <Access />;
   if (v.id === 'places') return <PlacesHub {...p} />;
   if (v.id === 'seats') return <Seats {...p} page={v.page} only={v.only} />;
   if (v.id === 'seat') return <SeatDetail {...p} personId={v.personId} />;

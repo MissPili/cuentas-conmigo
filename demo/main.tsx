@@ -68,6 +68,7 @@ const first = new URLSearchParams(location.search).get('v') ?? 'home';
 function start(): View {
   switch (first) {
     case 'more': return { id: 'more' };
+    case 'access': return { id: 'access' };
     case 'who': return { id: 'who', page: 0 };
     case 'person': return { id: 'person', personId: 'p3', page: 0 };
     case 'charge': return { id: 'charge', chargeId: 'c3' };

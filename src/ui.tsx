@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Kind } from './model';
 import logo from './assets/logo-cuentas-conmigo.png';
+import { getA11y, readScreen, speak } from './a11y';
 
 export function Icon({ children }: { children: ReactNode }) {
   return (
@@ -28,6 +30,8 @@ export const IcoQr = () => (
 );
 export const IcoBack = () => <Icon><path d="M15 5l-7 7 7 7" /></Icon>;
 export const IcoOut = () => <Icon><path d="M10 5H6v14h4M10 12h9M16 8l4 4-4 4" /></Icon>;
+export const IcoEye = () => <Icon><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
+export const IcoListen = () => <Icon><path d="M4 10v4h3l4 3V7L7 10z" /><path d="M15 9.2a3.6 3.6 0 010 5.6M17.4 7a6.5 6.5 0 010 10" /></Icon>;
 
 const KIND_ICON = { paid: IcoCheck, wait: IcoClock, due: IcoRing, bad: IcoAlert };
 
@@ -68,6 +72,24 @@ export function Alert({ children }: { children: ReactNode }) {
 }
 
 export function Shell({ canBack, onBack, note, children }: { canBack: boolean; onBack: () => void; note?: string; children: ReactNode }) {
+  const [spoken, setSpoken] = useState('');
+  const last = useRef('');
+  const listen = () => {
+    const text = readScreen();
+    last.current = text;
+    setSpoken(text);
+    speak(text);
+  };
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const text = readScreen();
+      if (!text || text === last.current || !getA11y().voice) return;
+      last.current = text;
+      setSpoken(text);
+      speak(text);
+    }, 120);
+    return () => window.clearTimeout(t);
+  });
   return (
     <div className="app">
       <header className="top">
@@ -76,13 +98,20 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
       <main className="panel">
         {note ? <p className="note" role="status"><IcoCheck /><span>{note}</span></p> : null}
         {children}
+        {spoken ? <p className="spoken" aria-live="polite">«{spoken}»</p> : null}
       </main>
-      {canBack ? (
-        <button type="button" className="back" onClick={onBack}>
-          <IcoBack />
-          <span>Atrás</span>
+      <div className="dock">
+        {canBack ? (
+          <button type="button" className="back" onClick={onBack}>
+            <IcoBack />
+            <span>Atrás</span>
+          </button>
+        ) : null}
+        <button type="button" className={canBack ? 'listen' : 'listen only'} onClick={listen}>
+          <IcoListen />
+          <span>Escuchar</span>
         </button>
-      ) : null}
+      </div>
     </div>
   );
 }

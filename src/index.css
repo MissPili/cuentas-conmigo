@@ -4,6 +4,8 @@
    Status colors stay the checked set: paid #0F5F28, waiting #F2B01E / #2A1D00, danger #9C1C15. */
 :root {
   --brand: #4E1A6E;
+  --on-brand: #fff;
+  --on-paid: #fff;
   --ink: #4E1A6E;
   --soft: #5A3E66;
   --bg: #FBF8FC;
@@ -117,11 +119,15 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
 .choice.primary {
   min-height: 5rem;
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   border-color: var(--brand);
   box-shadow: 0 8px 18px rgba(78, 26, 110, .16);
 }
 .choice.danger { color: var(--bad); border-color: var(--bad); }
+.choice.sw { justify-content: space-between; align-items: center; }
+.choice.sw .choice-text { flex: 1 1 9rem; }
+.choice.sw .choice-label { overflow-wrap: normal; word-break: normal; }
+.choice.sw .st { flex: none; }
 .choice-text { display: grid; gap: 2px; min-width: 0; }
 .choice-label { overflow-wrap: anywhere; }
 .choice small, .person-amt {
@@ -130,10 +136,13 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   line-height: 1.4;
   color: var(--soft);
 }
-.choice.primary small { color: #fff; }
+.choice.primary small { color: var(--on-brand); }
 .person { flex-wrap: wrap; }
 .person-name { font-size: 1.5rem; line-height: 1.4; overflow-wrap: anywhere; }
-.back { min-height: 3.5rem; font-size: 1.25rem; justify-content: center; }
+.back, .listen { min-height: 3.5rem; font-size: 1.25rem; justify-content: center; }
+.dock { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dock .only { grid-column: 1 / -1; }
+.spoken { margin: 0; color: var(--soft); font-size: 1.25rem; line-height: 1.5; }
 
 .st {
   display: inline-flex;
@@ -148,7 +157,7 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   line-height: 1.4;
 }
 .st .ico { width: 1.5rem; height: 1.5rem; }
-.st-paid { background: var(--paid); color: #fff; border-color: var(--paid); }
+.st-paid { background: var(--paid); color: var(--on-paid); border-color: var(--paid); }
 .st-wait {
   position: relative;
   background: var(--wait);
@@ -163,8 +172,8 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   width: 10px;
   background: repeating-linear-gradient(135deg, var(--on-wait) 0 3px, transparent 3px 7px);
 }
-.st-due { background: #fff; color: var(--ink); border-style: dotted; }
-.st-bad { background: #fff; color: var(--bad); border-color: var(--bad); }
+.st-due { background: var(--surface); color: var(--ink); border-style: dotted; }
+.st-bad { background: var(--surface); color: var(--bad); border-color: var(--bad); }
 
 .alert, .note {
   display: flex;
@@ -190,8 +199,8 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   place-items: center;
 }
 .seal .ico { width: 3.5rem; height: 3.5rem; }
-.seal.ok { background: var(--paid); color: #fff; }
-.seal.bad { background: #fff; color: var(--bad); border: 6px solid var(--bad); }
+.seal.ok { background: var(--paid); color: var(--on-paid); }
+.seal.bad { background: var(--surface); color: var(--bad); border: 6px solid var(--bad); }
 
 .field { display: grid; gap: 8px; font-weight: 800; font-size: 1.25rem; line-height: 1.4; }
 input, select {
@@ -264,8 +273,52 @@ a.choice { text-decoration: none; box-sizing: border-box; }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .choice:hover, .person:hover, .back:hover { transform: none; }
+  .choice:hover, .person:hover, .back:hover, .listen:hover { transform: none; }
 }
+
+html[data-text="xl"] { font-size: 125%; }
+
+:root[data-contrast="high"] {
+  --brand: #fff;
+  --on-brand: #000;
+  --ink: #fff;
+  --soft: #fff;
+  --bg: #000;
+  --surface: #000;
+  --line: #fff;
+  --edge: #fff;
+  --gold: #ffc400;
+  --paid: #3ddc84;
+  --on-paid: #000;
+  --wait: #ffc400;
+  --on-wait: #000;
+  --bad: #ff8a80;
+  --amplify-colors-primary-80: #fff;
+  --amplify-colors-primary-90: #fff;
+  --amplify-colors-primary-100: #fff;
+  --amplify-components-button-primary-background-color: #fff;
+  --amplify-components-button-primary-color: #000;
+  --amplify-components-button-primary-hover-background-color: #ffc400;
+  --amplify-components-button-primary-focus-background-color: #ffc400;
+  --amplify-components-button-primary-active-background-color: #ffc400;
+  color-scheme: dark;
+}
+html[data-contrast="high"] .choice,
+html[data-contrast="high"] .person,
+html[data-contrast="high"] .back,
+html[data-contrast="high"] .listen,
+html[data-contrast="high"] .st,
+html[data-contrast="high"] .panel,
+html[data-contrast="high"] .stat,
+html[data-contrast="high"] .alert,
+html[data-contrast="high"] .note {
+  box-shadow: none;
+}
+html[data-contrast="high"] .choice,
+html[data-contrast="high"] .person,
+html[data-contrast="high"] .back,
+html[data-contrast="high"] .listen { border-width: 4px; }
+html[data-contrast="high"] :focus-visible { outline-color: #ffeb3b; }
 
 .check { display: flex; gap: 12px; align-items: flex-start; font-weight: 800; font-size: 1.25rem; line-height: 1.4; }
 .check input { width: 2.5rem; height: 2.5rem; min-height: 0; flex: none; margin: 0; accent-color: var(--ink); }

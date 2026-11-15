@@ -4,6 +4,7 @@ import type { Schema } from '../amplify/data/resource';
 import type { Acc, Chg, Per, Proj, View } from './model';
 import { freeSpots, isFull } from './places';
 import { chargeKind, thisMonth } from './model';
+import { feedback } from './a11y';
 import { Stage } from './screens';
 import { Shell } from './ui';
 
@@ -127,6 +128,14 @@ export default function App({ signOut }: { signOut?: () => void }) {
     const c = charges.find((x) => x.id === view.chargeId);
     if (c && chargeKind(c) === 'paid') setView({ id: 'paid', chargeId: c.id });
   }, [charges, view]);
+
+  useEffect(() => {
+    if (view.id === 'paid') feedback('ok');
+  }, [view]);
+
+  useEffect(() => {
+    if (problem) feedback('error');
+  }, [problem]);
 
   function go(next: View) {
     setProblem(null);
