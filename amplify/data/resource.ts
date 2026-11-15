@@ -29,6 +29,11 @@ const schema = a
       emblem: a.string(), // picture chosen from the bank (src/emblems.ts); unique among people who hold a place
       photo: a.string(), // small JPEG data URL, only when the person agreed (photoConsent)
       photoConsent: a.boolean(),
+      projectId: a.id(), // which collection project (taller) they belong to; empty = the collector's first one
+      // Whoever helps pay: telephone in `helpers`, and, at the same position, their name and how they are related.
+      helperNames: a.string().array(),
+      helperRels: a.string().array(),
+      sendTo: a.string(), // telephone, among the ones they registered, where codes and receipts should go
       consentShared: a.boolean(), // agreed that the helpers' numbers are shared with the collector
       // Declared on purpose: the public signup function creates rows on the collector's behalf and must set the owner.
       owner: a.string(),
@@ -66,6 +71,7 @@ const schema = a
       numRef: a.string(),
       paidAt: a.datetime(),
       confirmsPlace: a.boolean(), // true for the monthly fee: only that payment confirms a place
+      projectId: a.id(),
     }).secondaryIndexes((i) => [i('transactionId')]).authorization((allow) => [allow.owner()]),
 
     // One entry point for everything that talks to Pey.

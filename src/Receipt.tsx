@@ -47,7 +47,13 @@ export function PictureSend({
       <h1>{title}</h1>
       <img className="shot" alt={alt} src={svgDataUrl(svg)} />
       {note ? <Alert>{note}</Alert> : null}
-      {dests.length ? <p className="hint">Elige WhatsApp y después a: {dests.map((d) => `${d.label.toLowerCase()} (${d.sub})`).join(', ')}.</p> : null}
+      {dests.length ? (
+        <p className="hint">
+          {dests[0].chosen ? 'Pidió que se lo mandes a ' : 'Elige WhatsApp y después a '}
+          <strong>{dests[0].label} ({dests[0].sub})</strong>
+          {dests.length > 1 ? `. También: ${dests.slice(1).map((d) => `${d.label} (${d.sub})`).join(', ')}` : ''}.
+        </p>
+      ) : null}
       <Choice primary icon={<IcoPhone />} label="Compartir imagen" hint="Se abre WhatsApp con la imagen" onClick={() => { void share(); }} />
       <Choice label="Guardar imagen" hint="Para mandarla después" onClick={() => { void save(); }} />
       {children}

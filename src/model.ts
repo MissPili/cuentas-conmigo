@@ -11,6 +11,9 @@ export type Acc = {
 
 export type PersonStatus = 'PENDING' | 'ENROLLED' | 'WAITLIST' | 'RELEASED';
 
+/** Someone who helps a person pay: who they are, how they are related, and their WhatsApp. */
+export type Helper = { tel: string; name: string; rel: string };
+
 export type Per = {
   id: string;
   name: string;
@@ -20,6 +23,9 @@ export type Per = {
   heldOn?: string | null; // ISO date the place was held or last extended
   via?: 'QR' | 'MANUAL' | null;
   helpers?: string[]; // 10-digit WhatsApp numbers of the people who help pay (1 to 3)
+  helperInfo?: Helper[]; // the same people with name and relation (older rows only have the number)
+  sendTo?: string | null; // number where they asked to receive codes and receipts
+  projectId?: string | null;
   regAt?: string | null; // when they signed up through the QR
   emblem?: string | null; // id of the picture chosen from the bank (see emblems.ts)
   photo?: string | null; // small JPEG as a data URL, only with consent
@@ -36,6 +42,7 @@ export type Proj = {
   monthlyConcept?: string | null;
   monthlyAmount?: number | null;
   accountId?: string | null;
+  createdAt?: string | null; // the oldest project adopts rows created before projects existed
 };
 
 export type Chg = {
@@ -53,9 +60,12 @@ export type Chg = {
   paidAt?: string | null;
   /** True for the monthly fee: only that payment confirms a place. */
   confirmsPlace?: boolean | null;
+  projectId?: string | null;
 };
 
 export type View =
+  | { id: 'projects' }
+  | { id: 'new-project' }
   | { id: 'home' }
   | { id: 'who'; page: number }
   | { id: 'person'; personId: string; page: number }
@@ -71,7 +81,7 @@ export type View =
   | { id: 'accounts'; page: number }
   | { id: 'account'; accountId: string }
   | { id: 'add-account' }
-  | { id: 'more' }
+  | { id: 'more'; page?: number }
   | { id: 'danger' }
   | { id: 'send-qr'; chargeId: string; img: string }
   | { id: 'places' }

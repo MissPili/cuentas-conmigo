@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import { confirmUserAttribute, sendUserAttributeVerificationCode } from 'aws-amplify/auth';
 import type { Schema } from '../amplify/data/resource';
@@ -17,7 +17,7 @@ type Project = Schema['Project']['type'];
 
 function mapProject(p: Project): Proj | null {
   if (!p.id || !p.token || p.open == null || p.capacity == null || p.holdDays == null) return null;
-  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays, monthlyConcept: p.monthlyConcept, monthlyAmount: p.monthlyAmount, accountId: p.accountId };
+  return { id: p.id, name: p.name, open: p.open, token: p.token, capacity: p.capacity, holdDays: p.holdDays, monthlyConcept: p.monthlyConcept, monthlyAmount: p.monthlyAmount, accountId: p.accountId, createdAt: p.createdAt };
 }
 
 function newToken(): string {
@@ -50,6 +50,9 @@ function mapPerson(p: Person): Per | null {
     via: p.via,
     helpers: (p.helpers ?? []).filter((h): h is string => !!h),
     regAt: p.regAt,
+    projectId: p.projectId,
+    sendTo: p.sendTo,
+    helperInfo: (p.helpers ?? []).map((tel, i) => ({ tel: tel ?? '', name: p.helperNames?.[i] ?? '', rel: p.helperRels?.[i] ?? '' })).filter((h) => !!h.tel),
     emblem: p.emblem,
     photo: p.photo,
   };
@@ -71,14 +74,35 @@ function mapCharge(c: Charge): Chg | null {
     transactionId: c.transactionId,
     paidAt: c.paidAt,
     confirmsPlace: c.confirmsPlace,
+    projectId: c.projectId,
   };
 }
 
 export default function App({ signOut }: { signOut?: () => void }) {
   const [accounts, setAccounts] = useState<Acc[]>([]);
-  const [people, setPeople] = useState<Per[]>([]);
-  const [charges, setCharges] = useState<Chg[]>([]);
-  const [project, setProject] = useState<Proj | null>(null);
+  const [allPeople, setPeople] = useState<Per[]>([]);
+  const [allCharges, setCharges] = useState<Chg[]>([]);
+  const [projects, setProjects] = useState<Proj[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const projectsRef = useRef<Proj[]>([]);
+
+  // Everything below works on ONE project (taller). Rows saved before projects existed belong to the oldest one.
+  const project = useMemo(() => projects.find((x) => x.id === projectId) ?? null, [projects, projectId]);
+  const legacyId = useMemo(
+    () => [...projects].sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))[0]?.id ?? null,
+    [projects],
+  );
+  const mine = (pid?: string | null) => (pid ? pid === projectId : projectId === legacyId);
+  const totals = useMemo(() => {
+    const t: Record<string, number> = {};
+    for (const c of allCharges) {
+      const pid = c.projectId ?? legacyId;
+      if (pid && c.status === 'PAID' && c.month === thisMonth()) t[pid] = (t[pid] ?? 0) + c.amount;
+    }
+    return t;
+  }, [allCharges, legacyId]);
+  const people = useMemo(() => allPeople.filter((x) => mine(x.projectId)), [allPeople, projectId, legacyId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const charges = useMemo(() => allCharges.filter((x) => mine(x.projectId)), [allCharges, projectId, legacyId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [view, setView] = useState<View>({ id: 'loading' });
   const [hist, setHist] = useState<View[]>([]);
   const [busy, setBusy] = useState(false);
@@ -102,19 +126,25 @@ export default function App({ signOut }: { signOut?: () => void }) {
     setAccounts(a.data.map(mapAccount).filter((x): x is Acc => !!x));
     setPeople(p.data.map(mapPerson).filter((x): x is Per => !!x));
     setCharges(c.data.map(mapCharge).filter((x): x is Chg => !!x));
-    setProject(j.data.map(mapProject).find((x): x is Proj => !!x) ?? null);
+    const list = j.data.map(mapProject).filter((x): x is Proj => !!x);
+    projectsRef.current = list;
+    setProjects(list);
+    // With a single project there is nothing to choose: go straight in.
+    setProjectId((cur) => (cur && list.some((x) => x.id === cur) ? cur : list.length === 1 ? list[0].id : null));
   }, []);
+
+  const firstView = (): View => (projectsRef.current.length === 1 ? { id: 'home' } : { id: 'projects' });
 
   useEffect(() => {
     let alive = true;
     load()
-      .then(() => { if (alive) setView((v) => (v.id === 'loading' ? { id: 'home' } : v)); })
+      .then(() => { if (alive) setView((v) => (v.id === 'loading' ? firstView() : v)); })
       .catch(() => {
         if (!alive) return;
         retryRef.current = () => {
           setProblem(null);
           setView({ id: 'loading' });
-          load().then(() => setView({ id: 'home' })).catch(() => {
+          load().then(() => setView(firstView())).catch(() => {
             setView({ id: 'home' });
             setProblem({ title: 'No se pudieron leer tus datos', detail: 'Revisa tu conexión e inténtalo de nuevo.' });
           });
@@ -202,6 +232,8 @@ export default function App({ signOut }: { signOut?: () => void }) {
         people={people}
         charges={charges}
         project={project}
+        projects={projects}
+        totals={totals}
         signOut={signOut}
         problem={problem}
         onView={go}
@@ -219,7 +251,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
           if (digits.length !== 10) { setFormError('El teléfono debe tener 10 números.'); return; }
           void run(async () => {
             const emblem = pickEmblems(people.filter((x) => x.status !== 'RELEASED').map((x) => x.emblem ?? ''), 1)[0]?.id;
-            await client.models.Person.create({ name: name.trim(), tel: digits, via: 'MANUAL', status: 'ENROLLED', heldOn: new Date().toISOString(), emblem });
+            await client.models.Person.create({ name: name.trim(), tel: digits, via: 'MANUAL', status: 'ENROLLED', heldOn: new Date().toISOString(), emblem, projectId: project?.id });
             await load();
           }, () => land({ id: 'people' }, 'Persona guardada.'));
         }}
@@ -253,6 +285,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
               month: thisMonth(),
               status: 'PENDING',
               confirmsPlace,
+              projectId: project?.id,
             });
             if (created.errors?.length || !created.data?.id) throw new Error('create');
             await load();
@@ -341,6 +374,23 @@ export default function App({ signOut }: { signOut?: () => void }) {
             await load();
             return 'No se pudo borrar todo. Intenta de nuevo.';
           }
+        }}
+        onPickProject={(id) => {
+          setProjectId(id);
+          setProblem(null);
+          setFormError('');
+          setNote('');
+          setHist([]);
+          setView({ id: 'home' });
+        }}
+        onCreateProject={(name) => {
+          if (name.trim().length < 2) { setFormError('Escribe el nombre del taller o proyecto.'); return; }
+          void run(async () => {
+            const r = await client.models.Project.create({ name: name.trim(), capacity: 0, holdDays: 5, open: true, token: newToken() });
+            if (r.errors?.length || !r.data?.id) throw new Error('project');
+            await load();
+            setProjectId(r.data.id);
+          }, () => land({ id: 'home' }, 'Listo. Ya puedes empezar.'));
         }}
         onToggleOpen={() => {
           if (!project) return;

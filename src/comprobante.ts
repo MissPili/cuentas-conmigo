@@ -1,3 +1,5 @@
+import type { Helper } from './model';
+
 // Payment receipt and "code to pay" card: tall pictures (1080x1350) that are easy to read and easy to send.
 // Big letters, one idea per row, an icon beside each idea, and the name of the workshop at the top, for people
 // who read little. Pure functions only, so the screens can be restyled without touching this.
@@ -154,9 +156,10 @@ export function receiptText(d: ReceiptData) {
 }
 
 /** Message sent with the code to whoever helps pay: says who they are helping, what for, and to ask first if in doubt. */
-export function payText(d: PayCardData) {
+export function payText(d: PayCardData, helperName = '') {
+  const hi = helperName ? `Hola ${helperName}.` : 'Hola.';
   return (
-    `Hola. Estás ayudando a ${d.payerName} a pagar ${money(d.amount)} de ${d.concept} en ${d.projectName}.\n\n` +
+    `${hi} Estás ayudando a ${d.payerName} a pagar ${money(d.amount)} de ${d.concept} en ${d.projectName}.\n\n` +
     'Para pagar: abre la app de tu banco, elige CoDi y escanea el código de la imagen.\n\n' +
     `Si tienes dudas, comunícate con ${d.payerName} antes de aprobar o hacer el pago.`
   );
@@ -167,22 +170,26 @@ export const whatsappUrl = (tel10: string, msg: string) => `https://wa.me/52${te
 
 export interface Dest {
   tel: string;
-  label: string;
-  sub: string;
+  label: string; // who it is: "María (hija)", or "Su celular"
+  sub: string; // the number, partly hidden
+  name: string; // first name to greet, empty when unknown
+  chosen: boolean; // the person asked that codes and receipts go here
 }
 
 const maskTel = (t: string) => `•••• ${t.slice(-4)}`;
 
-/** Who can receive a picture: first whoever helps pay, then the person. */
-export function destinations(personTel: string, helpers: string[] = []): Dest[] {
+/** Who can receive a picture: the one the person chose first, then the other helpers, then the person. */
+export function destinations(personTel: string, helpers: Helper[] = [], sendTo?: string | null): Dest[] {
   const seen = new Set<string>();
   const out: Dest[] = [];
   for (const h of helpers) {
-    if (!/^[0-9]{10}$/.test(h) || seen.has(h)) continue;
-    seen.add(h);
-    out.push({ tel: h, label: 'Quien ayuda a pagar', sub: maskTel(h) });
+    if (!/^[0-9]{10}$/.test(h.tel) || seen.has(h.tel)) continue;
+    seen.add(h.tel);
+    const who = h.name ? (h.rel ? `${h.name} (${h.rel})` : h.name) : 'Quien ayuda a pagar';
+    out.push({ tel: h.tel, label: who, sub: maskTel(h.tel), name: h.name.trim().split(/\s+/)[0] ?? '', chosen: h.tel === sendTo });
   }
-  if (!seen.has(personTel)) out.push({ tel: personTel, label: 'Su celular', sub: maskTel(personTel) });
+  if (!seen.has(personTel)) out.push({ tel: personTel, label: 'Su celular', sub: maskTel(personTel), name: '', chosen: personTel === sendTo });
+  out.sort((x, y) => Number(y.chosen) - Number(x.chosen));
   return out.slice(0, 3);
 }
 

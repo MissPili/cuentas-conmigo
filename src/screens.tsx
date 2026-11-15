@@ -9,7 +9,7 @@ import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprob
 import { PictureSend } from './Receipt';
 import { DangerZone, More, ReportView } from './screens2';
 import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3';
-import { canCharge, isFull, placesOn, toApprove } from './places';
+import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
 export type StageProps = {
   view: View;
@@ -27,6 +27,11 @@ export type StageProps = {
   onAddAccount: (input: { alias: string; legalName: string; clabe: string; entity: 'PERSON' | 'BUSINESS' }) => void;
   onCreateCharge: (personId: string, concept: string, amount: number, accountId: string, confirmsPlace: boolean) => void;
   onSaveProject: (input: { name: string; capacity: number; holdDays: number; monthlyAmount: number; monthlyConcept: string; accountId: string }) => void;
+  projects: Proj[];
+  /** Cobrado este mes por proyecto, para la lista de proyectos. */
+  totals?: Record<string, number>;
+  onPickProject: (id: string) => void;
+  onCreateProject: (name: string) => void;
   onToggleOpen: () => void;
   /** Sends a code to the collector's email. Returns an error message, or '' when it went out. */
   onSendCode: () => Promise<string>;
@@ -79,6 +84,8 @@ export function Stage(p: StageProps) {
   }
 
   const v = p.view;
+  if (v.id === 'projects' || !p.project) return <ProjectsView {...p} />;
+  if (v.id === 'new-project') return <NewProject {...p} />;
   if (v.id === 'home') return <Home {...p} />;
   if (v.id === 'who') return <Who {...p} page={v.page} />;
   if (v.id === 'person') return <PersonCharges {...p} personId={v.personId} page={v.page} />;
@@ -107,13 +114,10 @@ export function Stage(p: StageProps) {
 
 function Home({ accounts, people, charges, project, onView }: StageProps) {
   const month = thisMonth();
-  const now = charges.filter((c) => c.month === month);
-  const paid = now.filter((c) => c.status === 'PAID').length;
-  const waiting = now.filter((c) => c.status !== 'PAID' && !!c.transactionId).length;
-  const due = now.length - paid - waiting;
+  const collected = charges.filter((c) => c.month === month && c.status === 'PAID').reduce((n, c) => n + c.amount, 0);
+  const review = placesOn(project) ? toApprove(people).length + waitlisted(people).length : 0;
   const hasAccount = accounts.length > 0;
   const hasPeople = people.length > 0;
-  const name = monthName(month);
 
   let primary: ReactNode;
   if (!hasAccount) {
@@ -124,33 +128,63 @@ function Home({ accounts, people, charges, project, onView }: StageProps) {
     primary = <Choice primary icon={<IcoCash />} label="Cobrar" hint="Elegir a quién" onClick={() => onView({ id: 'who', page: 0 })} />;
   }
 
-  const extras: ReactNode[] = [
-    <Choice key="people" icon={<IcoPeople />} label="Personas" hint="Nombres y teléfonos" onClick={() => onView({ id: 'people' })} />,
-    ...(placesOn(project) ? [<Choice key="places" icon={<IcoPeople />} label="Lugares" hint={placesHint(people, charges, project)} onClick={() => onView({ id: 'places' })} />] : []),
-    <Choice key="more" icon={<IcoBank />} label="Más opciones" hint="Reporte, cuenta y salir" onClick={() => onView({ id: 'more' })} />,
-  ];
-
   return (
     <section className="stack">
-      <h1>¿Qué quieres hacer?</h1>
-      {now.length ? (
-        <div className="stat">
-          <p><strong>{name}:</strong> {paid} de {now.length} ya pagaron.</p>
-          <p>{waiting} esperando. {due} faltan.</p>
-        </div>
-      ) : (
-        <p className="lead">En {name.toLowerCase()} todavía no hay cobros.</p>
-      )}
+      <h1>{project?.name || 'Mi proyecto'}</h1>
+      <div className="stat">
+        <p><strong>Cobrado en {monthName(month).toLowerCase()}:</strong></p>
+        <p className="amount">{money(collected)}</p>
+      </div>
       {primary}
-      {extras}
+      {review ? (
+        <Choice icon={<IcoPeople />} label={`Aprobar inscripciones (${review})`} hint={review === 1 ? 'Hay 1 persona esperando' : `Hay ${review} personas esperando`} onClick={() => onView({ id: 'seats', page: 0, only: 'review' })} />
+      ) : null}
+      <Choice icon={<IcoBank />} label="Más opciones" hint="Personas, lugares, reporte y cuentas" onClick={() => onView({ id: 'more' })} />
     </section>
   );
 }
 
-function placesHint(people: Per[], charges: Chg[], project: Proj): string {
-  const review = toApprove(people).length;
-  if (review) return review === 1 ? '1 inscripción por revisar' : `${review} inscripciones por revisar`;
-  return isFull(people, project, charges, new Date()) ? 'Taller lleno' : 'Cupos e inscripciones';
+function ProjectsView({ projects, totals, onPickProject, onView, signOut }: StageProps) {
+  const month = monthName(thisMonth()).toLowerCase();
+  if (!projects.length) {
+    return (
+      <section className="stack">
+        <h1>Bienvenida</h1>
+        <p className="lead">Empieza creando tu primer taller o proyecto de cobro.</p>
+        <Choice primary icon={<IcoPeople />} label="Crear mi primer proyecto" onClick={() => onView({ id: 'new-project' })} />
+        {signOut ? <Choice icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
+      </section>
+    );
+  }
+  return (
+    <section className="stack">
+      <h1>Tus proyectos</h1>
+      <p className="lead">Elige a cuál entrar.</p>
+      {projects.map((x) => (
+        <Choice key={x.id} primary={projects.length === 1} icon={<IcoPeople />} label={x.name || 'Sin nombre'} hint={`Cobrado en ${month}: ${money(totals?.[x.id] ?? 0)}`} onClick={() => onPickProject(x.id)} />
+      ))}
+      <Choice icon={<IcoCash />} label="Nuevo proyecto" hint="Otro taller o cobro" onClick={() => onView({ id: 'new-project' })} />
+      {signOut ? <button type="button" className="quiet" onClick={signOut}>Salir</button> : null}
+    </section>
+  );
+}
+
+function NewProject({ busy, formError, onCreateProject, onView, projects }: StageProps) {
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onCreateProject(String(new FormData(e.currentTarget).get('name') || ''));
+  };
+  return (
+    <section className="stack">
+      <h1>Nuevo proyecto</h1>
+      <form className="stack" onSubmit={submit}>
+        {formError ? <Alert>{formError}</Alert> : null}
+        <Field label="Nombre del taller o proyecto"><input name="name" required autoComplete="off" placeholder="Taller de costura" /></Field>
+        <Choice primary type="submit" label={busy ? busyLabel : 'Crear'} />
+      </form>
+      {projects.length ? <Choice label="Volver a mis proyectos" onClick={() => onView({ id: 'projects' })} /> : null}
+    </section>
+  );
 }
 
 function Who({ people, charges, onOpenPerson, onView, page }: StageProps & { page: number }) {
@@ -179,6 +213,7 @@ function Who({ people, charges, onOpenPerson, onView, page }: StageProps & { pag
       {slice.more ? (
         <Choice label={slice.more.label} hint={slice.more.hint} onClick={() => onView({ id: 'who', page: slice.more!.page })} />
       ) : null}
+      <Choice icon={<IcoPeople />} label="Agregar persona" hint="Nombre y WhatsApp" onClick={() => onView({ id: 'add-person' })} />
     </section>
   );
 }
@@ -298,7 +333,8 @@ function QrStep({ charge, people, img, busy, onCheck, onView }: StageProps & { c
 
 function destsFor(people: Per[], tel: string, personId: string): Dest[] {
   const person = people.find((x) => x.id === personId) ?? people.find((x) => x.tel === tel);
-  return destinations(tel, person?.helpers ?? []);
+  const helpers = person?.helperInfo?.length ? person.helperInfo : (person?.helpers ?? []).map((t) => ({ tel: t, name: '', rel: '' }));
+  return destinations(tel, helpers, person?.sendTo);
 }
 
 function SendQr({ charge, img, accounts, people, project, onView }: StageProps & { charge: Chg | undefined; img: string }) {
@@ -316,7 +352,7 @@ function SendQr({ charge, img, accounts, people, project, onView }: StageProps &
       alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`}
       svg={payCardSvg(card)}
       filename={`codigo-${folioOf(charge.id)}.png`}
-      msg={payText(card)}
+      msg={payText(card, destsFor(people, charge.tel, charge.personId)[0]?.name ?? '')}
       dests={destsFor(people, charge.tel, charge.personId)}
     >
       <Choice icon={<IcoQr />} label="Volver al código" onClick={() => onView({ id: 'qr', chargeId: charge.id, img })} />

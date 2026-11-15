@@ -1,8 +1,9 @@
 // Public signup page: opens from the QR, no account. It only REGISTERS the person; the collector approves later.
 // Four steps: name, picture that identifies them (own photo with consent, or one from a bank), WhatsApp numbers
-// (their own and whoever helps pay, 1 to 3), review and confirm.
+// (their own, and whoever helps pay with name and relation, 1 to 3), review, choose where codes go, and confirm.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { emblemOf, pickEmblems, type Emblem } from './emblems';
+import type { Helper } from './model';
 import { Alert, Choice, Field, IcoCheck, IcoClock, IcoPeople, IcoPhone, IcoAlert, Shell } from './ui';
 
 type Info = { status: 'open' | 'closed' | 'limit' | 'error'; name?: string; full?: boolean; detail?: string; taken?: string[] };
@@ -28,13 +29,14 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   token: string;
   registerUrl: string;
   /** Only for the demo harness (screenshots): start on a given step with sample values. */
-  initial?: { step: number; name?: string; tel?: string; helpers?: string[]; emblem?: string; pic?: 'menu' | 'pick' };
+  initial?: { step: number; name?: string; tel?: string; helpers?: Helper[]; emblem?: string; pic?: 'menu' | 'pick' };
 }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [step, setStep] = useState(initial?.step ?? 1);
   const [name, setName] = useState(initial?.name ?? '');
   const [tel, setTel] = useState(initial?.tel ?? '');
-  const [helpers, setHelpers] = useState<string[]>(initial?.helpers ?? ['']);
+  const [helpers, setHelpers] = useState<Helper[]>(initial?.helpers ?? [{ name: '', rel: '', tel: '' }]);
+  const [sendTo, setSendTo] = useState('');
   const [consent, setConsent] = useState(false);
   const [emblem, setEmblem] = useState(initial?.emblem ?? '');
   const [photo, setPhoto] = useState('');
@@ -82,7 +84,11 @@ export default function Inscripcion({ token, registerUrl, initial }: {
     }
   }
 
-  const cleanHelpers = [...new Set(helpers.map(digits).filter(Boolean))];
+  const cleanHelpers: Helper[] = helpers
+    .map((h) => ({ name: h.name.trim().replace(/\s+/g, ' '), rel: h.rel.trim().replace(/\s+/g, ' '), tel: digits(h.tel) }))
+    .filter((h) => h.name || h.rel || h.tel)
+    .filter((h, i, all) => all.findIndex((x) => x.tel === h.tel) === i || !h.tel);
+  const sendTel = cleanHelpers.some((h) => h.tel === sendTo) || sendTo === digits(tel) ? sendTo : (cleanHelpers[0]?.tel ?? '');
 
   function next(e?: FormEvent) {
     e?.preventDefault();
@@ -91,8 +97,10 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       if (name.trim().length < 2) { setError('Escribe tu nombre.'); return; }
     } else if (step === 3) {
       if (digits(tel).length !== 10) { setError('Tu WhatsApp debe tener 10 números.'); return; }
-      if (!cleanHelpers.length) { setError('Escribe el WhatsApp de quien te ayuda a pagar.'); return; }
-      if (cleanHelpers.some((h) => h.length !== 10)) { setError('Cada número debe tener 10 números.'); return; }
+      if (!cleanHelpers.length) { setError('Escribe quién te ayuda a pagar.'); return; }
+      if (cleanHelpers.some((h) => h.name.length < 2)) { setError('Escribe el nombre de quien te ayuda.'); return; }
+      if (cleanHelpers.some((h) => h.rel.length < 2)) { setError('Escribe qué es tuyo, por ejemplo: mi hija.'); return; }
+      if (cleanHelpers.some((h) => h.tel.length !== 10)) { setError('Cada WhatsApp debe tener 10 números.'); return; }
     }
     setStep((s) => s + 1);
   }
@@ -105,7 +113,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       const r = await fetch(registerUrl, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token, name: name.trim(), tel: digits(tel), helpers: cleanHelpers, consent: true, ...(photo ? { photo, photoConsent: true } : { emblem }) }),
+        body: JSON.stringify({ token, name: name.trim(), tel: digits(tel), helpers: cleanHelpers, sendTo: sendTel, consent: true, ...(photo ? { photo, photoConsent: true } : { emblem }) }),
       });
       const j = (await r.json()) as { status?: Done | 'taken'; detail?: string };
       setDetail(j.detail ?? '');
@@ -256,14 +264,17 @@ export default function Inscripcion({ token, registerUrl, initial }: {
           <form className="stack" onSubmit={next}>
             <h1>Los WhatsApp</h1>
             <Field label="Tu WhatsApp (10 números)"><input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="numeric" autoComplete="tel" required /></Field>
-            <p className="lead">¿Quién te ayuda a pagar? Escribe su WhatsApp. Puedes poner hasta 3.</p>
+            <p className="lead">¿Quién te ayuda a pagar?</p>
             {helpers.map((h, i) => (
-              <Field key={i} label={`WhatsApp de quien ayuda ${i + 1}`}>
-                <input value={h} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? e.target.value : x)))} inputMode="numeric" autoComplete="off" required={i === 0} />
-              </Field>
+              <div key={i} className="stack">
+                {helpers.length > 1 ? <p className="who-line">Persona {i + 1}</p> : null}
+                <Field label="Su nombre"><input value={h.name} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} autoComplete="off" required={i === 0} /></Field>
+                <Field label="¿Qué es tuyo? (mi hija, mi vecino…)"><input value={h.rel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, rel: e.target.value } : x)))} autoComplete="off" required={i === 0} /></Field>
+                <Field label="Su WhatsApp (10 números)"><input value={h.tel} onChange={(e) => setHelpers(helpers.map((x, j) => (j === i ? { ...x, tel: e.target.value } : x)))} inputMode="numeric" autoComplete="off" required={i === 0} /></Field>
+              </div>
             ))}
             <Choice primary type="submit" icon={<IcoPhone />} label="Siguiente" />
-            {helpers.length < 3 ? <Choice icon={<IcoPeople />} label="Agregar otro número" onClick={() => setHelpers([...helpers, ''])} /> : null}
+            {helpers.length < 3 ? <Choice icon={<IcoPeople />} label="Agregar a otra persona" onClick={() => setHelpers([...helpers, { name: '', rel: '', tel: '' }])} /> : null}
           </form>
         ) : null}
 
@@ -274,8 +285,19 @@ export default function Inscripcion({ token, registerUrl, initial }: {
               <p><strong>Nombre:</strong> {name.trim()}</p>
               <p><strong>Tu imagen:</strong> {photo ? 'tu foto' : `${emblemOf(emblem)?.glyph ?? ''} ${emblemOf(emblem)?.name ?? ''}`}</p>
               <p><strong>Tu WhatsApp:</strong> {fmtTel(digits(tel))}</p>
-              <p><strong>Quien te ayuda:</strong> {cleanHelpers.map(fmtTel).join(', ')}</p>
+              {cleanHelpers.map((h) => (
+                <p key={h.tel}><strong>{h.name} ({h.rel}):</strong> {fmtTel(h.tel)}</p>
+              ))}
             </div>
+            <fieldset className="stack choose">
+              <legend className="who-line">¿A quién le mandamos tu código de pago y tu comprobante?</legend>
+              {[...cleanHelpers.map((h) => ({ tel: h.tel, text: `${h.name} (${h.rel})` })), { tel: digits(tel), text: 'A mí, a mi WhatsApp' }].map((o) => (
+                <label key={o.tel} className="check">
+                  <input type="radio" name="sendTo" checked={sendTel === o.tel} onChange={() => setSendTo(o.tel)} />
+                  <span>{o.text}</span>
+                </label>
+              ))}
+            </fieldset>
             <label className="check">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
               <span>Acepto que estos teléfonos se compartan con quien da el taller.</span>

@@ -60,7 +60,7 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
 
   try {
     let token = '';
-    let body: { name?: unknown; tel?: unknown; helpers?: unknown; consent?: unknown; emblem?: unknown; photo?: unknown; photoConsent?: unknown } = {};
+    let body: { name?: unknown; tel?: unknown; helpers?: unknown; consent?: unknown; emblem?: unknown; photo?: unknown; photoConsent?: unknown; sendTo?: unknown } = {};
     if (method === 'GET') {
       token = event.queryStringParameters?.token ?? '';
     } else if (method === 'POST') {
@@ -79,7 +79,11 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
     const project = found.data[0];
     if (!project || !project.owner) return json(200, { status: 'closed' });
 
-    const people = (await everyPerson(client)).filter((p) => p.owner === project.owner);
+    // Rows saved before projects existed belong to the collector's oldest project.
+    const mineProjects = (await client.models.Project.list({ limit: 200 })).data.filter((x) => x.owner === project.owner);
+    const oldest = [...mineProjects].sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))[0];
+    const inProject = (p: Schema['Person']['type']) => p.owner === project.owner && (p.projectId ? p.projectId === project.id : oldest?.id === project.id);
+    const people = (await everyPerson(client)).filter(inProject);
     const taking = people.filter((p) => takesPlaceByStatus(p.status));
     const full = project.capacity > 0 && taking.length >= project.capacity;
 
@@ -92,10 +96,18 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
 
     const name = typeof body.name === 'string' ? body.name.trim().replace(/\s+/g, ' ') : '';
     const tel = typeof body.tel === 'string' ? body.tel.replace(/\D/g, '') : '';
-    const helpers = Array.isArray(body.helpers)
-      ? [...new Set(body.helpers.filter((h): h is string => typeof h === 'string').map((h) => h.replace(/\D/g, '')))]
-      : [];
-    if (name.length < 2 || name.length > 60 || !TEL10.test(tel) || helpers.length < 1 || helpers.length > 3 || !helpers.every((h) => TEL10.test(h)) || body.consent !== true) {
+    // Each helper: name, how they are related, and a 10-digit WhatsApp. Duplicated numbers are dropped.
+    const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '');
+    const helperList = (Array.isArray(body.helpers) ? body.helpers : [])
+      .map((h: { name?: unknown; rel?: unknown; tel?: unknown }) => ({ name: clean(h?.name, 40), rel: clean(h?.rel, 30), tel: typeof h?.tel === 'string' ? h.tel.replace(/\D/g, '') : '' }))
+      .filter((h, i, all) => all.findIndex((x) => x.tel === h.tel) === i);
+    const helpers = helperList.map((h) => h.tel);
+    const sendTo = typeof body.sendTo === 'string' ? body.sendTo.replace(/\D/g, '') : '';
+    if (
+      name.length < 2 || name.length > 60 || !TEL10.test(tel) || helperList.length < 1 || helperList.length > 3 ||
+      !helperList.every((h) => TEL10.test(h.tel) && h.name.length >= 2 && h.rel.length >= 2) ||
+      (sendTo !== '' && sendTo !== tel && !helpers.includes(sendTo)) || body.consent !== true
+    ) {
       return json(200, { status: 'invalid' });
     }
 
@@ -112,6 +124,10 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
       name,
       tel,
       helpers,
+      helperNames: helperList.map((h) => h.name),
+      helperRels: helperList.map((h) => h.rel),
+      sendTo: sendTo || helpers[0],
+      projectId: project.id,
       consentShared: true,
       ...(photo ? { photo, photoConsent: true } : { emblem }),
       via: 'QR',
@@ -124,7 +140,7 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
     // Two signups can pick the same picture at once: the earlier one keeps it, the later one is removed and asked again.
     if (!photo) {
       const same = (await everyPerson(client))
-        .filter((p) => p.owner === project.owner && p.status !== 'RELEASED' && p.emblem === emblem)
+        .filter((p) => inProject(p) && p.status !== 'RELEASED' && p.emblem === emblem)
         .sort((a, b) => (a.regAt ?? '').localeCompare(b.regAt ?? '') || a.id.localeCompare(b.id));
       if (same[0] && same[0].id !== me.id) {
         must(await client.models.Person.delete({ id: me.id }), 'quitar imagen repetida');
@@ -135,7 +151,7 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
     // Two signups can both see the last free place. Settle it by arrival order: those beyond capacity wait.
     let status = me.status;
     if (project.capacity > 0 && status === 'PENDING') {
-      const after = (await everyPerson(client)).filter((p) => p.owner === project.owner && takesPlaceByStatus(p.status));
+      const after = (await everyPerson(client)).filter((p) => inProject(p) && takesPlaceByStatus(p.status));
       if (overflowIds(after.map((p) => ({ id: p.id, regAt: p.regAt })), project.capacity).includes(me.id)) {
         must(await client.models.Person.update({ id: me.id, status: 'WAITLIST' }), 'poner en espera');
         status = 'WAITLIST';

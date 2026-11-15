@@ -6,15 +6,26 @@ import { Alert, Choice, Field, IcoBank, IcoCash, IcoOut, IcoPeople, Status } fro
 import { canCharge } from './places';
 import { buildReport, reportCsv } from './report';
 
-export function More({ onView, signOut }: StageProps) {
-  // The danger entry is deliberately plain and last, so it is not tapped by mistake.
+export function More({ view, project, projects, onView, onReset, signOut }: StageProps) {
+  const page = view.id === 'more' ? view.page ?? 0 : 0;
+  if (page === 0) {
+    return (
+      <section className="stack">
+        <h1>Más opciones</h1>
+        <Choice primary icon={<IcoCash />} label="Reporte del mes" hint="Quién pagó y quién falta" onClick={() => onView({ id: 'report', month: thisMonth() })} />
+        <Choice icon={<IcoPeople />} label="Personas" hint="Nombres, teléfonos y bajas" onClick={() => onView({ id: 'people' })} />
+        <Choice icon={<IcoPeople />} label="Lugares e inscripciones" hint="Cupo, código QR y lista de espera" onClick={() => onView({ id: 'places' })} />
+        <Choice label="Ver más" hint="Cuentas, proyectos y salir" onClick={() => onView({ id: 'more', page: 1 })} />
+      </section>
+    );
+  }
   return (
     <section className="stack">
       <h1>Más opciones</h1>
-      <Choice primary icon={<IcoCash />} label="Reporte del mes" hint="Quién pagó y quién falta" onClick={() => onView({ id: 'report', month: thisMonth() })} />
-      <Choice icon={<IcoPeople />} label="Lugares e inscripciones" hint="Cupo, código QR y lista de espera" onClick={() => onView({ id: 'places' })} />
       <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
+      {projects.length > 1 || !project ? <Choice icon={<IcoPeople />} label="Cambiar de proyecto" hint="Otro taller o cobro" onClick={() => onReset({ id: 'projects' })} /> : <Choice icon={<IcoPeople />} label="Nuevo proyecto" hint="Otro taller o cobro" onClick={() => onView({ id: 'new-project' })} />}
       {signOut ? <Choice icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
+      {/* The danger entry is deliberately plain and last, so it is not tapped by mistake. */}
       <button type="button" className="quiet" onClick={() => onView({ id: 'danger' })}>Zona de peligro (solo para quien configura)</button>
     </section>
   );

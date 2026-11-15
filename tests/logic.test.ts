@@ -143,3 +143,20 @@ test('picture bank: ids are unique and a pick never repeats a taken one', async 
   assert.equal(freeEmblems(EMBLEMS.map((e) => e.id)).length, 0);
   assert.deepEqual(pickEmblems(EMBLEMS.map((e) => e.id), 3), []);
 });
+
+test('destinations: the number the person chose comes first and helpers carry their names', async () => {
+  const { destinations, payText } = await import('../src/comprobante.ts');
+  const helpers = [
+    { tel: '5500000001', name: 'Ana Pérez', rel: 'mi hija' },
+    { tel: '5500000002', name: 'Luis Gómez', rel: 'mi vecino' },
+  ];
+  const d = destinations('5500000009', helpers, '5500000002');
+  assert.equal(d[0].tel, '5500000002');
+  assert.equal(d[0].label, 'Luis Gómez (mi vecino)');
+  assert.equal(d[0].name, 'Luis');
+  assert.ok(d[0].chosen);
+  assert.equal(d.length, 3);
+  const msg = payText({ projectName: 'Taller', payerName: 'Rosa', concept: 'Mensualidad', amount: 130, qrPng: '' }, 'Luis');
+  assert.ok(msg.startsWith('Hola Luis.'));
+  assert.ok(msg.includes('Rosa') && msg.includes('Taller') && msg.includes('antes de aprobar'));
+});

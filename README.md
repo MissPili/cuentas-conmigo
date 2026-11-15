@@ -21,6 +21,9 @@ La app es de pocos pasos, con letra grande y alto contraste, pensada para person
 | Mandar el código QR como imagen a quien ayuda a pagar | Hecho (menú de compartir del celular) |
 | Comprobante grande, con nombre del taller e íconos | Hecho (compartir imagen o guardarla) |
 | Reporte mensual (por persona, CoDi y efectivo, hoja de cálculo) | Hecho |
+| Varios proyectos de cobro (talleres) por usuaria, cada uno con su código de inscripción | Hecho; falta probarlo desplegado |
+| Inicio sencillo por proyecto: cuánto se ha cobrado, aprobar inscripciones y cobrar | Hecho; falta probarlo desplegado |
+| Quien ayuda a pagar con nombre y relación; la persona elige a quién mandarle códigos y comprobantes | Hecho; falta probarlo desplegado |
 | Lugares (cupo), inscripción por QR con aprobación, lista de espera y vencimiento | Hecho |
 | Identificador visual: dibujo único o foto con consentimiento | Hecho; falta probarlo desplegado |
 | Mensualidad predefinida y cobro rápido tras aprobar | Hecho; falta probarlo desplegado |
@@ -34,38 +37,44 @@ Lo que ya está probado con el servidor real: crear una cuenta, registrarla en P
 
 Capturas hechas con el modo de demostración (datos inventados, sin servidor), a 390×844 como un iPhone. Están en el orden en que se usan.
 
-### Cobrar
+### Entrar y cobrar
 
 | | | |
 | --- | --- | --- |
-| ![Inicio](docs/pantallas/01-inicio.png)<br>**1. Inicio** | ![Quién paga](docs/pantallas/02-quien-paga.png)<br>**2. A quién cobrar** (con su imagen) | ![Cobros de una persona](docs/pantallas/03-cobros-de-una-persona.png)<br>**3. Cobros de una persona** |
-| ![Cómo cobrar](docs/pantallas/04-como-cobrar.png)<br>**4. Cómo cobrar** | ![Código QR](docs/pantallas/05-codigo-qr.png)<br>**5. Código QR de CoDi** | ![Mandar el código](docs/pantallas/06-mandar-el-codigo.png)<br>**6. Mandar el código como imagen** |
-| ![Esperando el pago](docs/pantallas/07-esperando-el-pago.png)<br>**7. Esperando el pago** | ![Ya pagó](docs/pantallas/08-ya-pago.png)<br>**8. Ya pagó** | ![Comprobante](docs/pantallas/09-comprobante.png)<br>**9. Comprobante** |
-| ![Nuevo cobro](docs/pantallas/10-nuevo-cobro.png)<br>**10. Nuevo cobro** | | |
+| ![](docs/pantallas/01-proyectos.png)<br>**1. Tus proyectos** | ![](docs/pantallas/02-inicio-del-proyecto.png)<br>**2. Inicio de un proyecto** | ![](docs/pantallas/03-quien-paga.png)<br>**3. A quién cobrar** |
+| ![](docs/pantallas/04-cobros-de-una-persona.png)<br>**4. Cobros de una persona** | ![](docs/pantallas/05-como-cobrar.png)<br>**5. Cómo cobrar** | ![](docs/pantallas/06-codigo-qr.png)<br>**6. Código QR de CoDi** |
+| ![](docs/pantallas/07-mandar-el-codigo.png)<br>**7. Mandar el código como imagen** | ![](docs/pantallas/08-esperando-el-pago.png)<br>**8. Esperando el pago** | ![](docs/pantallas/09-ya-pago.png)<br>**9. Ya pagó** |
+| ![](docs/pantallas/10-comprobante.png)<br>**10. Comprobante** | ![](docs/pantallas/11-nuevo-cobro.png)<br>**11. Nuevo cobro** | ![](docs/pantallas/12-agregar-persona.png)<br>**12. Agregar persona** |
 
-### Personas, cuentas y reporte
-
-| | | |
-| --- | --- | --- |
-| ![Agregar persona](docs/pantallas/11-agregar-persona.png)<br>**11. Agregar persona** | ![Cuentas que reciben](docs/pantallas/12-cuentas-que-reciben.png)<br>**12. Cuentas que reciben** | ![Cuenta en espera](docs/pantallas/13-cuenta-en-espera-de-pey.png)<br>**13. Cuenta en espera de Pey** |
-| ![Más opciones](docs/pantallas/14-mas-opciones.png)<br>**14. Más opciones** | ![Reporte](docs/pantallas/15-reporte-del-mes.png)<br>**15. Reporte del mes** | |
-
-### Lugares e inscripciones (quien cobra)
+### Más opciones, personas y reporte
 
 | | | |
 | --- | --- | --- |
-| ![Lugares](docs/pantallas/16-lugares.png)<br>**16. Lugares** | ![Ajustes](docs/pantallas/17-ajustes-de-lugares.png)<br>**17. Ajustes: lugares y mensualidad** | ![Código para inscribir](docs/pantallas/18-codigo-para-inscribir.png)<br>**18. Código para inscribir** |
-| ![Inscripciones](docs/pantallas/19-inscripciones-por-revisar.png)<br>**19. Inscripciones por revisar** | ![Aprobar](docs/pantallas/20-aprobar-una-inscripcion.png)<br>**20. Aprobar una inscripción** | ![Apartado vencido](docs/pantallas/21-apartado-vencido-y-cobro-rapido.png)<br>**21. Apartado vencido y cobro rápido** |
-| ![Dar de baja](docs/pantallas/22-dar-de-baja.png)<br>**22. Dar de baja** | ![Zona de peligro](docs/pantallas/23-zona-de-peligro.png)<br>**23. Zona de peligro** | |
+| ![](docs/pantallas/13-mas-opciones.png)<br>**13. Más opciones** | ![](docs/pantallas/14-mas-opciones-2.png)<br>**14. Más opciones (2)** | ![](docs/pantallas/15-personas.png)<br>**15. Personas** |
+| ![](docs/pantallas/16-reporte-del-mes.png)<br>**16. Reporte del mes** | ![](docs/pantallas/17-cuentas-que-reciben.png)<br>**17. Cuentas que reciben** | ![](docs/pantallas/18-cuenta-en-espera-de-pey.png)<br>**18. Cuenta en espera de Pey** |
+
+### Lugares, inscripciones y proyectos (quien cobra)
+
+| | | |
+| --- | --- | --- |
+| ![](docs/pantallas/19-lugares.png)<br>**19. Lugares** | ![](docs/pantallas/20-ajustes-de-lugares.png)<br>**20. Ajustes: lugares y mensualidad** | ![](docs/pantallas/21-codigo-para-inscribir.png)<br>**21. Código para inscribir** |
+| ![](docs/pantallas/22-inscripciones-por-revisar.png)<br>**22. Inscripciones por revisar** | ![](docs/pantallas/23-aprobar-una-inscripcion.png)<br>**23. Aprobar una inscripción** | ![](docs/pantallas/24-apartado-vencido-y-cobro-rapido.png)<br>**24. Apartado vencido y cobro rápido** |
+| ![](docs/pantallas/25-dar-de-baja.png)<br>**25. Dar de baja** | ![](docs/pantallas/26-zona-de-peligro.png)<br>**26. Zona de peligro** | ![](docs/pantallas/27-nuevo-proyecto.png)<br>**27. Nuevo proyecto** |
 
 ### Inscripción pública (la persona, desde el código QR, sin cuenta)
 
 | | | |
 | --- | --- | --- |
-| ![Paso 1](docs/pantallas/24-inscripcion-paso-1.png)<br>**24. Paso 1: nombre** | ![Paso 2](docs/pantallas/25-inscripcion-paso-2-imagen.png)<br>**25. Paso 2: su imagen** | ![Elegir dibujo](docs/pantallas/26-inscripcion-elegir-dibujo.png)<br>**26. Elegir un dibujo** |
-| ![Paso 3](docs/pantallas/27-inscripcion-paso-3.png)<br>**27. Paso 3: WhatsApp** | ![Paso 4](docs/pantallas/28-inscripcion-paso-4.png)<br>**28. Paso 4: revisar** | ![Enviada](docs/pantallas/29-inscripcion-enviada.png)<br>**29. Inscripción enviada** |
+| ![](docs/pantallas/28-inscripcion-paso-1.png)<br>**28. Inscripción, paso 1: nombre** | ![](docs/pantallas/29-inscripcion-paso-2-imagen.png)<br>**29. Paso 2: su imagen** | ![](docs/pantallas/30-inscripcion-elegir-dibujo.png)<br>**30. Elegir un dibujo** |
+| ![](docs/pantallas/31-inscripcion-paso-3.png)<br>**31. Paso 3: WhatsApp y quién ayuda** | ![](docs/pantallas/32-inscripcion-paso-4.png)<br>**32. Paso 4: revisar y a quién mandar** | ![](docs/pantallas/33-inscripcion-enviada.png)<br>**33. Inscripción enviada** |
 
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color).
+
+## Proyectos y pantalla de inicio
+
+Quien cobra puede llevar varios talleres o proyectos de cobro. Después de entrar ve **Tus proyectos** (con lo cobrado en el mes en cada uno); si solo tiene uno, entra directo. Cada proyecto tiene sus propias personas, cobros, lugares, mensualidad y **código QR de inscripción**, así que el mensaje a quien ayuda a pagar siempre nombra el taller correcto. Se cambia de proyecto o se crea otro en **Más opciones → Ver más**.
+
+El inicio de un proyecto es deliberadamente corto: el dato de **cuánto se ha cobrado** este mes, el botón **Cobrar** (ahí se ve a quién se puede cobrar y se agrega gente a mano), **Aprobar inscripciones (N)** solo si hay alguien esperando, y **Más opciones**. Personas, lugares (cupos e inscripciones), reporte y cuentas son configuración y viven en Más opciones.
 
 ## Cómo funciona un cobro
 
@@ -83,13 +92,13 @@ Cada cobro manda a Pey el `bankAccountId` de su cuenta, así una sola llave de P
 ## Lugares e inscripción por QR
 
 1. En **Lugares → Ajustes** quien cobra pone el nombre del taller, cuántos lugares hay, cuántos días se aparta uno (5 por defecto) y, si quiere, la **mensualidad** (monto, nombre del cobro y cuenta que recibe).
-2. **Código para inscribir** muestra un QR que abre una página pública (sin cuenta) en 4 pasos: nombre, **imagen que la identifica**, WhatsApp propio y de quien le ayuda a pagar (1 a 3), y confirmar con consentimiento.
+2. **Código para inscribir** muestra un QR que abre una página pública (sin cuenta) en 4 pasos: nombre, **imagen que la identifica**, WhatsApp propio y de **una** persona que le ayuda a pagar (con su **nombre y qué es suya**, por ejemplo "mi hija"; un botón permite agregar hasta 3), y revisar. En el último paso la persona **elige a quién quiere que le mandemos su código de pago y su comprobante** entre las que registró, y da su consentimiento.
 3. **Imagen que la identifica:** un **dibujo** de un banco de 28 (con su nombre escrito, y nunca uno que ya tenga otra persona con lugar) o **su foto**, con casilla de autorización obligatoria. La foto se reduce a unos 320 px y se guarda en su registro.
 4. La inscripción **solo registra**. No se manda ningún cobro ni mensaje hasta que quien cobra **apruebe**. Si el taller está lleno, la persona queda en lista de espera.
 5. Tras aprobar, la ficha ofrece **"Cobrarle $130"** con un solo botón (usa la mensualidad predefinida).
 6. Solo la mensualidad confirma el lugar. El cobro anual del DIF no.
 7. El apartado vence **solo** para quien se inscribió por QR, ya fue aprobado y todavía no paga. Quien cobra decide dejarlo más días o darlo de baja. Quien ya pagó, o fue agregado a mano, no vence.
-8. El servidor limita los intentos por dirección y por código. Si dos personas se inscriben a la vez por el último lugar, o eligen el mismo dibujo, gana quien llegó primero (se ordena por hora de llegada después de guardar, no con una escritura condicional).
+8. El servidor limita los intentos por dirección y por código. Cada proyecto tiene sus propios lugares y dibujos. Si dos personas se inscriben a la vez por el último lugar, o eligen el mismo dibujo, gana quien llegó primero (se ordena por hora de llegada después de guardar, no con una escritura condicional).
 
 **Dar de baja:** desde la ficha, con confirmación. Si la persona tiene cobros, queda solo como **"Juana (baja)"** con sus cobros (para el reporte) y se borran su foto, dibujo, teléfonos y notas; si regresa, se inscribe de nuevo. Si no tiene cobros, se borra por completo.
 
@@ -120,7 +129,7 @@ npm install
 npm run dev
 ```
 
-- **Modo de demostración** (sin servidor ni cuenta): abre `http://localhost:5173/demo/index.html?v=home`. Otras pantallas: `who`, `person`, `charge`, `qr`, `send-qr`, `wait`, `paid`, `receipt`, `new-charge`, `add-person`, `accounts`, `account`, `more`, `report`, `places`, `places-settings`, `reg-qr`, `review`, `seat`, `seat-late`, `seat-leave`, `danger`, y la inscripción: `signup1`, `signup2`, `signup2-pick`, `signup3`, `signup4`, `signup-done`.
+- **Modo de demostración** (sin servidor ni cuenta): abre `http://localhost:5173/demo/index.html?v=home`. Otras pantallas: `who`, `person`, `charge`, `qr`, `send-qr`, `wait`, `paid`, `receipt`, `new-charge`, `add-person`, `accounts`, `account`, `projects`, `new-project`, `more`, `more2`, `people`, `report`, `places`, `places-settings`, `reg-qr`, `review`, `seat`, `seat-late`, `seat-leave`, `danger`, y la inscripción: `signup1`, `signup2`, `signup2-pick`, `signup3`, `signup4`, `signup-done`.
 - **Pruebas de lógica** (lugares, vencimientos, reporte, dibujos): `npm test` (14 pruebas).
 - **Capturas del README:** con `npm run dev` corriendo, `node scripts/screens.cjs` (necesita Google Chrome; `CHROME_PATH` cambia su ubicación). Borra las capturas con numeración vieja.
 - **App completa:** necesita `amplify_outputs.json` en la raíz, que Amplify genera al desplegar (descárgalo en la consola de Amplify). No se sube al repositorio.

@@ -20,11 +20,13 @@ const people: Per[] = [
   { id: 'p2', name: 'Juan López', tel: '5500000002', emblem: 'perro', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
   { id: 'p3', name: 'Elena Ruiz', tel: '5500000003', emblem: 'pez', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
   { id: 'p4', name: 'Pedro Sánchez', tel: '5500000004', emblem: 'nopal', status: 'ENROLLED', via: 'MANUAL', heldOn: daysAgo(40),  },
-  { id: 'p5', name: 'Lucía Torres', tel: '5500000005', emblem: 'luna', status: 'ENROLLED', via: 'QR', heldOn: daysAgo(8), helpers: ['5500000015'], regAt: daysAgo(9) },
-  { id: 'p6', name: 'Marta Díaz', tel: '5500000006', emblem: 'abeja', status: 'PENDING', via: 'QR', helpers: ['5500000016', '5500000026'], regAt: daysAgo(0) },
+  { id: 'p5', name: 'Lucía Torres', tel: '5500000005', emblem: 'luna', status: 'ENROLLED', via: 'QR', heldOn: daysAgo(8), helpers: ['5500000015'], helperInfo: [{ tel: '5500000015', name: 'Ana Torres', rel: 'mi hija' }], sendTo: '5500000015', regAt: daysAgo(9) },
+  { id: 'p6', name: 'Marta Díaz', tel: '5500000006', emblem: 'abeja', status: 'PENDING', via: 'QR', helpers: ['5500000016', '5500000026'], helperInfo: [{ tel: '5500000016', name: 'Carlos Díaz', rel: 'mi hijo' }, { tel: '5500000026', name: 'Rita Gómez', rel: 'mi vecina' }], regAt: daysAgo(0) },
   { id: 'p7', name: 'Hugo Ramírez', tel: '5500000007', emblem: 'uvas', status: 'WAITLIST', via: 'QR', helpers: ['5500000017'], regAt: daysAgo(1) },
 ];
 const project: Proj = { id: 'j1', name: 'Taller', open: true, token: 'demo-token-demo-token-demo', capacity: 6, holdDays: 5, monthlyConcept: 'Mensualidad', monthlyAmount: 130, accountId: 'a1' };
+const projects: Proj[] = [project, { id: 'j2', name: 'Tanda de los jueves', open: false, token: 'otro-token-otro-token-otro', capacity: 0, holdDays: 5 }];
+const totals = { j1: 260, j2: 0 };
 const m = thisMonth();
 const base = { month: m, accountId: 'a1', concept: 'Mensualidad', amount: 130, confirmsPlace: true };
 const now = new Date().toISOString();
@@ -68,7 +70,10 @@ const first = new URLSearchParams(location.search).get('v') ?? 'home';
 function start(): View {
   switch (first) {
     case 'danger': return { id: 'danger' };
+    case 'projects': return { id: 'projects' };
+    case 'new-project': return { id: 'new-project' };
     case 'more': return { id: 'more' };
+    case 'more2': return { id: 'more', page: 1 };
     case 'who': return { id: 'who', page: 0 };
     case 'person': return { id: 'person', personId: 'p3', page: 0 };
     case 'charge': return { id: 'charge', chargeId: 'c3' };
@@ -101,9 +106,9 @@ const signupSteps: Record<string, { step: number; name?: string; tel?: string; h
   signup1: { step: 1 },
   signup2: { step: 2, name: 'María Hernández' },
   'signup2-pick': { step: 2, name: 'María Hernández', pic: 'pick' },
-  signup3: { step: 3, name: 'María Hernández', emblem: 'girasol', tel: '5500000009' },
-  signup4: { step: 4, name: 'María Hernández', emblem: 'girasol', tel: '5500000009', helpers: ['5500000019', '5500000029'] },
-  'signup-done': { step: 4, name: 'María Hernández', emblem: 'girasol', tel: '5500000009', helpers: ['5500000019'] },
+  signup3: { step: 3, name: 'María Hernández', emblem: 'girasol', tel: '5500000009', helpers: [{ name: 'Ana Hernández', rel: 'mi hija', tel: '' }] },
+  signup4: { step: 4, name: 'María Hernández', emblem: 'girasol', tel: '5500000009', helpers: [{ name: 'Ana Hernández', rel: 'mi hija', tel: '5500000019' }, { name: 'Luis Pérez', rel: 'mi vecino', tel: '5500000029' }] },
+  'signup-done': { step: 4, name: 'María Hernández', emblem: 'girasol', tel: '5500000009', helpers: [{ name: 'Ana Hernández', rel: 'mi hija', tel: '5500000019' }] },
   'signup-full': { step: 1 },
 };
 
@@ -130,6 +135,10 @@ function Demo() {
         people={people}
         charges={charges}
         project={project}
+        projects={projects}
+        totals={totals}
+        onPickProject={noop}
+        onCreateProject={noop}
         signOut={noop}
         onView={setView}
         onReset={setView}

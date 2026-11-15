@@ -116,7 +116,11 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
       <Status kind={words.kind}>{words.text}</Status>
       <div className="stat">
         <p><strong>Su WhatsApp:</strong> {fmtTel(person.tel)}</p>
-        {person.helpers?.length ? <p><strong>Quien le ayuda a pagar:</strong> {person.helpers.map(fmtTel).join(', ')}</p> : null}
+        {person.helperInfo?.length
+          ? person.helperInfo.map((h) => (
+            <p key={h.tel}><strong>{h.name ? `${h.name}${h.rel ? ` (${h.rel})` : ''}` : 'Quien le ayuda'}:</strong> {fmtTel(h.tel)}{person.sendTo === h.tel ? ' · le mandas sus códigos' : ''}</p>
+          ))
+          : null}
       </div>
       {canQuick ? (
         <Choice primary icon={<IcoPhone />} label={`Cobrarle ${money(fee)}`} hint={`${feeConcept} de ${monthName(month).toLowerCase()}`} onClick={() => onCreateCharge(person.id, feeConcept, fee, feeAccount.id, true)} />
@@ -182,8 +186,9 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
   return (
     <section className="stack">
       <h1>Código para inscribir</h1>
+      <p className="who-line">{project.name || 'Mi proyecto'}</p>
       {failed ? <Alert>No se pudo hacer el código. Intenta de nuevo.</Alert> : img ? <img className="shot" alt="Código QR para inscribirse al taller" src={img} /> : null}
-      <p className="lead">Quien lo escanee deja su nombre y su WhatsApp. Tú apruebas antes de cobrar.</p>
+      <p className="lead">Quien lo escanee se inscribe a este proyecto. Tú apruebas antes de cobrar.</p>
       <Status kind={project.open ? 'paid' : 'due'}>{project.open ? 'Inscripciones abiertas' : 'Inscripciones cerradas'}</Status>
       <Choice primary icon={<IcoPhone />} label={project.open ? 'Cerrar inscripciones' : 'Abrir inscripciones'} onClick={onToggleOpen} />
       <Choice icon={<IcoQr />} label={busy ? busyLabel : 'Hacer un código nuevo'} hint="El anterior deja de servir" onClick={onRotateToken} />
