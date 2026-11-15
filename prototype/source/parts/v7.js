@@ -206,9 +206,9 @@
   }
   const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
   function receiptSVG(m) {
-    const INK = '#18213B', SOFT = '#3B4560', PAID = '#0F5F28', t = (x, y, size, txt, o) => '<text x="' + x + '" y="' + y + '" font-size="' + size + '"' + (o && o.w ? ' font-weight="' + o.w + '"' : '') + (o && o.fill ? ' fill="' + o.fill + '"' : '') + (o && o.anchor ? ' text-anchor="' + o.anchor + '"' : '') + '>' + esc(txt) + '</text>';
-    let s = '<svg viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comprobante de pago de ' + esc(m.P.n) + ' por ' + esc(money(m.amount)) + '" font-family="Atkinson Hyperlegible, Arial, Helvetica, sans-serif" fill="' + INK + '">';
-    s += '<rect width="1080" height="1350" fill="#fff"/><rect width="1080" height="230" fill="' + PAID + '"/>';
+    const INK = '#4E1A6E', SOFT = '#5A3E66', PAID = '#0F5F28', t = (x, y, size, txt, o) => '<text x="' + x + '" y="' + y + '" font-size="' + size + '"' + (o && o.w ? ' font-weight="' + o.w + '"' : '') + (o && o.fill ? ' fill="' + o.fill + '"' : '') + (o && o.anchor ? ' text-anchor="' + o.anchor + '"' : '') + '>' + esc(txt) + '</text>';
+    let s = '<svg viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comprobante de pago de ' + esc(m.P.n) + ' por ' + esc(money(m.amount)) + '" font-family="Nunito, Segoe UI, Arial, Helvetica, sans-serif" fill="' + INK + '">';
+    s += '<rect width="1080" height="1350" fill="#fff"/><rect width="1080" height="230" fill="' + PAID + '"/><rect y="230" width="1080" height="14" fill="#EDB438"/>';
     s += '<circle cx="150" cy="115" r="64" fill="#fff"/><path d="M118 116l24 24 46-52" fill="none" stroke="' + PAID + '" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>';
     s += t(260, 128, 100, 'PAGADO', { w: 800, fill: '#fff' }) + t(262, 196, 50, viaName(m.via), { w: 700, fill: '#fff' });
     const av = avatar(m.P).replace('<svg ', '<svg x="60" y="270" width="230" height="230" ');

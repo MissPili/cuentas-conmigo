@@ -36,7 +36,7 @@ assert old[943].strip() == '}' and old[945].lstrip().startswith('/* ============
 assert old[1200].lstrip().startswith('/* ================= wiring'), old[1200][:40]
 assert old[1237].startswith('  start();'), old[1237]
 
-parts = {n: rd(os.path.join(HERE, 'parts', n)) for n in ('tokens.css', 'simple.css', 'phone_a.html', 'phone_b.html', 'identity.html', 'views.js', 'wiring.js', 'v7.js', 'v7.css', 'report.html')}
+parts = {n: rd(os.path.join(HERE, 'parts', n)) for n in ('tokens.css', 'simple.css', 'phone_a.html', 'phone_b.html', 'identity.html', 'views.js', 'wiring.js', 'v7.js', 'v7.css', 'brand.css', 'report.html')}
 
 # ---- head + CSS
 css_mid = seg(40, 262)  # old layout/components, kept for the advanced layer and the identity page
@@ -47,13 +47,28 @@ css_mid = rep(css_mid, 'letter-spacing: 0; opacity: .95; }', 'letter-spacing: 0;
 css_mid = rep(css_mid, '.feat.dis { opacity: .55; cursor: not-allowed; }', '.feat.dis { border-style: dashed; color: var(--ink-soft); cursor: not-allowed; }')
 css_mid = rep(css_mid, '.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }', '.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }')
 head = seg(1, 5) + '\n' + parts['tokens.css'] + '\n'
+head = rep(head,
+           '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+           '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap">',
+           '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+           '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+           '<link rel="icon" href="assets/favicon.png" type="image/png">\n'
+           '<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">\n'
+           '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">')
 simple_css = parts['simple.css'] + '\nh1.q:focus { outline: none; }\n'
 simple_css = rep(simple_css, '.steps .sep { flex: 1; height: 4px; min-width: 6px; border-radius: 2px; background: var(--edge); }',
                  '.steps li.sep { flex: 1; width: auto; height: 4px; min-width: 6px; border: 0; border-radius: 2px; background: var(--edge); box-shadow: none; }')
-css = head + css_mid + '\n' + simple_css + parts['v7.css'] + seg(292, 293) + '\n'
+css = head + css_mid + '\n' + simple_css + parts['v7.css'] + '\n' + parts['brand.css'] + seg(292, 293) + '\n'
 
 # ---- page header (old 294..304) + prototype block
 page_header = seg(294, 304)
+brand_at = page_header.index('<div class="brand"')
+brand_end = page_header.index('</div>', brand_at) + len('</div>')
+page_header = (page_header[:brand_at]
+               + '<div class="brand">\n'
+               + '    <img src="assets/logo-cuentas-conmigo.png" alt="Cuentas conmigo" width="498" height="96">\n'
+               + '  </div>'
+               + page_header[brand_end:])
 personas_ajustes = seg(316, 352)
 personas_ajustes = rep(personas_ajustes, '<button class="btn primary" data-goto="cobrar" style="justify-content:center">Ver cómo queda en Cobrar</button>',
                        '<button class="btn primary" data-goto="cobrar" style="justify-content:center">Volver al modo sencillo</button>')
@@ -73,6 +88,8 @@ js_top = rep(js_top, "    info: I('<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=
              "    x: I('<path d=\"M6 6l12 12M18 6L6 18\"/>'),\n"
              "    send: I('<path d=\"M4 12l16-8-6 16-3-7z\"/>')\n  };")
 js_top = rep(js_top, 'amount: r ? r.amount : 0, title: \'Abono\'', 'amount: r ? r.amount : (S.flow === \'abono\' ? amtVal() : 0), title: \'Abono\'')
+js_top = rep(js_top, 'fill="#18213B"', 'fill="#4E1A6E"', 3)
+js_top = rep(js_top, 'font-family="Bricolage Grotesque, system-ui, sans-serif"', 'font-family="Nunito, Segoe UI, sans-serif"')
 js_cfg = seg(945, 1200)
 js_cfg = rep(js_cfg, "function afterChange() { S.view = 'who'; renderPreview(); render(); }",
              "function afterChange() { S.view = 'home'; S.hist = []; S.flow = null; S.saved = null; S.page = 0; S.person = null; renderPreview(); render(); }")
