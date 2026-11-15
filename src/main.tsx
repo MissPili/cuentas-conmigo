@@ -7,7 +7,16 @@ import '@aws-amplify/ui-react/styles.css';
 import outputs from '../amplify_outputs.json';
 import App from './App';
 import favicon from './assets/favicon.png';
+import logo from './assets/logo-cuentas-conmigo.png';
 import './index.css';
+
+function AuthLogo() {
+  return (
+    <header className="top">
+      <img src={logo} alt="Cuentas conmigo" width="498" height="96" />
+    </header>
+  );
+}
 
 I18n.putVocabularies(translations);
 I18n.setLanguage('es');
@@ -20,6 +29,6 @@ Amplify.configure(outputs);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Authenticator>{({ signOut }) => <App signOut={signOut} />}</Authenticator>
+    <Authenticator components={{ Header: AuthLogo }}>{({ signOut }) => <App signOut={signOut} />}</Authenticator>
   </React.StrictMode>,
 );
