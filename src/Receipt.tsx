@@ -27,7 +27,7 @@ type ShareLink = {
  * An image itself cannot travel inside a wa.me link, hence the link. The phone's share sheet and saving stay as backups.
  */
 export function PictureSend({
-  title, alt, svg, filename, msg, dests, link, children,
+  title, alt, svg, filename, msg, dests, link, guion = 'mandar', children,
 }: {
   title: string;
   alt: string;
@@ -36,6 +36,7 @@ export function PictureSend({
   msg: string;
   dests: Dest[];
   link?: ShareLink;
+  guion?: string;
   children?: ReactNode;
 }) {
   const [note, setNote] = useState('');
@@ -81,7 +82,7 @@ export function PictureSend({
   const text = url ? `${msg}\n\n${url}` : msg;
 
   return (
-    <section className="stack">
+    <section className="stack" data-guion={guion}>
       <h1>{title}</h1>
       <img className="shot" alt={alt} src={svgDataUrl(svg)} />
       {note ? <Alert>{note}</Alert> : null}
@@ -120,6 +121,7 @@ export default function Receipt({
       filename={`comprobante-${data.folio}.png`}
       msg={receiptText(data)}
       dests={dests}
+      guion="comprobante"
       link={{
         kind: 'RECEIPT',
         title: `Comprobante de pago · ${data.projectName}`,

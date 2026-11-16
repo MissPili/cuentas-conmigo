@@ -129,7 +129,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   if (!info) {
     return (
       <Shell canBack={false} onBack={() => {}}>
-        <section className="stack"><h1>Un momento…</h1><p className="lead">Estamos abriendo la inscripción.</p></section>
+        <section className="stack" data-guion="inscripcion-abre"><h1>Un momento…</h1><p className="lead">Estamos abriendo la inscripción.</p></section>
       </Shell>
     );
   }
@@ -137,7 +137,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   if (info.status === 'closed' || done === 'closed') {
     return (
       <Shell canBack={false} onBack={() => {}}>
-        <section className="stack">
+        <section className="stack" data-guion="inscripcion-cerrada">
           <div className="result"><div className="seal bad"><IcoAlert /></div><h1>Inscripciones cerradas</h1><p>Por ahora no se reciben inscripciones. Pregunta a quien da el taller.</p></div>
         </section>
       </Shell>
@@ -147,7 +147,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   if (info.status === 'limit' || done === 'limit') {
     return (
       <Shell canBack={false} onBack={() => {}}>
-        <section className="stack">
+        <section className="stack" data-guion="inscripcion-luego">
           <div className="result"><div className="seal bad"><IcoClock /></div><h1>Intenta más tarde</h1><p>Hubo muchos intentos. Vuelve a probar en un rato.</p></div>
         </section>
       </Shell>
@@ -162,7 +162,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       : 'Quien da el taller revisará tu inscripción. Todavía no se te cobra nada.';
     return (
       <Shell canBack={false} onBack={() => {}}>
-        <section className="stack">
+        <section className="stack" data-guion="inscripcion-lista">
           <div className="result"><div className="seal ok"><IcoCheck /></div><h1>{title}</h1><p>{text}</p></div>
         </section>
       </Shell>
@@ -172,7 +172,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
   if (done === 'invalid' || done === 'error' || info.status === 'error') {
     return (
       <Shell canBack={false} onBack={() => {}}>
-        <section className="stack">
+        <section className="stack" data-guion="inscripcion-error">
           <div className="result"><div className="seal bad"><IcoAlert /></div><h1>No se pudo</h1><p>Revisa tus datos e inténtalo de nuevo.</p>{detail || info.detail ? <p className="hint">Detalle: {detail || info.detail}</p> : null}</div>
           <Choice primary mark="🔄" label="Intentar de nuevo" onClick={() => { setStep(1); again(); }} />
         </section>
@@ -189,7 +189,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
         {error ? <Alert>{error}</Alert> : null}
 
         {step === 1 ? (
-          <form className="stack" onSubmit={next}>
+          <form className="stack" data-guion="inscripcion-nombre" onSubmit={next}>
             <h1>¿Cómo te llamas?</h1>
             <Field label="Nombre completo"><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required /></Field>
             <Choice primary type="submit" icon={<IcoPeople />} label="Siguiente" />
@@ -199,7 +199,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
         {step === 2 ? <PictureStep p={picture} who="self" setError={setError} onChosen={() => setStep(3)} /> : null}
 
         {step === 3 ? (
-          <form className="stack" onSubmit={next}>
+          <form className="stack" data-guion="inscripcion-whats" onSubmit={next}>
             <h1>Tu WhatsApp</h1>
             <p className="lead">Te escribiremos a este número para todo lo del taller: avisos, cobros y comprobantes.</p>
             <Field label="Tu WhatsApp (10 números)"><input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="numeric" autoComplete="tel" required /></Field>
@@ -212,7 +212,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
         ) : null}
 
         {step === 4 ? (
-          <div className="stack">
+          <div className="stack" data-guion="inscripcion-revisar">
             <h1>Revisa y confirma</h1>
             <div className="stat">
               <p><strong>Nombre:</strong> {name.trim()}</p>

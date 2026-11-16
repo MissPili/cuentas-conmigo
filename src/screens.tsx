@@ -86,7 +86,7 @@ function findAccount(accounts: Acc[], id: string) {
 export function Stage(p: StageProps) {
   if (p.view.id === 'loading') {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="cargando">
         <h1>Un momento…</h1>
         <p className="lead">Estamos leyendo tus cobros.</p>
         <Status kind="wait">Cargando</Status>
@@ -97,7 +97,7 @@ export function Stage(p: StageProps) {
 
   if (p.problem) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="error">
         <Result kind="bad" title={p.problem.title} text={p.problem.detail} tech={p.problem.tech} />
         <Choice primary mark="🔄" label={p.busy ? busyLabel : 'Intentar de nuevo'} onClick={p.onRetry} />
         <Choice label="Volver" hint="Para elegir otra forma de cobrar" onClick={p.onDismiss} />
@@ -163,7 +163,7 @@ function Home({ accounts, people, charges, project, onView }: StageProps) {
   }
 
   return (
-    <section className="stack">
+    <section className="stack" data-guion={!hasAccount ? 'inicio-cuenta' : !hasPeople ? 'inicio-persona' : 'inicio'}>
       <h1>{project?.name || 'Mi proyecto'}</h1>
       <div className="stat">
         <p><strong>Cobrado en {monthName(month).toLowerCase()}:</strong></p>
@@ -182,7 +182,7 @@ function ProjectsView({ projects, totals, onPickProject, onView, signOut }: Stag
   const month = monthName(thisMonth()).toLowerCase();
   if (!projects.length) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="bienvenida">
         <h1>Bienvenida</h1>
         <p className="lead">Empieza creando tu primer taller o proyecto de cobro.</p>
         <Choice primary icon={<IcoPeople />} label="Crear mi primer proyecto" onClick={() => onView({ id: 'new-project' })} />
@@ -191,7 +191,7 @@ function ProjectsView({ projects, totals, onPickProject, onView, signOut }: Stag
     );
   }
   return (
-    <section className="stack">
+    <section className="stack" data-guion="proyectos">
       <h1>Tus proyectos</h1>
       <p className="lead">Elige a cuál entrar.</p>
       {projects.map((x) => (
@@ -209,7 +209,7 @@ function NewProject({ busy, formError, onCreateProject, onView, projects }: Stag
     onCreateProject(String(new FormData(e.currentTarget).get('name') || ''));
   };
   return (
-    <section className="stack">
+    <section className="stack" data-guion="proyecto-nuevo">
       <h1>Nuevo proyecto</h1>
       <form className="stack" onSubmit={submit}>
         {formError ? <Alert>{formError}</Alert> : null}
@@ -234,7 +234,7 @@ function Who({ people, charges, onOpenPerson, onView, page }: StageProps & { pag
     .sort((a, b) => a.urgency - b.urgency || a.person.name.localeCompare(b.person.name, 'es'));
   const slice = pageOf(ranked, page);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="quien">
       <h1>¿Quién paga?</h1>
       <p className="lead">Toca el nombre.</p>
       {slice.rows.map(({ person, words }) => (
@@ -293,7 +293,7 @@ function PersonCharges({ people, charges, accounts, project, onCreateCharge, onV
   ];
   const slice = pageOf(rows, page);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="cobros">
       <WhoLine name={person.name} person={person} />
       <h1>Sus cobros de {monthName(month).toLowerCase()}</h1>
       {slice.rows.map((row) => <div key={row.key}>{row.node}</div>)}
@@ -310,7 +310,7 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
   // With registered helpers the collector chooses who gets the request today; with none it goes to the person.
   const several = (() => { const who = findPerson(people, charge.personId); return !!who && helpersOf(who).length > 0; })();
   return (
-    <section className="stack">
+    <section className="stack" data-guion={canCell ? 'cobrar' : 'cobrar-efectivo'}>
       <WhoLine name={name} person={findPerson(people, charge.personId)} />
       <h1>¿Cómo paga?</h1>
       <p className="amount">{money(charge.amount)}</p>
@@ -337,7 +337,7 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
 function CashStep({ charge, people, busy, onCash, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   return (
-    <section className="stack">
+    <section className="stack" data-guion="confirmar">
       <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>¿Recibiste {money(charge.amount)}?</h1>
       <p className="lead">Cuéntalos antes de confirmar. Es de {charge.concept}.</p>
@@ -352,7 +352,7 @@ function WaitStep({ charge, people, busy, onCheck, onShowQr, onView }: StageProp
   const dests = destinations(who?.tel ?? charge.tel, who ? helpersOf(who) : [], who?.sendTo, 4);
   const askedTo = charge.pushTel ? dests.find((d) => d.tel === charge.pushTel)?.label : undefined;
   return (
-    <section className="stack">
+    <section className="stack" data-guion="esperando">
       <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>Esperando el pago</h1>
       <p className="amount">{money(charge.amount)}</p>
@@ -370,7 +370,7 @@ function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Ch
   if (!charge) return <Missing onHome={() => onReset({ id: 'home' })} />;
   const name = findPerson(people, charge.personId)?.name || charge.personName;
   return (
-    <section className="stack">
+    <section className="stack" data-guion="pagado">
       <Result kind="paid" title="Ya pagó" text={`${name} pagó ${money(charge.amount)}. ${charge.concept}.`} />
       <Status kind="paid">{chargeWords(charge)}</Status>
       <Choice primary mark="💬" label="Enviar comprobante" hint="Por WhatsApp" onClick={() => onView({ id: 'receipt', chargeId: charge.id })} />
@@ -382,7 +382,7 @@ function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Ch
 function QrStep({ charge, people, img, busy, onCheck, onView }: StageProps & { charge: Chg | undefined; img: string }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
   return (
-    <section className="stack">
+    <section className="stack" data-guion="codigo">
       <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>Muestra el código</h1>
       <img className="shot" alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`} src={`data:image/png;base64,${img}`} />
@@ -466,7 +466,7 @@ function Accounts({ accounts, page, onView }: StageProps & { page: number }) {
   });
   const slice = pageOf(rows, page);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="cuentas">
       <h1>Cuenta que recibe</h1>
       <p className="lead">Es la cuenta a la que llega el dinero.</p>
       {slice.rows.map((row) => <div key={row.key}>{row.node}</div>)}
@@ -485,7 +485,7 @@ function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, on
   // The Pey key was changed: Pey does not know the account registered with the old key, so it is sent again.
   if (again) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="cuenta-otra">
         <h1>¿Registrarla otra vez en Pey?</h1>
         <p className="lead">{account.alias}</p>
         <Alert>Hazlo solo si cambiaste la llave de Pey. Una cuenta nueva puede tardar hasta 5 días hábiles en quedar lista; mientras tanto solo se puede cobrar en efectivo.</Alert>
@@ -495,7 +495,7 @@ function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, on
     );
   }
   return (
-    <section className="stack">
+    <section className="stack" data-guion="cuenta">
       <h1>{account.alias}</h1>
       <p className="lead">{account.legalName}</p>
       <Status kind={words.kind}>{words.text}</Status>
@@ -511,7 +511,7 @@ function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, on
       {!asking ? (
         <Choice danger label="Eliminar cuenta" hint={account.codiStatus === 'ERROR' ? 'Tiene un error' : 'Ya no la necesito'} onClick={() => setAsking(true)} />
       ) : (
-        <div className="stack" data-ayuda="Esto quita la cuenta de la app. Toca Sí, eliminar. O toca No, volver.">
+        <div className="stack" data-guion="cuenta-borrar">
           <Alert>Se quita de esta app. Los cobros que ya hiciste se conservan, pero sin el nombre de la cuenta. En Pey la cuenta sigue registrada.</Alert>
           <Choice danger label={busy ? busyLabel : 'Sí, eliminar'} onClick={() => onDeleteAccount(account.id)} />
           <Choice label="No, volver" onClick={() => setAsking(false)} />
@@ -533,7 +533,7 @@ function AddAccount({ busy, formError, onAddAccount }: StageProps) {
     });
   };
   return (
-    <section className="stack">
+    <section className="stack" data-guion="cuenta-nueva">
       <h1>Nueva cuenta</h1>
       <form className="stack" onSubmit={submit}>
         {formError ? <Alert>{formError}</Alert> : null}
@@ -542,7 +542,7 @@ function AddAccount({ busy, formError, onAddAccount }: StageProps) {
         <Field label="Nombre de quien es la cuenta"><input name="legal" required autoComplete="name" /></Field>
         <Field label="CLABE, 18 números"><input name="clabe" required inputMode="numeric" autoComplete="off" /></Field>
         <Field label="¿De quién es la cuenta?">
-          <select name="entity" defaultValue="PERSON" data-ayuda="Toca y elige si la cuenta es de una persona o de un negocio.">
+          <select name="entity" defaultValue="PERSON" data-guion="lista-de-quien">
             <option value="PERSON">Persona</option>
             <option value="BUSINESS">Negocio o institución</option>
           </select>
@@ -558,7 +558,7 @@ function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge
   if (!person) return <Missing onHome={() => onView({ id: 'home' })} />;
   if (!accounts.length) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="falta-cuenta">
         <h1>Falta la cuenta</h1>
         <Alert>Primero agrega la cuenta que recibe el dinero.</Alert>
         <Choice primary icon={<IcoBank />} label="Agregar cuenta" onClick={() => onView({ id: 'add-account' })} />
@@ -573,7 +573,7 @@ function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge
     onCreateCharge(person.id, String(data.get('concept') || ''), parseAmount(String(data.get('amount') || '')), accountId, false); // an extraordinary charge never confirms a place
   };
   return (
-    <section className="stack">
+    <section className="stack" data-guion="cobro-extra">
       <WhoLine name={person.name} person={person} />
       <h1>Cobro extraordinario</h1>
       <p className="lead">Para algo que no es el cobro de siempre, por ejemplo una cooperación para un evento.</p>
@@ -585,7 +585,7 @@ function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge
         </Field>
         {only ? <p className="lead">El dinero llega a {only.alias}.</p> : (
           <Field label="¿A qué cuenta llega?">
-            <select name="account" required defaultValue="" data-ayuda="Toca y elige a qué cuenta llega el dinero.">
+            <select name="account" required defaultValue="" data-guion="lista-cuenta">
               <option value="" disabled>Elige la cuenta</option>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
             </select>
@@ -599,7 +599,7 @@ function NewCharge({ people, accounts, personId, busy, formError, onCreateCharge
 
 function Missing({ onHome }: { onHome: () => void }) {
   return (
-    <section className="stack">
+    <section className="stack" data-guion="ya-no-esta">
       <Result kind="bad" title="Ya no está" text="Ese dato ya no está en la lista." />
       <Choice primary label="Volver al inicio" onClick={onHome} />
     </section>
