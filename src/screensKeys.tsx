@@ -23,7 +23,7 @@ const STATE_WORDS: Record<KeyState, { kind: 'paid' | 'due' | 'bad'; text: string
 
 function NotFound({ onView }: Pick<StageProps, 'onView'>) {
   return (
-    <section className="stack">
+    <section className="stack" data-guion="ya-no-esta">
       <h1>No encontramos a esa persona</h1>
       <Choice primary label="Ir al inicio" onClick={() => onView({ id: 'home' })} />
     </section>
@@ -81,7 +81,7 @@ export function KeyringHub({ people, onView }: StageProps) {
   }
 
   return (
-    <section className="stack">
+    <section className="stack" data-guion="llaveros">
       <h1>Imágenes y llaveros</h1>
       <p className="lead">La imagen de cada persona activa, para mandar a imprimir en su llavero.</p>
       <div className="stat">
@@ -107,7 +107,7 @@ export function Keyrings({ people, page, onView }: StageProps & { page: number }
   const active = activeForKeyring(people);
   const slice = pageOf(active, page);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="llaveros-lista">
       <h1>Personas activas</h1>
       <p className="lead">{active.length ? 'Elige a una persona para ver su imagen.' : 'Todavía no hay personas activas.'}</p>
       {slice.rows.map((p) => {
@@ -163,7 +163,7 @@ export function KeyringDetail({ people, personId, busy, onKey, onView }: StagePr
 
   if (asking) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="llavero-nuevo">
         <WhoLine name={person.name} person={person} />
         <h1>¿Hacer un código nuevo?</h1>
         <Alert>El llavero que tiene ahora dejará de funcionar para siempre. Hazlo solo si se perdió o vas a cambiarlo.</Alert>
@@ -174,7 +174,7 @@ export function KeyringDetail({ people, personId, busy, onKey, onView }: StagePr
   }
 
   return (
-    <section className="stack">
+    <section className="stack" data-guion="llavero">
       <WhoLine name={person.name} person={person} />
       <h1>Imagen del llavero</h1>
       {preview ? <img className="shot" alt={`Imagen del llavero de ${person.name}`} src={preview} /> : null}
@@ -217,7 +217,7 @@ export function KeyringDetail({ people, personId, busy, onKey, onView }: StagePr
 /** Steps to write a chip, test it and lock it. Written for whoever helps set up the keychains. */
 export function KeyringHelp() {
   return (
-    <section className="stack">
+    <section className="stack" data-guion="llavero-ayuda">
       <h1>Cómo programar un llavero</h1>
       <ol className="steps-list">
         <li>Entra a la persona, activa su llavero y copia la dirección.</li>
@@ -242,7 +242,7 @@ export function KeyTap({ kind, personId, people, onView, onReset }: StageProps &
         ? { title: 'Esa persona ya no está activa', text: 'Su llavero ya no sirve.' }
         : { title: 'No reconocemos este llavero', text: 'Puede ser de otro taller, de alguien que ya se dio de baja, o haber sido cambiado por uno nuevo.' };
   return (
-    <section className="stack">
+    <section className="stack" data-guion="llavero-toque">
       <Result kind="bad" title={copy.title} text={copy.text} />
       {kind === 'off' && person ? <Choice primary icon={<IcoKey />} label={`Ver el llavero de ${person.name.split(' ')[0]}`} hint="Ahí puedes activarlo de nuevo" onClick={() => onView({ id: 'keyring', personId: person.id })} /> : null}
       <Choice primary={!(kind === 'off' && person)} label="Ir al inicio" onClick={() => onReset({ id: 'home' })} />

@@ -95,7 +95,7 @@ export function PictureStep({ p, who, setError, onChosen }: { p: Picture; who: W
 
   if (p.pic === 'pick') {
     return (
-      <div className="stack" data-ayuda={`${t.pickTitle}. Toca el dibujo que quieres.`}>
+      <div className="stack" data-guion={who === 'self' ? 'dibujo-tu' : 'dibujo'}>
         <h1>{t.pickTitle}</h1>
         {p.offered.length ? (
           <div className="emblems">
@@ -114,7 +114,7 @@ export function PictureStep({ p, who, setError, onChosen }: { p: Picture; who: W
 
   if (p.pic === 'photo') {
     return (
-      <div className="stack">
+      <div className="stack" data-guion={who === 'self' ? 'foto-tu' : 'foto'}>
         <h1>{t.photoTitle}</h1>
         <input ref={fileRef} type="file" accept="image/*" capture={t.capture} hidden onChange={(e) => { void p.take(e.target.files?.[0]); e.target.value = ''; }} />
         {p.photo ? (
@@ -135,7 +135,7 @@ export function PictureStep({ p, who, setError, onChosen }: { p: Picture; who: W
   }
 
   return (
-    <div className="stack">
+    <div className="stack" data-guion={who === 'self' ? 'imagen-tu' : 'imagen'}>
       <h1>{t.title}</h1>
       <p className="lead">{t.lead}</p>
       <Choice primary icon={<IcoPeople />} label="Elegir un dibujo" hint="Uno que nadie más tenga" onClick={() => { p.offer(); p.setPic('pick'); }} />
@@ -199,7 +199,7 @@ export function PayersFields({ p, who, title, children }: { p: Payers; who: Who;
       {children}
       {title ? <h1>{t.ask}</h1> : <h2 className="ask">{t.ask}</h2>}
       <p className="lead">Se paga con CoDi, desde la app de un banco.</p>
-      <div className="emblems" data-ayuda={p.mode ? undefined : `${t.ask} Toca una.`}>
+      <div className="emblems">
         <button type="button" className={p.mode === 'self' ? 'emblem-btn on' : 'emblem-btn'} aria-pressed={p.mode === 'self'} onClick={() => p.setMode('self')}>
           <span className="emblem-glyph" aria-hidden="true">📱</span>
           <span>{t.alone}{p.mode === 'self' ? ' ✔ Elegido' : ''}</span>
@@ -211,7 +211,7 @@ export function PayersFields({ p, who, title, children }: { p: Payers; who: Who;
       </div>
 
       {p.mode === 'helper' ? (
-        <div className="stack" data-ayuda={`${t.who} Escribe su nombre y su WhatsApp.`}>
+        <div className="stack" data-guion="pago-ayuda">
           <h2 className="ask">{t.who}</h2>
           <p className="lead">Escribe sus datos. Si no entiende de qué se trata, le explicaremos por WhatsApp.</p>
           {p.helpers.map((h, i) => (

@@ -76,7 +76,7 @@ export function AddPerson({ people, busy, formError, onAddPerson, onInterceptBac
       {error || formError ? <Alert>{error || formError}</Alert> : null}
 
       {step === 1 ? (
-        <form className="stack" onSubmit={next}>
+        <form className="stack" data-guion="persona-nueva" onSubmit={next}>
           <h1>Nueva persona</h1>
           <Field label="Nombre completo"><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" required /></Field>
           <Field label="WhatsApp, 10 números"><input value={tel} onChange={(e) => setTel(e.target.value)} inputMode="numeric" autoComplete="off" required /></Field>
@@ -87,14 +87,14 @@ export function AddPerson({ people, busy, formError, onAddPerson, onInterceptBac
       {step === 2 ? <PictureStep p={picture} who="other" setError={setError} onChosen={() => setStep(3)} /> : null}
 
       {step === 3 ? (
-        <form className="stack" onSubmit={next}>
+        <form className="stack" data-guion="pago" onSubmit={next}>
           <PayersFields p={pay} who="other" title />
           <Choice primary type="submit" icon={<IcoPhone />} label="Siguiente" />
         </form>
       ) : null}
 
       {step === 4 ? (
-        <div className="stack">
+        <div className="stack" data-guion="persona-revisar">
           <h1>Revisa y guarda</h1>
           <div className="stat">
             <p><strong>Nombre:</strong> {name.trim()}</p>

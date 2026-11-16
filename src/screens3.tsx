@@ -30,7 +30,7 @@ export function PlacesHub({ project, people, charges, onView }: StageProps) {
   const now = new Date();
   if (!placesOn(project)) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="lugares-off">
         <h1>Lugares del taller</h1>
         <p className="lead">Pon cuántos lugares hay y recibe inscripciones con un código QR.</p>
         <Choice primary icon={<IcoPeople />} label="Activar lugares" hint="Cuántos lugares hay" onClick={() => onView({ id: 'places-settings' })} />
@@ -43,7 +43,7 @@ export function PlacesHub({ project, people, charges, onView }: StageProps) {
   const waiting = waitlisted(people).length;
   const full = isFull(people, project, charges, now);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="lugares">
       <h1>Lugares</h1>
       <div className="stat">
         <p><strong>{taken} de {project.capacity}</strong> lugares ocupados.</p>
@@ -74,7 +74,7 @@ export function Seats({ project, people, charges, page, only, onView }: StagePro
   const ordered = only === 'review' ? [...list.filter((x) => x.state === 'pending'), ...list.filter((x) => x.state === 'waitlist')] : list;
   const slice = pageOf(ordered, page);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="lugares-lista">
       <h1>{only === 'review' ? 'Inscripciones' : 'Quién tiene lugar'}</h1>
       {ordered.length ? null : <p className="lead">{only === 'review' ? 'No hay inscripciones por revisar.' : 'Todavía nadie tiene lugar.'}</p>}
       {slice.rows.map(({ person, state }) => (
@@ -96,7 +96,7 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
   const person = people.find((p) => p.id === personId);
   if (!person || !placesOn(project)) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="lugar-no">
         <h1>Ya no está</h1>
         <Choice primary label="Volver a lugares" onClick={() => onView({ id: 'places' })} />
       </section>
@@ -111,7 +111,7 @@ export function SeatDetail({ project, people, charges, accounts, personId, busy,
     : [];
   const feeCharge = charges.find((c) => c.personId === person.id && c.month === month);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="lugar">
       <WhoLine name={person.name} person={person} />
       {emblemOf(person.emblem) && !person.photo ? <p className="hint">Su imagen: {emblemOf(person.emblem)!.name}</p> : null}
       <Status kind={words.kind}>{words.text}</Status>
@@ -185,7 +185,7 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
   }, [link]);
   if (!placesOn(project)) {
     return (
-      <section className="stack">
+      <section className="stack" data-guion="lugares-off">
         <h1>Código para inscribir</h1>
         <p className="lead">Primero activa los lugares.</p>
         <Choice primary label="Activar lugares" onClick={() => onView({ id: 'places-settings' })} />
@@ -212,7 +212,7 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
   };
 
   return (
-    <section className="stack">
+    <section className="stack" data-guion="inscribir-codigo">
       <h1>Código para inscribir</h1>
       <p className="who-line">{project.name || 'Mi proyecto'}</p>
       {failed ? <Alert>No se pudo hacer el código. Intenta de nuevo.</Alert> : img ? <img className="shot" alt="Código QR para inscribirse al taller" src={img} /> : null}
@@ -224,7 +224,7 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
       {project.open ? null : <Alert>Las inscripciones están cerradas: quien abra el enlace verá que no hay lugar por ahora.</Alert>}
       {shared?.ok ? <p className="note" role="status"><IcoCheck /><span>{shared.text}</span></p> : null}
       {shared && !shared.ok ? <Alert>{shared.text}</Alert> : null}
-      <Choice primary icon={<IcoPhone />} label="Mandar el enlace por WhatsApp" hint="Eliges a quién; tú tocas Enviar" onClick={() => window.open(whatsappShareUrl(`${message}
+      <Choice primary mark="💬" label="Mandar el enlace por WhatsApp" hint="Eliges a quién; tú tocas Enviar" onClick={() => window.open(whatsappShareUrl(`${message}
 
 ${link}`), '_blank', 'noopener')} />
       <Choice icon={<IcoQr />} label="Compartir o copiar el enlace" hint="Mensajes, correo u otra app" onClick={() => { void share(); }} />
@@ -286,7 +286,7 @@ export function PlacesSettings({ project, accounts, busy, formError, onSaveProje
   };
 
   return (
-    <section className="stack">
+    <section className="stack" data-guion="lugares-ajustes">
       <h1>Lugares y cobros</h1>
       <form className="stack" onSubmit={submit}>
         {formError || error ? <Alert>{error || formError}</Alert> : null}
@@ -305,18 +305,18 @@ export function PlacesSettings({ project, accounts, busy, formError, onSaveProje
             <label className="check"><input type="radio" name={`kind${i}`} checked={s.kind === 'ONCE'} onChange={() => set(i, { kind: 'ONCE' })} /><span>Una sola vez</span></label>
             <label className="check"><input type="radio" name={`kind${i}`} checked={s.kind === 'MONTHLY'} onChange={() => set(i, { kind: 'MONTHLY' })} /><span>Cada mes</span></label>
             {s.kind === 'MONTHLY' ? (
-              <>
+              <div className="stack" data-guion="lugares-mes">
                 <Field label="¿Cuántos meses?"><input value={s.months} onChange={(e) => set(i, { months: e.target.value })} inputMode="numeric" /></Field>
                 <Field label="¿Desde qué mes?">
-                  <select value={s.start} data-ayuda="Toca y elige desde qué mes se cobra." onChange={(e) => set(i, { start: e.target.value })}>
+                  <select value={s.start} data-guion="lista-mes" onChange={(e) => set(i, { start: e.target.value })}>
                     {startOptions.map((m) => <option key={m} value={m}>{monthName(m)} {m.slice(0, 4)}</option>)}
                   </select>
                 </Field>
                 <p className="hint">Termina en {monthName(cycleEnd({ id: 'x', kind: 'MONTHLY', concept: '', amount: 1, accountId: '', start: s.start, months: Number(s.months.replace(/\D/g, '')) || 1 })).toLowerCase()} {cycleEnd({ id: 'x', kind: 'MONTHLY', concept: '', amount: 1, accountId: '', start: s.start, months: Number(s.months.replace(/\D/g, '')) || 1 }).slice(0, 4)}.</p>
-              </>
+              </div>
             ) : null}
             <Field label="¿A qué cuenta llega?">
-              <select value={s.accountId} data-ayuda="Toca y elige a qué cuenta llega este cobro." onChange={(e) => set(i, { accountId: e.target.value })}>
+              <select value={s.accountId} data-guion="lista-cuenta" onChange={(e) => set(i, { accountId: e.target.value })}>
                 <option value="">Elige la cuenta</option>
                 {usable.map((a) => <option key={a.id} value={a.id}>{a.alias}</option>)}
               </select>

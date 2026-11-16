@@ -13,7 +13,7 @@ const busyLabel = 'Un momento…';
 
 function Missing({ onHome }: { onHome: () => void }) {
   return (
-    <section className="stack">
+    <section className="stack" data-guion="ya-no-esta">
       <h1>No encontramos a esa persona</h1>
       <Choice primary label="Ir al inicio" onClick={onHome} />
     </section>
@@ -25,7 +25,7 @@ export function People({ people: all, page, onView }: StageProps & { page: numbe
   const people = all.filter((x) => x.status !== 'RELEASED').sort((a, b) => a.name.localeCompare(b.name, 'es'));
   const slice = pageOf(people, page);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="personas">
       <h1>Personas</h1>
       <p className="lead">{people.length ? 'Toca un nombre para ver o corregir sus datos.' : 'Aún no hay personas.'}</p>
       {slice.rows.map((p) => {
@@ -52,7 +52,7 @@ export function PersonData({ people, personId, onView, onOpenPerson }: StageProp
   const picture = person.photo ? 'su foto (con su permiso)' : emblemOf(person.emblem) ? `${emblemOf(person.emblem)!.glyph} ${emblemOf(person.emblem)!.name}` : 'todavía no tiene';
   const gets = destinations(person.tel, helpers, person.sendTo, 4).find((d) => d.chosen);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="persona">
       <WhoLine name={person.name} person={person} />
       <h1>Sus datos</h1>
       <div className="stat">
@@ -73,7 +73,7 @@ export function PersonData({ people, personId, onView, onOpenPerson }: StageProp
       {helpers.length ? (
         <p className="hint">Sus códigos y comprobantes se mandan a: {gets?.label ?? 'su celular'}. {person.consentShared ? 'Está de acuerdo en que se guarden esos teléfonos.' : 'Falta su permiso para guardar esos teléfonos.'}</p>
       ) : null}
-      <Choice primary icon={<IcoPhone />} label="Cobrarle" hint="Ver sus cobros" onClick={() => onOpenPerson(person.id)} />
+      <Choice primary mark="💰" label="Cobrarle" hint="Ver sus cobros" onClick={() => onOpenPerson(person.id)} />
       <Choice icon={<IcoPeople />} label="Corregir su nombre o WhatsApp" onClick={() => onView({ id: 'person-edit', personId, part: 'own' })} />
       <Choice icon={<IcoPeople />} label={helpers.length ? 'Corregir quién le ayuda' : 'Agregar quién le ayuda'} hint={helpers.length ? 'Cambiar, completar o quitar' : 'Hasta 3 personas'} onClick={() => onView({ id: 'person-edit', personId, part: 'helpers' })} />
     </section>
@@ -96,7 +96,7 @@ export function PersonEditOwn({ people, personId, busy, formError, onSaveOwn, on
     onSaveOwn(person.id, { name, tel });
   };
   return (
-    <section className="stack">
+    <section className="stack" data-guion="persona-corregir">
       <WhoLine name={person.name} person={person} />
       <h1>Corregir sus datos</h1>
       {error || formError ? <Alert>{error || formError}</Alert> : null}
@@ -130,7 +130,7 @@ export function PersonEditHelpers({ people, personId, busy, formError, onSaveHel
   };
 
   return (
-    <form className="stack" onSubmit={submit}>
+    <form className="stack" data-guion="persona-ayuda" onSubmit={submit}>
       <WhoLine name={person.name} person={person} />
       {error || formError ? <Alert>{error || formError}</Alert> : null}
       <PayersFields p={pay} who="other" title />
@@ -155,7 +155,7 @@ export function ChargeTo({ charge, people, busy, onRequest, onView }: StageProps
   const person: Per | undefined = people.find((x) => x.id === charge.personId);
   const dests = destinations(person?.tel ?? charge.tel, person ? helpersOf(person) : [], person?.sendTo, 4);
   return (
-    <section className="stack">
+    <section className="stack" data-guion="pedir-a">
       <WhoLine name={person?.name ?? charge.personName} person={person} />
       <h1>¿A quién le pedimos el pago?</h1>
       <p className="amount">{money(charge.amount)}</p>
@@ -165,6 +165,7 @@ export function ChargeTo({ charge, people, busy, onRequest, onView }: StageProps
         <Choice
           key={d.tel}
           primary={i === 0}
+          mark={i === 0 ? '💬' : undefined}
           icon={<IcoPhone />}
           label={busy ? busyLabel : d.label}
           hint={`Celular ${d.sub}${d.chosen ? ' · el que prefiere' : ''}`}

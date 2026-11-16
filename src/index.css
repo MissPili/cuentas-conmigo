@@ -121,7 +121,22 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   background: var(--brand);
   color: var(--on-brand);
   border-color: var(--brand);
+  /* Gold ring is the cue for the one next step. The pulse grows it; reduced motion keeps the ring still. */
+  box-shadow: 0 0 0 4px #EDB438, 0 8px 18px rgba(78, 26, 110, .16);
+  animation: cue 2.4s ease-in-out infinite;
+}
+.choice.primary ~ .choice.primary {
+  animation: none;
   box-shadow: 0 8px 18px rgba(78, 26, 110, .16);
+}
+/* If someone is waiting, that button is the one cue. The purple action stays quiet. */
+.stack:has(.choice.attention) .choice.primary {
+  animation: none;
+  box-shadow: 0 8px 18px rgba(78, 26, 110, .16);
+}
+@keyframes cue {
+  0%, 100% { box-shadow: 0 0 0 3px #EDB438, 0 8px 18px rgba(78, 26, 110, .16); }
+  50% { box-shadow: 0 0 0 8px rgba(237, 180, 56, .45), 0 10px 24px rgba(78, 26, 110, .22); }
 }
 .choice.danger { color: var(--bad); border-color: var(--bad); }
 .choice.sw { justify-content: space-between; align-items: center; }
@@ -134,7 +149,17 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   background: var(--wait);
   color: var(--on-wait);
   border: 4px dashed var(--on-wait);
-  box-shadow: 0 8px 18px rgba(42, 29, 0, .18);
+  box-shadow: 0 0 0 4px #4E1A6E, 0 8px 18px rgba(42, 29, 0, .18);
+  animation: cue-ink 2.4s ease-in-out infinite;
+}
+@keyframes cue-ink {
+  0%, 100% { box-shadow: 0 0 0 3px #4E1A6E, 0 8px 18px rgba(42, 29, 0, .18); }
+  50% { box-shadow: 0 0 0 8px rgba(78, 26, 110, .4), 0 10px 22px rgba(42, 29, 0, .22); }
+}
+/* A list with no main button: only the first name glows. */
+.stack:not(:has(.choice.primary)):not(:has(.choice.attention)) > button.person:first-of-type {
+  box-shadow: 0 0 0 4px #EDB438;
+  animation: cue 2.4s ease-in-out infinite;
 }
 .choice.attention small { color: var(--on-wait); }
 .ico-emoji { flex: none; width: 2.5rem; text-align: center; font-size: 2.25rem; line-height: 1; }
@@ -143,6 +168,11 @@ h1 { margin: 0; font-size: 2rem; line-height: 1.4; font-weight: 800; }
   width: 3.5rem; height: 3.5rem; display: grid; place-items: center;
   border-radius: 50%; background: #fff; border: 3px solid var(--on-wait); font-size: 2rem;
 }
+.choice.primary .ico-emoji {
+  width: 3.25rem; height: 3.25rem; display: grid; place-items: center;
+  border-radius: 50%; background: #fff; font-size: 1.75rem;
+}
+.listen .ico-emoji { width: auto; font-size: 1.6rem; background: none; }
 .tech { margin: 0; font-size: 1.25rem; line-height: 1.5; color: var(--soft); overflow-wrap: anywhere; }
 .choice-text { display: grid; gap: 2px; min-width: 0; }
 .choice-label { overflow-wrap: anywhere; }
@@ -290,6 +320,7 @@ a.choice { text-decoration: none; box-sizing: border-box; }
     transition-duration: 0.01ms !important;
   }
   .choice:hover, .person:hover, .back:hover, .listen:hover { transform: none; }
+  .choice.primary, .choice.attention, button.person { animation: none; }
 }
 
 html[data-text="xl"] { font-size: 125%; }

@@ -11,7 +11,7 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
   const page = view.id === 'more' ? view.page ?? 0 : 0;
   if (page <= 0) {
     return (
-      <section className="stack" data-ayuda="Toca Reporte del mes para ver quién pagó.">
+      <section className="stack" data-guion="mas">
         <h1>Más opciones</h1>
         <Choice primary icon={<IcoCash />} label="Reporte del mes" hint="Quién pagó y quién falta" onClick={() => onView({ id: 'report', month: thisMonth() })} />
         <Choice icon={<IcoPeople />} label="Personas" hint="Nombres, teléfonos y bajas" onClick={() => onView({ id: 'people' })} />
@@ -22,7 +22,7 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
   }
   if (page === 1) {
     return (
-      <section className="stack" data-ayuda="Toca Ver mejor para prender o apagar la voz.">
+      <section className="stack" data-guion="mas-2">
         <h1>Más opciones</h1>
         <Choice primary icon={<IcoEye />} label="Ver mejor" hint="Voz, letra y colores" onClick={() => onView({ id: 'access' })} />
         <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
@@ -32,7 +32,7 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
     );
   }
   return (
-    <section className="stack" data-ayuda="Toca para cambiar de proyecto o para salir.">
+    <section className="stack" data-guion="mas-3">
       <h1>Más opciones</h1>
       {projects.length > 1 || !project ? <Choice icon={<IcoPeople />} label="Cambiar de proyecto" hint="Otro taller o cobro" onClick={() => onReset({ id: 'projects' })} /> : <Choice icon={<IcoPeople />} label="Nuevo proyecto" hint="Otro taller o cobro" onClick={() => onView({ id: 'new-project' })} />}
       {signOut ? <Choice primary icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
@@ -69,7 +69,7 @@ export function ReportView({ month, people, charges, accounts, onView }: StagePr
   }
 
   return (
-    <section className="stack">
+    <section className="stack" data-guion="reporte">
       <h1>Reporte de {name.toLowerCase()}</h1>
       {r.rows.length ? (
         <div className="stat">
@@ -107,7 +107,7 @@ export function ReportView({ month, people, charges, accounts, onView }: StagePr
 const SWITCHES: { key: keyof A11y; label: string }[] = [
   { key: 'hc', label: 'Colores fuertes' },
   { key: 'xl', label: 'Letra extra grande' },
-  { key: 'voice', label: 'Voz de ayuda' },
+  { key: 'voice', label: 'Voz guía' },
   { key: 'sound', label: 'Sonido y vibración' },
 ];
 
@@ -117,13 +117,13 @@ export function Access() {
     const next = !set[key];
     updateA11y({ [key]: next });
     if (key === 'voice') {
-      if (next) speak('Te diré qué tocar en cada pantalla.');
+      if (next) speak('Listo. A partir de ahora te explico cada pantalla.');
       else stopSpeak();
     }
     if (key === 'sound' && next) feedback('ok');
   }
   return (
-    <section className="stack" data-ayuda="Toca para prender o apagar la voz, la letra y los colores.">
+    <section className="stack" data-guion="ver-mejor">
       <h1>Ver mejor</h1>
       <p className="lead">Toca para activar o apagar. La pantalla se entiende aunque el sonido esté apagado.</p>
       {SWITCHES.map((s) => {
@@ -148,12 +148,6 @@ export function DangerZone({ people, charges, onSendCode, onWipe, onView }: Stag
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const help = step === 1
-    ? 'Esto borra a todas las personas y cobros. Toca Entiendo solo si estás segura.'
-    : step === 2
-      ? 'Escribe la palabra BORRAR y toca Mandar código.'
-      : 'Escribe el código del correo y toca Borrar. O toca No borrar nada.';
-
   async function sendCode(e: FormEvent) {
     e.preventDefault();
     if (word.trim().toUpperCase() !== WORD) { setError(`Escribe la palabra ${WORD} tal como aparece.`); return; }
@@ -176,7 +170,7 @@ export function DangerZone({ people, charges, onSendCode, onWipe, onView }: Stag
   }
 
   return (
-    <section className="stack danger-zone" data-ayuda={help}>
+    <section className="stack danger-zone" data-guion={`peligro-${step}`}>
       <h1>Zona de peligro</h1>
       <Alert>Esto borra a TODAS las personas ({people.length}) y TODOS los cobros ({charges.length}). No se puede deshacer. Úsalo solo con quien te ayuda a configurar la app.</Alert>
       <p className="hint">No se borran las cuentas que reciben ni los ajustes de lugares. Los cobros que ya se mandaron a Pey no se cancelan allá.</p>

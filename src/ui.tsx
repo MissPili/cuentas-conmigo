@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { Kind } from './model';
 import logo from './assets/logo-cuentas-conmigo.png';
-import { getA11y, helpLine, selectHelp, speak, stopSpeak, updateA11y, useA11y } from './a11y';
+import { getA11y, speak, stopSpeak, unlockSpeak, updateA11y, useA11y } from './a11y';
+import { guionActual, guionLista } from './guion';
 import { emblemOf } from './emblems';
 
 export function Icon({ children }: { children: ReactNode }) {
@@ -34,7 +35,6 @@ export const IcoBack = () => <Icon><path d="M15 5l-7 7 7 7" /></Icon>;
 export const IcoOut = () => <Icon><path d="M10 5H6v14h4M10 12h9M16 8l4 4-4 4" /></Icon>;
 export const IcoEye = () => <Icon><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
 export const IcoListen = () => <Icon><path d="M4 10v4h3l4 3V7L7 10z" /><path d="M15 9.2a3.6 3.6 0 010 5.6M17.4 7a6.5 6.5 0 010 10" /></Icon>;
-export const IcoMute = () => <Icon><path d="M4 10v4h3l4 3V7L7 10z" /><path d="M16 9.5l5 5M21 9.5l-5 5" /></Icon>;
 
 const KIND_ICON = { paid: IcoCheck, wait: IcoClock, due: IcoRing, bad: IcoAlert };
 
@@ -44,13 +44,15 @@ export function Status({ kind, children }: { kind: Kind; children: ReactNode }) 
 }
 
 export function Choice({
-  primary, danger, attention, icon, label, hint, onClick, type = 'button',
+  primary, danger, attention, icon, mark, label, hint, onClick, type = 'button',
 }: {
   primary?: boolean;
   danger?: boolean;
   /** Something is waiting for the collector: gold fill, dashed border and a bell, never color alone. */
   attention?: boolean;
   icon?: ReactNode;
+  /** One familiar emoji for a key action. Replaces the line icon so the button does not show both. Hidden from screen readers. */
+  mark?: string;
   label: string;
   hint?: string;
   onClick?: () => void;
@@ -59,7 +61,7 @@ export function Choice({
   const cls = primary ? 'choice primary' : danger ? 'choice danger' : attention ? 'choice attention' : 'choice';
   return (
     <button type={type} className={cls} onClick={onClick}>
-      {icon}
+      {mark ? <span className="ico-emoji" aria-hidden="true">{mark}</span> : icon}
       <span className="choice-text">
         <span className="choice-label">{label}</span>
         {hint ? <small>{hint}</small> : null}
@@ -85,22 +87,27 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
     setSpoken(text);
     speak(text);
   };
-  // The bottom button is the switch: it is on every screen, so the voice can be turned off without looking for the setting.
+  // Escuchar repeats this screen. It does not turn the guide on. The speak call stays inside the tap: iPhone needs that.
+  const listen = () => {
+    const text = guionActual();
+    screenLast.current = text;
+    say(text);
+  };
   const toggleVoice = () => {
     if (voiceOn) {
       updateA11y({ voice: false });
       stopSpeak();
+      setSpoken('');
       return;
     }
     updateA11y({ voice: true });
-    const active = document.activeElement;
-    const text = active instanceof HTMLSelectElement && active.closest('main') ? selectHelp(active) : helpLine();
+    const text = guionActual();
     screenLast.current = text;
     say(text);
   };
   useEffect(() => {
     const t = window.setTimeout(() => {
-      const text = helpLine();
+      const text = guionActual();
       if (!text || text === screenLast.current) return;
       screenLast.current = text;
       if (!getA11y().voice) { setSpoken(''); return; }
@@ -109,33 +116,21 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
     return () => window.clearTimeout(t);
   });
   useEffect(() => {
+    // A tap while the guide is on lets iPhone keep speaking on the next screen.
+    const unlock = () => { if (getA11y().voice) unlockSpeak(); };
+    document.addEventListener('pointerup', unlock);
+    return () => document.removeEventListener('pointerup', unlock);
+  }, []);
+  useEffect(() => {
     const onFocus = (e: FocusEvent) => {
       const el = e.target;
       if (!(el instanceof HTMLSelectElement) || !el.closest('main') || !getA11y().voice) return;
-      const text = selectHelp(el);
+      const text = guionLista(el);
       setSpoken(text);
       speak(text);
     };
     document.addEventListener('focusin', onFocus);
-    const main = document.querySelector('main');
-    const seen = new Set<Element>();
-    main?.querySelectorAll('select').forEach((el) => seen.add(el));
-    const obs = new MutationObserver(() => {
-      if (!getA11y().voice || !main) return;
-      const fresh = [...main.querySelectorAll('select')].filter((el) => !seen.has(el));
-      fresh.forEach((el) => seen.add(el));
-      const el = fresh[fresh.length - 1];
-      if (!el) return;
-      // The screen line, if it changed, speaks a moment later and replaces this.
-      const text = selectHelp(el);
-      setSpoken(text);
-      speak(text);
-    });
-    if (main) obs.observe(main, { childList: true, subtree: true });
-    return () => {
-      document.removeEventListener('focusin', onFocus);
-      obs.disconnect();
-    };
+    return () => document.removeEventListener('focusin', onFocus);
   }, []);
   return (
     <div className="app">
@@ -154,9 +149,13 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
             <span>Atrás</span>
           </button>
         ) : null}
-        <button type="button" className={canBack ? 'listen' : 'listen only'} role="switch" aria-checked={voiceOn} onClick={toggleVoice}>
-          {voiceOn ? <IcoMute /> : <IcoListen />}
-          <span>{voiceOn ? 'Apagar voz' : 'Prender voz'}</span>
+        <button type="button" className="listen" onClick={listen}>
+          <IcoListen />
+          <span>Escuchar</span>
+        </button>
+        <button type="button" className="listen" role="switch" aria-checked={voiceOn} onClick={toggleVoice}>
+          <span className="ico-emoji" aria-hidden="true">{voiceOn ? '🔇' : '🔊'}</span>
+          <span>{voiceOn ? 'Apagar voz' : 'Activar voz guía'}</span>
         </button>
       </div>
     </div>

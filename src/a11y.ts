@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react';
 export type A11y = { voice: boolean; sound: boolean; hc: boolean; xl: boolean };
 
 const KEY = 'ccm-a11y';
-const DEFAULTS: A11y = { voice: true, sound: true, hc: false, xl: false };
+const DEFAULTS: A11y = { voice: false, sound: true, hc: false, xl: false };
 
 function load(): A11y {
   try {
@@ -51,6 +51,8 @@ export function updateA11y(patch: Partial<A11y>) {
 export function speak(text: string) {
   try {
     if (!text || !('speechSynthesis' in window)) return;
+    // iPhone only starts speech after a tap. Call this from that tap; later screens can continue.
+    window.speechSynthesis.resume?.();
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'es-MX';
@@ -67,52 +69,9 @@ export function stopSpeak() {
   try { window.speechSynthesis?.cancel(); } catch { /* optional */ }
 }
 
-function clean(t: string | null | undefined): string {
-  return (t || '').replace(/\s+/g, ' ').trim().replace(/\.+$/, '');
-}
-
-function labelOf(el: Element | null): string {
-  if (!el) return '';
-  return clean(el.querySelector('.choice-label')?.textContent || el.getAttribute('aria-label') || el.textContent);
-}
-
-/** One short call to action for what is on screen. A later `data-ayuda` wins, so a step that just opened speaks instead of the page behind it. */
-export function helpLine(): string {
-  const main = document.querySelector('main');
-  if (!main) return '';
-  const marked = [...main.querySelectorAll('[data-ayuda]')].filter((el) => !el.matches('select, option, input, textarea'));
-  for (let i = marked.length - 1; i >= 0; i--) {
-    const el = marked[i];
-    if ((el as HTMLElement).hidden || el.closest('[hidden]')) continue;
-    const t = clean(el.getAttribute('data-ayuda'));
-    if (t) return t.endsWith('.') || t.endsWith('?') || t.endsWith('!') ? t : `${t}.`;
-  }
-  const h1 = clean(main.querySelector('h1')?.textContent);
-  const primary = labelOf(main.querySelector('button.choice.primary, a.choice.primary'));
-  const writing = !!main.querySelector('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]), textarea');
-  if (h1 && primary && writing) return `${h1}. Escribe los datos y toca ${primary}.`;
-  if (h1 && primary) return `${h1}. Toca ${primary}.`;
-  if (main.querySelector('button.person')) {
-    const what = /cuenta/i.test(h1) ? 'una cuenta' : /cobro/i.test(h1) ? 'un cobro' : 'un nombre';
-    return h1 ? `${h1}. Toca ${what}.` : `Toca ${what}.`;
-  }
-  if (main.querySelector('button.emblem-btn')) return h1 ? `${h1}. Toca una.` : 'Toca una.';
-  const extra = clean(main.querySelector('.result p, .lead')?.textContent);
-  if (h1 && extra) return `${h1}. ${extra}.`;
-  if (h1) return `${h1}.`;
-  return '';
-}
-
-/** What to say when a list (a desplegable) is shown or opened. */
-export function selectHelp(el: HTMLSelectElement): string {
-  const custom = clean(el.getAttribute('data-ayuda'));
-  if (custom) return custom.endsWith('.') ? custom : `${custom}.`;
-  const field = el.closest('label');
-  const name = clean(field?.querySelector(':scope > span')?.textContent || el.getAttribute('aria-label'));
-  const current = el.value ? clean(el.selectedOptions[0]?.textContent) : '';
-  if (name && current) return `${name}. Ahora dice ${current}. Toca para cambiar.`;
-  if (name) return `${name}. Toca y elige una.`;
-  return 'Hay una lista. Toca y elige una.';
+/** iPhone only allows speech that starts in a tap. Call this from the tap; the next screen can continue. */
+export function unlockSpeak() {
+  try { window.speechSynthesis?.resume(); } catch { /* optional */ }
 }
 
 let audio: AudioContext | null = null;
