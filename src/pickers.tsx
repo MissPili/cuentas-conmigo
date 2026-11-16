@@ -162,10 +162,10 @@ export function PictureStep({ p, who, setError, onChosen }: { p: Picture; who: W
 // ---------------------------------------------------------------- how they pay
 
 /** State of "how do they pay": alone or with relatives. Person 1 is required, persons 2 and 3 are optional. */
-export function usePayers(initial?: { mode?: PayMode; helpers?: Helper[] }) {
+export function usePayers(initial?: { mode?: PayMode; helpers?: Helper[]; sendTo?: string }) {
   const [mode, setMode] = useState<PayMode>(initial?.mode ?? (initial?.helpers?.some((h) => h.tel) ? 'helper' : ''));
   const [helpers, setHelpers] = useState<Helper[]>(initial?.helpers ?? [emptyHelper()]);
-  const [sendTo, setSendTo] = useState('');
+  const [sendTo, setSendTo] = useState(initial?.sendTo ?? '');
   const clean = cleanHelpers(mode, helpers);
   /** The number that receives codes and receipts, given the person's own number. */
   const sendTel = (own: string) => chooseSendTo(clean, sendTo, own);

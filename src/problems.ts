@@ -24,6 +24,9 @@ export function explainProblem(raw: string, topic: Topic = 'charge'): Problem {
   if (/^data error/i.test(text)) {
     return { title: 'No se pudieron leer los datos', detail: 'Inténtalo de nuevo. Si sigue igual, avísale a quien te ayuda con la app.', tech };
   }
+  if (/phone not registered/i.test(text)) {
+    return { title: 'Ese número no está registrado', detail: 'Entra a la persona, revisa sus datos y vuelve a elegir.' };
+  }
   if (/not signed in|not ?authorized|unauthorized/i.test(text)) {
     return { title: 'Tu sesión terminó', detail: 'Sal de la app y vuelve a entrar.' };
   }

@@ -83,6 +83,15 @@ Son los mismos 4 pasos de la inscripción, escritos por quien cobra y en tercera
 
 Cada pantalla tiene un solo botón principal, máximo 4 opciones, texto grande y el estado siempre con ícono, palabras y borde (nada se dice solo con color).
 
+### Datos de cada persona y a quién se le pide el pago (Personas → toca un nombre)
+
+| | | |
+| --- | --- | --- |
+| ![](docs/pantallas/47-datos-de-una-persona.png)<br>**47. Sus datos y los de quien le ayuda** (marca lo que falta) | ![](docs/pantallas/48-corregir-nombre-y-whatsapp.png)<br>**48. Corregir nombre o WhatsApp** | ![](docs/pantallas/49-corregir-quien-ayuda.png)<br>**49. Completar, corregir o quitar a quien le ayuda** |
+| ![](docs/pantallas/50-a-quien-pedirle-el-pago.png)<br>**50. A quién le pedimos el pago por CoDi hoy** |  |  |
+
+Corregir el WhatsApp de la persona también corrige sus cobros (nombre y número), para que la siguiente solicitud salga al número bueno. **Pedir el pago por CoDi:** si la persona tiene quien le ayuda, se elige ese día entre los familiares registrados y su propio celular (va primero el que ella prefiere); si no, se manda a su celular como antes. El servidor solo acepta un número registrado de esa persona, y el cobro guarda a cuál se mandó. Si no llegó el aviso, en "Esperando el pago" está **Pedirlo a otra persona**.
+
 ### Imágenes y llaveros (Más opciones → Imágenes y llaveros)
 
 | | | |

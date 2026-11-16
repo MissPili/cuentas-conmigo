@@ -90,16 +90,29 @@ export const handler: Handler = async (event) => {
     const acc = await loadAccount(ch.accountId);
     // Never send a CoDi request to an account Pey has not activated yet.
     if (!acc.peyId || acc.codiStatus !== 'ACTIVE') throw new Error('Account not active yet');
+
+    // Who gets the request: the person's own number, or ONE of the numbers registered for them (a helper). Anything
+    // else is refused here, so a changed request can never send a collection to a stranger's phone.
+    let to = ch.tel;
+    const wanted = (event.arguments.phone ?? '').replace(/\D/g, '');
+    if (wanted && wanted !== ch.tel) {
+      const { data: person, errors } = await client.models.Person.get({ id: ch.personId });
+      if (errors?.length) { console.error('person read failed', ch.personId, errors[0]?.message); throw new Error(`Data error: ${errors[0]?.message ?? 'unknown'}`.slice(0, 200)); }
+      const known = person && mine(person.owner) ? [person.tel, ...(person.helpers ?? [])] : [];
+      if (!/^[0-9]{10}$/.test(wanted) || !known.includes(wanted)) { console.error('phone not registered for', ch.personId); throw new Error('Phone not registered'); }
+      to = wanted;
+    }
+
     const numRef = newNumRef();
     const r = await peyCall('/codi/pn', 'POST', {
       amount: ch.amount,
-      phoneNumber: ch.tel,
+      phoneNumber: to,
       concept: ch.concept.slice(0, 40),
       numRef,
       bankAccountId: acc.peyId, // always explicit: the webhook only echoes it if sent here
       metadata: { chargeId: ch.id },
     });
-    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.transactionId, numRef });
+    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.transactionId, numRef, pushTel: to });
     return r.transactionId;
   }
 

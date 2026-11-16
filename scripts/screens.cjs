@@ -53,6 +53,10 @@ const SHOTS = [
   ['keyring-off', '44-llavero-desactivado'],
   ['keyring-help', '45-como-programar-un-llavero'],
   ['key-tap-off', '46-al-acercar-un-llavero-desactivado'],
+  ['person-data', '47-datos-de-una-persona'],
+  ['person-edit-own', '48-corregir-nombre-y-whatsapp'],
+  ['person-edit-helpers', '49-corregir-quien-ayuda'],
+  ['charge-to', '50-a-quien-pedirle-el-pago'],
 ];
 // Screens that need a tap to reach (text of the button to press).
 const TAP = { 'seat-leave': 'Dar de baja' };

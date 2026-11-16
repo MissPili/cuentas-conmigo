@@ -1,10 +1,11 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   accountWords, chargeKind, chargeWords, money, monthName, pageOf, parseAmount, personWords, ready, thisMonth,
-  type Acc, type Chg, type NewPerson, type Per, type Proj, type View,
+  type Acc, type Chg, type Helper, type NewPerson, type Per, type Proj, type View,
 } from './model';
 import { Alert, Avatar, WhoLine, Choice, Field, IcoBank, IcoCash, IcoClock, IcoOut, IcoPeople, IcoPhone, IcoQr, Result, Status } from './ui';
 import ReceiptView from './Receipt';
+import { helpersOf } from './payers';
 import { destinations, folioOf, payCardSvg, payText, type Dest } from './comprobante';
 import { PictureSend } from './Receipt';
 import { Access, DangerZone, More, ReportView } from './screens2';
@@ -13,6 +14,7 @@ import { duePlans, type Plan } from './plans';
 import type { Problem } from './problems';
 import { AddPerson, type AddPersonInitial } from './AddPerson';
 import { KeyTap, KeyringDetail, KeyringHelp, KeyringHub, Keyrings, type KeyAction } from './screensKeys';
+import { ChargeTo, People, PersonData, PersonEditHelpers, PersonEditOwn } from './screensPeople';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
 export type StageProps = {
@@ -52,7 +54,12 @@ export type StageProps = {
   onWipe: (code: string) => Promise<string>;
   onRotateToken: () => void;
   onSeat: (personId: string, action: 'approve' | 'give' | 'extend' | 'release') => void;
-  onRequest: (chargeId: string) => void;
+  /** Asks Pey for a CoDi request on the phone. `phone` = which registered number gets it (default: the person's own). */
+  onRequest: (chargeId: string, phone?: string) => void;
+  /** Corrects the person's own name and WhatsApp (also on their charges). */
+  onSaveOwn: (personId: string, input: { name: string; tel: string }) => void;
+  /** Completes or corrects who helps the person pay, and where codes go by default. */
+  onSaveHelpers: (personId: string, input: { helpers: Helper[]; sendTo: string; consentShared: boolean }) => void;
   onShowQr: (chargeId: string) => void;
   onCash: (chargeId: string) => void;
   onCheck: (chargeId: string) => void;
@@ -128,7 +135,10 @@ export function Stage(p: StageProps) {
   if (v.id === 'keyrings') return <Keyrings {...p} page={v.page} />;
   if (v.id === 'keyring') return <KeyringDetail {...p} personId={v.personId} />;
   if (v.id === 'keyring-help') return <KeyringHelp />;
-  if (v.id === 'people') return <People {...p} />;
+  if (v.id === 'people') return <People {...p} page={v.page ?? 0} />;
+  if (v.id === 'person-data') return <PersonData {...p} personId={v.personId} />;
+  if (v.id === 'person-edit') return v.part === 'own' ? <PersonEditOwn {...p} personId={v.personId} /> : <PersonEditHelpers {...p} personId={v.personId} />;
+  if (v.id === 'charge-to') return <ChargeTo {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'add-person') return <AddPerson {...p} />;
   if (v.id === 'accounts') return <Accounts {...p} page={v.page} />;
   if (v.id === 'account') return <AccountStep {...p} account={findAccount(p.accounts, v.accountId)} />;
@@ -296,6 +306,8 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
   const account = findAccount(accounts, charge.accountId);
   const canCell = ready(account);
   const name = findPerson(people, charge.personId)?.name || charge.personName;
+  // With registered helpers the collector chooses who gets the request today; with none it goes to the person.
+  const several = (() => { const who = findPerson(people, charge.personId); return !!who && helpersOf(who).length > 0; })();
   return (
     <section className="stack">
       <WhoLine name={name} person={findPerson(people, charge.personId)} />
@@ -308,7 +320,12 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
         <Choice primary icon={<IcoQr />} label={busy ? busyLabel : 'Mostrar código para pagar'} hint="Lo escanea con su banco" onClick={() => onShowQr(charge.id)} />
       ) : null}
       {canCell ? (
-        <Choice icon={<IcoPhone />} label={busy ? busyLabel : 'Pedir el pago a su celular'} hint="Puede no llegar a todos los bancos" onClick={() => onRequest(charge.id)} />
+        <Choice
+          icon={<IcoPhone />}
+          label={busy ? busyLabel : several ? 'Pedir el pago por CoDi' : 'Pedir el pago a su celular'}
+          hint={several ? 'Tú eliges a quién' : 'Puede no llegar a todos los bancos'}
+          onClick={() => (several ? onView({ id: 'charge-to', chargeId: charge.id }) : onRequest(charge.id))}
+        />
       ) : null}
       <Choice primary={!canCell} icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Tú guardas el dinero" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
       <Choice label="Crear otro cobro" onClick={() => onView({ id: 'new-charge', personId: charge.personId })} />
@@ -330,14 +347,18 @@ function CashStep({ charge, people, busy, onCash, onView }: StageProps & { charg
 
 function WaitStep({ charge, people, busy, onCheck, onShowQr, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
+  const who = findPerson(people, charge.personId);
+  const dests = destinations(who?.tel ?? charge.tel, who ? helpersOf(who) : [], who?.sendTo, 4);
+  const askedTo = charge.pushTel ? dests.find((d) => d.tel === charge.pushTel)?.label : undefined;
   return (
     <section className="stack">
       <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>Esperando el pago</h1>
       <p className="amount">{money(charge.amount)}</p>
       <Status kind="wait">Esperando el pago</Status>
-      <p className="lead">Cuando pague, aquí se marca solo. Si ya pagó y no cambia, revisa.</p>
+      <p className="lead">{askedTo ? `Se pidió a ${askedTo}. ` : ''}Cuando pague, aquí se marca solo. Si ya pagó y no cambia, revisa.</p>
       <Choice primary icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya pagó'} hint="Le preguntamos a Pey" onClick={() => onCheck(charge.id)} />
+      {dests.length > 1 ? <Choice icon={<IcoPhone />} label="Pedirlo a otra persona" hint="Si no le llegó el aviso" onClick={() => onView({ id: 'charge-to', chargeId: charge.id })} /> : null}
       <Choice icon={<IcoQr />} label="Mostrar el código otra vez" hint="Hace uno nuevo" onClick={() => onShowQr(charge.id)} />
       <Choice icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Si no fue por celular" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
     </section>
@@ -375,8 +396,7 @@ function QrStep({ charge, people, img, busy, onCheck, onView }: StageProps & { c
 
 function destsFor(people: Per[], tel: string, personId: string): Dest[] {
   const person = people.find((x) => x.id === personId) ?? people.find((x) => x.tel === tel);
-  const helpers = person?.helperInfo?.length ? person.helperInfo : (person?.helpers ?? []).map((t) => ({ tel: t, name: '', rel: '' }));
-  return destinations(tel, helpers, person?.sendTo);
+  return destinations(tel, person ? helpersOf(person) : [], person?.sendTo);
 }
 
 function SendQr({ charge, img, accounts, people, project, onShareLink, onView }: StageProps & { charge: Chg | undefined; img: string }) {
@@ -422,24 +442,6 @@ function ReceiptStep({ charge, accounts, people, project, onShareLink, onView }:
         paidAt: charge.paidAt ?? new Date().toISOString(),
       }}
     />
-  );
-}
-
-function People({ people: all, onView }: StageProps) {
-  const people = all.filter((x) => x.status !== 'RELEASED');
-  return (
-    <section className="stack">
-      <h1>Personas</h1>
-      <p className="lead">{people.length ? 'Estas son las personas a las que les cobras.' : 'Aún no hay personas.'}</p>
-      {people.length ? (
-        <ul className="plain">
-          {people.map((person) => (
-            <li key={person.id}><strong>{person.name}</strong><span>{person.tel}</span></li>
-          ))}
-        </ul>
-      ) : null}
-      <Choice primary icon={<IcoPeople />} label="Agregar persona" hint="Nombre y WhatsApp" onClick={() => onView({ id: 'add-person' })} />
-    </section>
   );
 }
 

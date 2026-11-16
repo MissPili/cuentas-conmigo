@@ -63,6 +63,7 @@ function mapPerson(p: Person): Per | null {
     regAt: p.regAt,
     projectId: p.projectId,
     sendTo: p.sendTo,
+    consentShared: p.consentShared,
     helperInfo: (p.helpers ?? []).map((tel, i) => ({ tel: tel ?? '', name: p.helperNames?.[i] ?? '', rel: p.helperRels?.[i] ?? '' })).filter((h) => !!h.tel),
     emblem: p.emblem,
     photo: p.photo,
@@ -86,6 +87,7 @@ function mapCharge(c: Charge): Chg | null {
     via: c.via,
     status: c.status,
     transactionId: c.transactionId,
+    pushTel: c.pushTel,
     paidAt: c.paidAt,
     confirmsPlace: c.confirmsPlace,
     projectId: c.projectId,
@@ -365,9 +367,44 @@ export default function App({ signOut }: { signOut?: () => void }) {
             go({ id: 'charge', chargeId: created.data.id });
           });
         }}
-        onRequest={(id) => {
+        onSaveOwn={(personId, input) => {
+          const person = people.find((x) => x.id === personId);
+          if (!person) return;
           void run(async () => {
-            const r = await client.mutations.peyAction({ action: 'requestCodi', id });
+            const r = await client.models.Person.update({
+              id: personId,
+              name: input.name,
+              tel: input.tel,
+              // When codes went to the person's own number, they keep going there after the number is corrected.
+              ...(person.sendTo === person.tel ? { sendTo: input.tel } : {}),
+            });
+            if (r.errors?.length) throw failed(r.errors);
+            // The charges carry a copy of the name and the number: correct them too, so the next request goes to the right place.
+            const mine = allCharges.filter((c) => c.personId === personId && (c.personName !== input.name || c.tel !== input.tel));
+            for (let i = 0; i < mine.length; i += 10) {
+              const rs = await Promise.all(mine.slice(i, i + 10).map((c) => client.models.Charge.update({ id: c.id, personName: input.name, tel: input.tel })));
+              if (rs.some((x) => x.errors?.length)) throw new Error('person');
+            }
+            await load();
+          }, () => land({ id: 'person-data', personId }, 'Listo. Se guardaron sus datos.'));
+        }}
+        onSaveHelpers={(personId, input) => {
+          void run(async () => {
+            const r = await client.models.Person.update({
+              id: personId,
+              helpers: input.helpers.map((h) => h.tel),
+              helperNames: input.helpers.map((h) => h.name),
+              helperRels: input.helpers.map((h) => h.rel),
+              sendTo: input.sendTo,
+              consentShared: input.consentShared,
+            });
+            if (r.errors?.length) throw failed(r.errors);
+            await load();
+          }, () => land({ id: 'person-data', personId }, 'Listo. Se guardaron sus datos.'));
+        }}
+        onRequest={(id, phone) => {
+          void run(async () => {
+            const r = await client.mutations.peyAction({ action: 'requestCodi', id, ...(phone ? { phone } : {}) });
             if (r.errors?.length) throw failed(r.errors);
             await load();
           }, () => setView({ id: 'wait', chargeId: id }));

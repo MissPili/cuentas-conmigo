@@ -28,6 +28,16 @@ export function cleanHelpers(mode: PayMode, helpers: Helper[]): Helper[] {
     .slice(0, MAX_HELPERS);
 }
 
+/** The helpers of a person as saved. Older rows only kept the number, so name and relation can be empty. */
+export function helpersOf(p: { helperInfo?: Helper[] | null; helpers?: string[] | null }): Helper[] {
+  return p.helperInfo?.length ? p.helperInfo : (p.helpers ?? []).map((tel) => ({ tel, name: '', rel: '' }));
+}
+
+/** What a saved helper still lacks, in words ("su nombre", "qué es de la persona"); empty when complete. */
+export function helperGaps(h: Helper): string[] {
+  return [h.name.trim().length < 2 ? 'su nombre' : '', h.rel.trim().length < 2 ? 'qué es de la persona' : '', h.tel.length !== 10 ? 'su WhatsApp' : ''].filter(Boolean);
+}
+
 /** Where codes and receipts go: the chosen number if it is still one of the known ones, else the first helper, else the person. */
 export function chooseSendTo(clean: Helper[], sendTo: string, own: string): string {
   return clean.some((h) => h.tel === sendTo) || sendTo === own ? sendTo : (clean[0]?.tel ?? own);

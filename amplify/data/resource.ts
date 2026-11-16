@@ -88,6 +88,7 @@ const schema = a
       status: a.enum(['PENDING', 'PAID']),
       transactionId: a.string(), // Pey transaction id
       numRef: a.string(),
+      pushTel: a.string(), // number the CoDi request was sent to: the person's own or one of their registered helpers
       paidAt: a.datetime(),
       confirmsPlace: a.boolean(), // true for the monthly fee: only that payment confirms a place
       projectId: a.id(),
@@ -99,6 +100,7 @@ const schema = a
       .arguments({
         action: a.string().required(), // registerAccount | refreshAccount | requestCodi
         id: a.string().required(), // Account id or Charge id
+        phone: a.string(), // requestCodi only: which registered number gets the request (default: the person's own)
       })
       .returns(a.string())
       .authorization((allow) => [allow.authenticated()])

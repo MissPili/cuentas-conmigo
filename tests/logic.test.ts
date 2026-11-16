@@ -8,7 +8,8 @@ import {
 import { buildReport, reportCsv } from '../src/report.ts';
 import { parseAmount, shiftMonth } from '../src/model.ts';
 import { explainProblem } from '../src/problems.ts';
-import { chooseSendTo, cleanHelpers, payProblem } from '../src/payers.ts';
+import { chooseSendTo, cleanHelpers, helperGaps, helpersOf, payProblem } from '../src/payers.ts';
+import { destinations } from '../src/comprobante.ts';
 import { isProbe, parseShareRequest, shareLink, shortLinksWork, signupMessage, whatsappShareUrl } from '../src/links.ts';
 import {
   activeForKeyring, codeFromAddress, dedupeNames, isKeyCode, keyState, keyringFileName, keyringUrl, newKeyCode, resolveTap,
@@ -457,4 +458,42 @@ test('repeated file names in one batch get a number', () => {
     dedupeNames(['llavero-ana.png', 'llavero-luis.png', 'llavero-ana.png', 'llavero-ana.png']),
     ['llavero-ana.png', 'llavero-luis.png', 'llavero-ana-2.png', 'llavero-ana-3.png'],
   );
+});
+
+// ---- Who is registered and who gets the CoDi request ----
+
+test('the helpers of a person: with names when saved, only numbers in older rows', () => {
+  const info = [{ tel: '5500000011', name: 'Marta', rel: 'su hija' }];
+  assert.deepEqual(helpersOf({ helperInfo: info, helpers: ['5500000011'] }), info);
+  assert.deepEqual(helpersOf({ helpers: ['5500000011'] }), [{ tel: '5500000011', name: '', rel: '' }]);
+  assert.deepEqual(helpersOf({}), []);
+});
+
+test('what a saved helper still lacks is said in words', () => {
+  assert.deepEqual(helperGaps({ tel: '5500000011', name: 'Marta', rel: 'su hija' }), []);
+  assert.deepEqual(helperGaps({ tel: '5500000011', name: '', rel: '' }), ['su nombre', 'qué es de la persona']);
+  assert.deepEqual(helperGaps({ tel: '55000', name: 'Marta', rel: 'su hija' }), ['su WhatsApp']);
+});
+
+test('the CoDi request can go to the person or to any of up to 3 helpers, the preferred one first', () => {
+  const hs = [
+    { tel: '5500000011', name: 'Marta Ruiz', rel: 'su hija' },
+    { tel: '5500000012', name: 'Luis Ruiz', rel: 'su hijo' },
+    { tel: '5500000013', name: 'Rita Gómez', rel: 'su vecina' },
+  ];
+  const all = destinations('5500000010', hs, '5500000012', 4);
+  assert.equal(all.length, 4); // the 3 helpers AND the person's own phone
+  assert.equal(all[0].tel, '5500000012');
+  assert.equal(all[0].chosen, true);
+  assert.ok(all.some((d) => d.tel === '5500000010' && d.label === 'Su celular'));
+  assert.equal(destinations('5500000010', hs, '5500000012').length, 3); // receipts keep the old limit
+});
+
+test('a person with no helpers has only their own phone as destination', () => {
+  const d = destinations('5500000010', [], null, 4);
+  assert.deepEqual(d.map((x) => x.tel), ['5500000010']);
+});
+
+test('a refused phone is explained without technical words', () => {
+  assert.equal(explainProblem('Phone not registered').title, 'Ese número no está registrado');
 });

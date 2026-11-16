@@ -179,7 +179,7 @@ export interface Dest {
 const maskTel = (t: string) => `•••• ${t.slice(-4)}`;
 
 /** Who can receive a picture: the one the person chose first, then the other helpers, then the person. */
-export function destinations(personTel: string, helpers: Helper[] = [], sendTo?: string | null): Dest[] {
+export function destinations(personTel: string, helpers: Helper[] = [], sendTo?: string | null, max = 3): Dest[] {
   const seen = new Set<string>();
   const out: Dest[] = [];
   for (const h of helpers) {
@@ -190,7 +190,7 @@ export function destinations(personTel: string, helpers: Helper[] = [], sendTo?:
   }
   if (!seen.has(personTel)) out.push({ tel: personTel, label: 'Su celular', sub: maskTel(personTel), name: '', chosen: personTel === sendTo });
   out.sort((x, y) => Number(y.chosen) - Number(x.chosen));
-  return out.slice(0, 3);
+  return out.slice(0, max);
 }
 
 export function svgToPng(svg: string, width = 1080, height = 1350): Promise<Blob> {

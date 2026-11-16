@@ -27,6 +27,7 @@ export type Per = {
   helpers?: string[]; // 10-digit WhatsApp numbers of the people who help pay (1 to 3)
   helperInfo?: Helper[]; // the same people with name and relation (older rows only have the number)
   sendTo?: string | null; // number where they asked to receive codes and receipts
+  consentShared?: boolean | null; // agreed that the helpers' numbers are kept
   projectId?: string | null;
   regAt?: string | null; // when they signed up through the QR
   emblem?: string | null; // id of the picture chosen from the bank (see emblems.ts)
@@ -74,6 +75,8 @@ export type Chg = {
   via?: 'CODI' | 'CASH' | null;
   status?: 'PENDING' | 'PAID' | null;
   transactionId?: string | null;
+  /** The number the CoDi request was sent to (the person's own or one of their helpers). */
+  pushTel?: string | null;
   paidAt?: string | null;
   /** True for the monthly fee: only that payment confirms a place. */
   confirmsPlace?: boolean | null;
@@ -92,7 +95,10 @@ export type View =
   | { id: 'qr'; chargeId: string; img: string }
   | { id: 'paid'; chargeId: string }
   | { id: 'receipt'; chargeId: string }
-  | { id: 'people' }
+  | { id: 'people'; page?: number }
+  | { id: 'person-data'; personId: string }
+  | { id: 'person-edit'; personId: string; part: 'own' | 'helpers' }
+  | { id: 'charge-to'; chargeId: string }
   | { id: 'add-person' }
   | { id: 'new-charge'; personId: string }
   | { id: 'accounts'; page: number }
