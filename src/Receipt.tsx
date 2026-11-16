@@ -90,7 +90,7 @@ export function PictureSend({
       {link && state === 'ready'
         ? dests.slice(0, 2).map((d, i) => (
           <a key={d.tel} className={i === 0 ? 'choice primary' : 'choice'} href={whatsappUrl(d.tel, text)} target="_blank" rel="noopener noreferrer">
-            <IcoPhone />
+            {i === 0 ? <span className="ico-emoji" aria-hidden="true">💬</span> : <IcoPhone />}
             <span className="choice-text">
               <span className="choice-label">WhatsApp a {d.label === 'Su celular' ? 'su celular' : d.label}</span>
               <small>{d.sub}{d.chosen ? ' · el que pidió' : ''}. Abre su chat sin guardar el contacto.</small>
@@ -98,7 +98,7 @@ export function PictureSend({
           </a>
         ))
         : null}
-      <Choice primary={!link} icon={<IcoPhone />} label="Compartir imagen" hint="Eliges el contacto en WhatsApp" onClick={() => { void share(); }} />
+      <Choice primary={!link} mark={!link ? '💬' : undefined} icon={<IcoPhone />} label="Compartir imagen" hint="Eliges el contacto en WhatsApp" onClick={() => { void share(); }} />
       <Choice label="Guardar imagen" hint="Para mandarla después" onClick={() => { void save(); }} />
       {children}
     </section>

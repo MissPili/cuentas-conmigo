@@ -73,7 +73,7 @@ export function PersonData({ people, personId, onView, onOpenPerson }: StageProp
       {helpers.length ? (
         <p className="hint">Sus códigos y comprobantes se mandan a: {gets?.label ?? 'su celular'}. {person.consentShared ? 'Está de acuerdo en que se guarden esos teléfonos.' : 'Falta su permiso para guardar esos teléfonos.'}</p>
       ) : null}
-      <Choice primary icon={<IcoPhone />} label="Cobrarle" hint="Ver sus cobros" onClick={() => onOpenPerson(person.id)} />
+      <Choice primary mark="💰" label="Cobrarle" hint="Ver sus cobros" onClick={() => onOpenPerson(person.id)} />
       <Choice icon={<IcoPeople />} label="Corregir su nombre o WhatsApp" onClick={() => onView({ id: 'person-edit', personId, part: 'own' })} />
       <Choice icon={<IcoPeople />} label={helpers.length ? 'Corregir quién le ayuda' : 'Agregar quién le ayuda'} hint={helpers.length ? 'Cambiar, completar o quitar' : 'Hasta 3 personas'} onClick={() => onView({ id: 'person-edit', personId, part: 'helpers' })} />
     </section>
@@ -165,6 +165,7 @@ export function ChargeTo({ charge, people, busy, onRequest, onView }: StageProps
         <Choice
           key={d.tel}
           primary={i === 0}
+          mark={i === 0 ? '💬' : undefined}
           icon={<IcoPhone />}
           label={busy ? busyLabel : d.label}
           hint={`Celular ${d.sub}${d.chosen ? ' · el que prefiere' : ''}`}

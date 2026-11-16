@@ -224,7 +224,7 @@ export function RegQr({ project, busy, onView, onToggleOpen, onRotateToken }: St
       {project.open ? null : <Alert>Las inscripciones están cerradas: quien abra el enlace verá que no hay lugar por ahora.</Alert>}
       {shared?.ok ? <p className="note" role="status"><IcoCheck /><span>{shared.text}</span></p> : null}
       {shared && !shared.ok ? <Alert>{shared.text}</Alert> : null}
-      <Choice primary icon={<IcoPhone />} label="Mandar el enlace por WhatsApp" hint="Eliges a quién; tú tocas Enviar" onClick={() => window.open(whatsappShareUrl(`${message}
+      <Choice primary mark="💬" label="Mandar el enlace por WhatsApp" hint="Eliges a quién; tú tocas Enviar" onClick={() => window.open(whatsappShareUrl(`${message}
 
 ${link}`), '_blank', 'noopener')} />
       <Choice icon={<IcoQr />} label="Compartir o copiar el enlace" hint="Mensajes, correo u otra app" onClick={() => { void share(); }} />

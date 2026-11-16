@@ -174,7 +174,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
       <Shell canBack={false} onBack={() => {}}>
         <section className="stack">
           <div className="result"><div className="seal bad"><IcoAlert /></div><h1>No se pudo</h1><p>Revisa tus datos e inténtalo de nuevo.</p>{detail || info.detail ? <p className="hint">Detalle: {detail || info.detail}</p> : null}</div>
-          <Choice primary icon={<IcoClock />} label="Intentar de nuevo" onClick={() => { setStep(1); again(); }} />
+          <Choice primary mark="🔄" label="Intentar de nuevo" onClick={() => { setStep(1); again(); }} />
         </section>
       </Shell>
     );
@@ -231,7 +231,7 @@ export default function Inscripcion({ token, registerUrl, initial }: {
                 <span>Acepto que estos teléfonos se compartan con quien da el taller.</span>
               </label>
             </div>
-            <Choice primary icon={<IcoCheck />} label={busy ? 'Un momento…' : 'Enviar inscripción'} onClick={() => { void send(); }} />
+            <Choice primary mark="📝" label={busy ? 'Un momento…' : 'Enviar inscripción'} onClick={() => { void send(); }} />
           </div>
         ) : null}
       </section>

@@ -99,7 +99,7 @@ export function Stage(p: StageProps) {
     return (
       <section className="stack">
         <Result kind="bad" title={p.problem.title} text={p.problem.detail} tech={p.problem.tech} />
-        <Choice primary icon={<IcoClock />} label={p.busy ? busyLabel : 'Intentar de nuevo'} onClick={p.onRetry} />
+        <Choice primary mark="🔄" label={p.busy ? busyLabel : 'Intentar de nuevo'} onClick={p.onRetry} />
         <Choice label="Volver" hint="Para elegir otra forma de cobrar" onClick={p.onDismiss} />
         <button type="button" className="quiet" onClick={() => p.onReset({ id: 'home' })}>Ir al inicio</button>
       </section>
@@ -155,11 +155,11 @@ function Home({ accounts, people, charges, project, onView }: StageProps) {
 
   let primary: ReactNode;
   if (!hasAccount) {
-    primary = <Choice primary icon={<IcoBank />} label="Agregar cuenta" hint="Ahí llega el dinero" onClick={() => onView({ id: 'add-account' })} />;
+    primary = <Choice primary mark="🏦" label="Agregar cuenta" hint="Ahí llega el dinero" onClick={() => onView({ id: 'add-account' })} />;
   } else if (!hasPeople) {
-    primary = <Choice primary icon={<IcoPeople />} label="Agregar persona" hint="Nombre y WhatsApp" onClick={() => onView({ id: 'add-person' })} />;
+    primary = <Choice primary mark="👤" label="Agregar persona" hint="Nombre y WhatsApp" onClick={() => onView({ id: 'add-person' })} />;
   } else {
-    primary = <Choice primary icon={<IcoCash />} label="Cobrar" hint="Elegir a quién" onClick={() => onView({ id: 'who', page: 0 })} />;
+    primary = <Choice primary mark="💰" label="Cobrar" hint="Elegir a quién" onClick={() => onView({ id: 'who', page: 0 })} />;
   }
 
   return (
@@ -277,6 +277,7 @@ function PersonCharges({ people, charges, accounts, project, onCreateCharge, onV
       node: (
         <Choice
           primary={!mine.some((c) => chargeKind(c) !== 'paid') && due[0] === d}
+          mark={!mine.some((c) => chargeKind(c) !== 'paid') && due[0] === d ? '💰' : undefined}
           icon={<IcoCash />}
           label={`Cobrar ${money(d.plan.amount)}`}
           hint={d.plan.kind === 'ONCE' ? `${d.plan.concept} (una sola vez)` : `${d.plan.concept}, mes ${d.nth} de ${d.total}`}
@@ -327,7 +328,7 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
           onClick={() => (several ? onView({ id: 'charge-to', chargeId: charge.id }) : onRequest(charge.id))}
         />
       ) : null}
-      <Choice primary={!canCell} icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Tú guardas el dinero" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
+      <Choice primary={!canCell} mark={!canCell ? '💵' : undefined} icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Tú guardas el dinero" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
       <Choice label="Crear otro cobro" onClick={() => onView({ id: 'new-charge', personId: charge.personId })} />
     </section>
   );
@@ -340,7 +341,7 @@ function CashStep({ charge, people, busy, onCash, onView }: StageProps & { charg
       <WhoLine name={charge.personName} person={findPerson(people, charge.personId)} />
       <h1>¿Recibiste {money(charge.amount)}?</h1>
       <p className="lead">Cuéntalos antes de confirmar. Es de {charge.concept}.</p>
-      <Choice primary icon={<IcoCash />} label={busy ? busyLabel : 'Sí, ya lo recibí'} onClick={() => onCash(charge.id)} />
+      <Choice primary mark="✅" label={busy ? busyLabel : 'Sí, ya lo recibí'} onClick={() => onCash(charge.id)} />
     </section>
   );
 }
@@ -372,7 +373,7 @@ function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Ch
     <section className="stack">
       <Result kind="paid" title="Ya pagó" text={`${name} pagó ${money(charge.amount)}. ${charge.concept}.`} />
       <Status kind="paid">{chargeWords(charge)}</Status>
-      <Choice primary icon={<IcoPhone />} label="Enviar comprobante" hint="Por WhatsApp" onClick={() => onView({ id: 'receipt', chargeId: charge.id })} />
+      <Choice primary mark="💬" label="Enviar comprobante" hint="Por WhatsApp" onClick={() => onView({ id: 'receipt', chargeId: charge.id })} />
       <Choice icon={<IcoPeople />} label="Siguiente persona" onClick={() => onReset({ id: 'who', page: 0 })} />
     </section>
   );
@@ -387,7 +388,7 @@ function QrStep({ charge, people, img, busy, onCheck, onView }: StageProps & { c
       <img className="shot" alt={`Código para que ${charge.personName} pague ${money(charge.amount)}`} src={`data:image/png;base64,${img}`} />
       <p className="lead">Escanéalo con la app del banco. Cuando pague, aquí se marca solo.</p>
       <Status kind="wait">Esperando el pago</Status>
-      <Choice primary icon={<IcoPhone />} label="Mandar el código por WhatsApp" hint="Imagen para quien ayuda a pagar" onClick={() => onView({ id: 'send-qr', chargeId: charge.id, img })} />
+      <Choice primary mark="💬" label="Mandar el código por WhatsApp" hint="Imagen para quien ayuda a pagar" onClick={() => onView({ id: 'send-qr', chargeId: charge.id, img })} />
       <Choice icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya pagó'} hint="Le preguntamos a Pey" onClick={() => onCheck(charge.id)} />
       <Choice icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Si no fue con el código" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
     </section>
@@ -505,7 +506,7 @@ function AccountStep({ account, busy, onRegister, onRefresh, onDeleteAccount, on
       {account.peyId && !active ? (
         <Choice primary icon={<IcoClock />} label={busy ? busyLabel : 'Revisar si ya está lista'} onClick={() => onRefresh(account.id)} />
       ) : null}
-      {active ? <Choice primary icon={<IcoCash />} label="Cobrar" onClick={() => onView({ id: 'who', page: 0 })} /> : null}
+      {active ? <Choice primary mark="💰" label="Cobrar" onClick={() => onView({ id: 'who', page: 0 })} /> : null}
       {account.peyId && !asking ? <Choice icon={<IcoBank />} label="Registrarla otra vez en Pey" hint="Solo si cambiaste la llave de Pey" onClick={() => setAgain(true)} /> : null}
       {!asking ? (
         <Choice danger label="Eliminar cuenta" hint={account.codiStatus === 'ERROR' ? 'Tiene un error' : 'Ya no la necesito'} onClick={() => setAsking(true)} />

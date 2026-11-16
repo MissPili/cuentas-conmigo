@@ -44,13 +44,15 @@ export function Status({ kind, children }: { kind: Kind; children: ReactNode }) 
 }
 
 export function Choice({
-  primary, danger, attention, icon, label, hint, onClick, type = 'button',
+  primary, danger, attention, icon, mark, label, hint, onClick, type = 'button',
 }: {
   primary?: boolean;
   danger?: boolean;
   /** Something is waiting for the collector: gold fill, dashed border and a bell, never color alone. */
   attention?: boolean;
   icon?: ReactNode;
+  /** One familiar emoji for a key action. Replaces the line icon so the button does not show both. Hidden from screen readers. */
+  mark?: string;
   label: string;
   hint?: string;
   onClick?: () => void;
@@ -59,7 +61,7 @@ export function Choice({
   const cls = primary ? 'choice primary' : danger ? 'choice danger' : attention ? 'choice attention' : 'choice';
   return (
     <button type={type} className={cls} onClick={onClick}>
-      {icon}
+      {mark ? <span className="ico-emoji" aria-hidden="true">{mark}</span> : icon}
       <span className="choice-text">
         <span className="choice-label">{label}</span>
         {hint ? <small>{hint}</small> : null}
@@ -155,7 +157,7 @@ export function Shell({ canBack, onBack, note, children }: { canBack: boolean; o
           </button>
         ) : null}
         <button type="button" className={canBack ? 'listen' : 'listen only'} role="switch" aria-checked={voiceOn} onClick={toggleVoice}>
-          {voiceOn ? <IcoMute /> : <IcoListen />}
+          <span className="ico-emoji" aria-hidden="true">{voiceOn ? '🔇' : '🔊'}</span>
           <span>{voiceOn ? 'Apagar voz' : 'Prender voz'}</span>
         </button>
       </div>
