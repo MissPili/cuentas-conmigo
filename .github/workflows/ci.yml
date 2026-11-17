@@ -1,0 +1,28 @@
+# Revisión automática antes de que un cambio llegue a dev, qa o main.
+# Amplify es quien despliega; esto solo avisa si algo está roto (no toca AWS ni usa secretos).
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, qa, main]
+  push:
+    branches: [dev, qa]
+
+permissions:
+  contents: read
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Igual que amplify.yml: `npm ci` no acepta este package-lock.json.
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      # El build necesita amplify_outputs.json (lo genera Amplify al desplegar); aquí basta uno vacío para revisar tipos y compilar.
+      - run: echo '{}' > amplify_outputs.json
+      - run: npm run build

@@ -11,6 +11,7 @@ import favicon from './assets/favicon.png';
 import logo from './assets/logo-cuentas-conmigo.png';
 import './index.css';
 import './a11y';
+import { showEnvironment } from './entorno';
 
 function AuthLogo() {
   return (
@@ -27,6 +28,7 @@ document.title = 'Cuentas conmigo';
 const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
 if (icon) icon.href = favicon;
 
+showEnvironment();
 Amplify.configure(outputs);
 
 // The signup QR opens /?i=TOKEN: a public page, no account, outside the login.

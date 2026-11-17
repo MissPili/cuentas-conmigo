@@ -36,7 +36,7 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
       <h1>Más opciones</h1>
       {projects.length > 1 || !project ? <Choice icon={<IcoPeople />} label="Cambiar de proyecto" hint="Otro taller o cobro" onClick={() => onReset({ id: 'projects' })} /> : <Choice icon={<IcoPeople />} label="Nuevo proyecto" hint="Otro taller o cobro" onClick={() => onView({ id: 'new-project' })} />}
       {signOut ? <Choice primary icon={<IcoOut />} label="Salir" onClick={signOut} /> : null}
-      <p className="hint">Versión de la app: {__BUILD__}</p>
+      <p className="hint">Versión de la app: {__BUILD__}{__ENV__ ? ` · ${__ENV__}` : ''}</p>
       {/* The danger entry is deliberately plain and last, so it is not tapped by mistake. */}
       <button type="button" className="quiet" onClick={() => onView({ id: 'danger' })}>Zona de peligro (solo para quien configura)</button>
     </section>

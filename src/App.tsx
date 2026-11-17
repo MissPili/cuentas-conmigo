@@ -524,7 +524,8 @@ export default function App({ signOut }: { signOut?: () => void }) {
           // The random token is the only secret of the link; the code to pay lasts a week, a receipt much longer.
           // The short link (on this app's own domain) is used when the Amplify rewrite for /p/ is set up; else the long one.
           const token = newToken(16);
-          const short = await shortLinksWork(location.origin);
+          // The Amplify rewrite rule is shared by every branch and points at production's function, so dev/qa always use the long link.
+          const short = !__ENV__ && (await shortLinksWork(location.origin));
           if (!short && !shareUrl) throw new Error('share');
           const days = kind === 'PAY' ? 7 : 180;
           const r = await client.models.Share.create({
