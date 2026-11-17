@@ -203,7 +203,7 @@ npm run dev
 
 ## Despliegue
 
-Amplify Hosting construye y despliega solo cada vez que se sube un cambio a `main` (`amplify.yml`); tarda unos 10 minutos. El servidor necesita dos secretos en **Hosting → Secret management** de la app de Amplify:
+Amplify Hosting construye y despliega solo cada vez que se sube un cambio a `main` (producción), `qa` (pruebas) o `dev` (desarrollo) (`amplify.yml`); cada rama tiene su propio servidor y sus propios datos. Cómo se crearon y cómo se trabaja con ellos: [`docs/AMBIENTES.md`](docs/AMBIENTES.md). Cada despliegue tarda unos 10 minutos. El servidor necesita dos secretos en **Hosting → Secret management** de la app de Amplify (cada rama necesita los suyos antes de su primer despliegue; en `dev` y `qa` conviene un valor de mentira para que no se pueda mover dinero real):
 
 - `PEY_API_KEY`: la llave de la API de Pey.
 - `PEY_WEBHOOK_SECRET`: el secreto `whsec_…` que Pey entrega al registrar la URL del webhook (portal.mipey.mx → Developers).
