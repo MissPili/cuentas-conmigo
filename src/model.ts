@@ -118,6 +118,7 @@ export type View =
   | { id: 'keyrings'; page: number }
   | { id: 'keyring'; personId: string }
   | { id: 'keyring-help' }
+  | { id: 'keyring-write'; personId: string; mode: 'write' | 'erase' }
   | { id: 'key-tap'; kind: 'off' | 'unknown' | 'gone'; personId?: string }
   | { id: 'loading' };
 

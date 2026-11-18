@@ -13,7 +13,7 @@ import { PlacesHub, PlacesSettings, RegQr, SeatDetail, Seats } from './screens3'
 import { duePlans, type Plan } from './plans';
 import type { Problem } from './problems';
 import { AddPerson, type AddPersonInitial } from './AddPerson';
-import { KeyTap, KeyringDetail, KeyringHelp, KeyringHub, Keyrings, type KeyAction } from './screensKeys';
+import { KeyTap, KeyringDetail, KeyringHelp, KeyringHub, Keyrings, KeyringWrite, type KeyAction } from './screensKeys';
 import { ChargeTo, People, PersonData, PersonEditHelpers, PersonEditOwn } from './screensPeople';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
 
@@ -135,6 +135,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'keyrings') return <Keyrings {...p} page={v.page} />;
   if (v.id === 'keyring') return <KeyringDetail {...p} personId={v.personId} />;
   if (v.id === 'keyring-help') return <KeyringHelp />;
+  if (v.id === 'keyring-write') return <KeyringWrite {...p} personId={v.personId} mode={v.mode} />;
   if (v.id === 'people') return <People {...p} page={v.page ?? 0} />;
   if (v.id === 'person-data') return <PersonData {...p} personId={v.personId} />;
   if (v.id === 'person-edit') return v.part === 'own' ? <PersonEditOwn {...p} personId={v.personId} /> : <PersonEditHelpers {...p} personId={v.personId} />;

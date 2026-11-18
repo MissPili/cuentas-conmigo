@@ -87,6 +87,7 @@ export const GUION: Record<string, Guion> = {
   llavero: (el) => `Esta es la imagen y el llavero de ${nombre(el)}. El recuadro de color dice si está activo. El botón morado es el siguiente paso.`,
   'llavero-nuevo': 'Un código nuevo deja de servir el llavero viejo. Hazlo solo si se perdió. Si sí, toca Sí, hacer un código nuevo.',
   'llavero-ayuda': 'Estas son las instrucciones para grabar el llavero. Léelas con calma, de arriba hacia abajo. No bloquees el chip hasta probarlo.',
+  'llavero-escribir': 'Sigue el recuadro. Acerca el llavero a la parte de atrás del celular y no lo muevas hasta que diga que terminó.',
   'llavero-toque': 'Este llavero no abre un cobro. Lee el recuadro. Para volver, toca Ir al inicio.',
 
   'inscripcion-abre': 'Un momento. Estamos abriendo la inscripción.',
