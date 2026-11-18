@@ -3,7 +3,8 @@ import { generateClient } from 'aws-amplify/data';
 import { confirmUserAttribute, sendUserAttributeVerificationCode } from 'aws-amplify/auth';
 import type { Schema } from '../amplify/data/resource';
 import type { Acc, Chg, Per, Proj, View } from './model';
-import { freeSpots, isFull } from './places';
+import { freeSpots, isFull, placesOn } from './places';
+import { RESET_SENT, canEditCharge, chargeLock } from './chargeEdit';
 import { pickEmblems } from './emblems';
 import { KEY_PARAM, codeFromAddress, newKeyCode, resolveTap } from './keyring';
 import { legacyPlan, parsePlans, serializePlans } from './plans';
@@ -89,10 +90,14 @@ function mapCharge(c: Charge): Chg | null {
     transactionId: c.transactionId,
     pushTel: c.pushTel,
     paidAt: c.paidAt,
+    sentAt: c.sentAt,
+    updatedAt: c.updatedAt,
     confirmsPlace: c.confirmsPlace,
     projectId: c.projectId,
   };
 }
+
+const lockWasExpired = (c: Chg) => chargeLock(c).kind === 'expired';
 
 export default function App({ signOut }: { signOut?: () => void }) {
   const [accounts, setAccounts] = useState<Acc[]>([]);
@@ -420,6 +425,24 @@ export default function App({ signOut }: { signOut?: () => void }) {
             setView({ id: 'qr', chargeId: id, img: parsed.qrImage });
           });
         }}
+        onEditCharge={(id, concept, amount) => {
+          const current = charges.find((x) => x.id === id);
+          if (!current) return;
+          if (!canEditCharge(chargeLock(current))) { setFormError('Este cobro ya se mandó a pagar y todavía no caduca.'); return; }
+          if (!(amount > 0)) { setFormError('Escribe el monto.'); return; }
+          if (!concept.trim()) { setFormError('Escribe para qué es.'); return; }
+          void run(async () => {
+            // Read it again from the database: another phone may have sent it to pay a moment ago.
+            const cur = await client.models.Charge.get({ id });
+            if (cur.errors?.length || !cur.data) throw new Error('charge');
+            const lock = chargeLock(cur.data);
+            if (!canEditCharge(lock)) throw new Error('charge locked');
+            // An expired code must not stay linked to the corrected charge (sentAmount stays: it guards a late payment).
+            const r = await client.models.Charge.update({ id, concept: concept.trim(), amount, ...(lock.kind === 'expired' ? RESET_SENT : {}) });
+            if (r.errors?.length) throw new Error('charge');
+            await load();
+          }, () => land({ id: 'charge', chargeId: id }, lockWasExpired(current) ? 'Listo. Se corrigió el cobro. Hay que mandar un código nuevo.' : 'Listo. Se corrigió el cobro.'));
+        }}
         onCash={(id) => {
           void run(async () => {
             const r = await client.models.Charge.update({
@@ -592,7 +615,7 @@ export default function App({ signOut }: { signOut?: () => void }) {
             const r = await client.models.Person.update({ id: personId, ...patch });
             if (r.errors?.length) throw new Error('seat');
             await load();
-          }, () => land(action === 'release' || action === 'extend' ? { id: 'places' } : { id: 'seat', personId }, message));
+          }, () => land(action === 'release' ? (placesOn(project) ? { id: 'places' } : { id: 'people' }) : action === 'extend' ? { id: 'places' } : { id: 'seat', personId }, message));
         }}
         onKey={(personId, action) => {
           const person = people.find((x) => x.id === personId);

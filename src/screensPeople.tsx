@@ -45,8 +45,9 @@ export function People({ people: all, page, onView }: StageProps & { page: numbe
 }
 
 /** What is registered about one person, and who helps them pay. */
-export function PersonData({ people, personId, onView, onOpenPerson }: StageProps & { personId: string }) {
+export function PersonData({ people, personId, busy, onView, onOpenPerson, onSeat }: StageProps & { personId: string }) {
   const person = people.find((x) => x.id === personId);
+  const [leaving, setLeaving] = useState(false);
   if (!person) return <Missing onHome={() => onView({ id: 'home' })} />;
   const helpers = helpersOf(person);
   const picture = person.photo ? 'su foto (con su permiso)' : emblemOf(person.emblem) ? `${emblemOf(person.emblem)!.glyph} ${emblemOf(person.emblem)!.name}` : 'todavía no tiene';
@@ -76,6 +77,14 @@ export function PersonData({ people, personId, onView, onOpenPerson }: StageProp
       <Choice primary mark="💰" label="Cobrarle" hint="Ver sus cobros" onClick={() => onOpenPerson(person.id)} />
       <Choice icon={<IcoPeople />} label="Corregir su nombre o WhatsApp" onClick={() => onView({ id: 'person-edit', personId, part: 'own' })} />
       <Choice icon={<IcoPeople />} label={helpers.length ? 'Corregir quién le ayuda' : 'Agregar quién le ayuda'} hint={helpers.length ? 'Cambiar, completar o quitar' : 'Hasta 3 personas'} onClick={() => onView({ id: 'person-edit', personId, part: 'helpers' })} />
+      <Choice danger label="Dar de baja" hint="Queda libre su lugar" onClick={() => setLeaving(true)} />
+      {leaving ? (
+        <div className="stack">
+          <Alert>Se borran su foto, sus teléfonos y sus notas. Solo queda “{person.name.trim().split(' ')[0]} (baja)” con sus cobros. Si regresa, tiene que inscribirse de nuevo.</Alert>
+          <Choice danger label={busy ? busyLabel : 'Sí, dar de baja'} onClick={() => onSeat(person.id, 'release')} />
+          <Choice label="No, volver" onClick={() => setLeaving(false)} />
+        </div>
+      ) : null}
     </section>
   );
 }

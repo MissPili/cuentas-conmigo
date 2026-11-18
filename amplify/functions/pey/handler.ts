@@ -112,7 +112,7 @@ export const handler: Handler = async (event) => {
       bankAccountId: acc.peyId, // always explicit: the webhook only echoes it if sent here
       metadata: { chargeId: ch.id },
     });
-    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.transactionId, numRef, pushTel: to });
+    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.transactionId, numRef, pushTel: to, sentAt: new Date().toISOString(), sentAmount: ch.amount });
     return r.transactionId;
   }
 
@@ -132,7 +132,7 @@ export const handler: Handler = async (event) => {
       metadata: { chargeId: ch.id },
     });
     // Keep the QR id so the webhook can still find the charge if metadata is missing.
-    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.id, numRef });
+    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.id, numRef, sentAt: new Date().toISOString(), sentAmount: ch.amount });
     return JSON.stringify({ qrImage: r.qrImage ?? null, qrString: r.qrString ?? null });
   }
 

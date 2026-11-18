@@ -78,6 +78,10 @@ export type Chg = {
   /** The number the CoDi request was sent to (the person's own or one of their helpers). */
   pushTel?: string | null;
   paidAt?: string | null;
+  /** When the payment code was sent (QR or CoDi request); null if it never was. */
+  sentAt?: string | null;
+  /** Last change in the database; stands in for sentAt on charges sent before that field existed. */
+  updatedAt?: string | null;
   /** True for the monthly fee: only that payment confirms a place. */
   confirmsPlace?: boolean | null;
   projectId?: string | null;
@@ -90,6 +94,7 @@ export type View =
   | { id: 'who'; page: number }
   | { id: 'person'; personId: string; page: number }
   | { id: 'charge'; chargeId: string }
+  | { id: 'charge-edit'; chargeId: string }
   | { id: 'cash'; chargeId: string }
   | { id: 'wait'; chargeId: string }
   | { id: 'qr'; chargeId: string; img: string }

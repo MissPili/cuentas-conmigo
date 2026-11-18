@@ -172,17 +172,20 @@ flowchart TD
   M -->|"página 1"| R["Reporte del mes"]
   M -->|"página 1"| PE["Personas"]
   M -->|"página 1"| PL["Lugares e inscripciones"]
+  M -->|"página 1"| LL["Imágenes y llaveros"]
   M -->|"página 2"| VM["Ver mejor<br>voz, letra y colores"]
   M -->|"página 2"| CU["Cuenta que recibe"]
-  M -->|"página 2"| LL["Imágenes y llaveros"]
   M -->|"página 3"| CP["Cambiar de proyecto o Nuevo proyecto"]
   M -->|"página 3"| SA["Salir"]
   M -->|"página 3"| ZP["Zona de peligro<br>al final y discreta"]
   T(["Se acerca un llavero"]) -.->|"abre directo"| PC["Cobros de la persona"]
   W --> PC
   PE -->|"persona"| PD["Sus datos"]
+  PC -->|"Sus datos"| PD
   PD -->|"Cobrarle"| PC
 ```
+
+**Cobros y datos de una persona están conectados en los dos sentidos:** desde *Cobros de la persona* hay un botón **Sus datos**, y desde *Sus datos* hay un botón **Cobrarle**. No hace falta salir a *Más opciones* para corregir algo en medio de un cobro.
 
 **Regla del mapa:** *cobrar a alguien* tiene tres entradas (Cobrar, Sus datos → Cobrarle, o el llavero), pero **las tres llegan a la misma pantalla** (*Cobros de la persona*) y de ahí el camino es uno solo.
 
@@ -243,6 +246,28 @@ flowchart TD
   style AV fill:#fff3cd,stroke:#b58900
 ```
 
+#### Corregir un cobro
+
+Un cobro se puede corregir (el monto y para qué es) **mientras no se haya mandado a pagar**. Una vez mandado, el código **caduca a las 24 horas** (lo que dura el QR en Pey) y solo entonces se puede volver a corregir.
+
+```mermaid
+stateDiagram-v2
+  [*] --> SinMandar: se crea el cobro
+  SinMandar --> SinMandar: Corregir este cobro
+  SinMandar --> Mandado: Mostrar código o Pedir el pago
+  Mandado --> Pagado: la persona paga
+  Mandado --> Caducado: pasan 24 horas sin pagar
+  Caducado --> SinMandar: Corregir este cobro, se desliga el código viejo
+  Caducado --> Mandado: mandar un código nuevo, mismo monto
+  SinMandar --> Pagado: Ya lo recibí en efectivo
+  Pagado --> [*]
+```
+
+- **Dónde:** *¿Cómo paga?* → **Corregir este cobro** (el botón solo aparece cuando se puede). Si ya se mandó, la pantalla dice hasta qué hora sirve el código.
+- **Los cobros que vienen del plan del proyecto** (inscripción, mensualidad) solo permiten cambiar el **monto**: la app los reconoce por su nombre y, si se cambiara, volvería a ofrecer el cobro del mes como pendiente.
+- **Protección del dinero:** si alguien paga un código viejo después de que el cobro se corrigió con otro monto, el aviso de Pey **no lo marca como pagado** (queda registrado en el servidor para revisarlo en Pey). Así el monto que figura nunca difiere del que se pagó.
+- La cuenta que recibe no se cambia en un cobro ya creado.
+
 **Qué hay que saber:**
 - **El código QR es la vía principal.** La solicitud al celular a veces no llega a todos los bancos (lo dice la propia pantalla).
 - El pago **se detecta solo**: la app revisa cada pocos segundos y pasa sola a *Ya pagó* cuando Pey avisa. El botón *Revisar si ya pagó* es por si el aviso se perdió.
@@ -296,7 +321,7 @@ flowchart TD
 
 ### 3.4 Editar a una persona y corregir datos
 
-**Una sola puerta:** *Más opciones → Personas → (la persona) → Sus datos*. De ahí salen todas las correcciones.
+**Una sola pantalla de correcciones: *Sus datos*.** Se llega desde *Más opciones → Personas → (la persona)* o con el botón **Sus datos** dentro de los cobros de la persona. De ahí salen todas las correcciones y también **Dar de baja**.
 
 ```mermaid
 flowchart TD
@@ -305,6 +330,8 @@ flowchart TD
   PD -->|"Corregir su nombre o WhatsApp"| E1["Corregir sus datos<br>nombre completo y WhatsApp de 10 números"]
   PD -->|"Corregir quién le ayuda<br>o Agregar quién le ayuda"| E2["Quién le ayuda<br>cambiar, completar o quitar<br>y a quién se mandan los códigos"]
   PD -->|"Cobrarle"| PC["Cobros de la persona"]
+  PC -->|"Sus datos"| PD
+  PD -->|"Dar de baja"| BJ["Advertencia y confirmación<br>ver 3.6"]
   E1 -->|"Guardar"| OK["Listo, se guardaron sus datos<br>vuelve a Sus datos"]
   E2 -->|"Guardar"| OK
   OK --> PD
@@ -315,11 +342,11 @@ flowchart TD
 
 | Dato | ¿Se puede corregir? | Dónde |
 |---|---|---|
-| Nombre y WhatsApp de la persona | Sí | Sus datos → *Corregir su nombre o WhatsApp* |
+| Nombre y WhatsApp de la persona | Sí | *Cobros de la persona* o *Más opciones → Personas* → **Sus datos** → *Corregir su nombre o WhatsApp* |
 | Quién le ayuda, su relación y a quién se mandan los códigos | Sí | Sus datos → *Corregir quién le ayuda* |
 | A quién se le pide el pago de **un cobro** | Sí | En el cobro → *Pedir el pago por CoDi* → *A quién le pedimos el pago* |
 | Su dibujo o foto | **No** (solo se elige un dibujo si aún no tiene) | Imágenes y llaveros → la persona → *Elegir un dibujo* |
-| Monto o concepto de un cobro ya creado | **No** (el código solo permite marcarlo como pagado en efectivo) | Hoy se crea otro cobro |
+| Monto y concepto de un cobro (en los del plan, solo el monto) | **Sí**, si no se ha mandado a pagar o si su código ya caducó (24 h) | En el cobro → *Corregir este cobro* (ver 3.2) |
 | La cuenta que recibe | Se puede registrar de nuevo en Pey o eliminar | Más opciones → *Cuenta que recibe* |
 
 ### 3.5 Llaveros NFC: activar, programar, perder, reemplazar
@@ -354,6 +381,7 @@ flowchart TD
 flowchart TD
   M["Más opciones<br>Lugares e inscripciones"] --> Q["Quién tiene lugar"]
   Q -->|"toca a la persona"| SD["Detalle de su lugar"]
+  PD["Sus datos<br>desde Personas o Cobros"] -->|"Dar de baja"| C
   SD -->|"Dar de baja"| C["Advertencia<br>se borran su foto, teléfonos y notas<br>queda Nombre (baja) con sus cobros<br>si regresa, debe inscribirse de nuevo"]
   C -->|"Sí, dar de baja"| B(["Dada de baja<br>su lugar queda libre<br>su llavero deja de abrir"])
   C -->|"No, volver"| SD
@@ -380,12 +408,13 @@ Cada tarea **empieza en un solo lugar**. Si hay otro camino, termina en la misma
 | **Dar de alta a alguien presente** | Inicio → **Agregar persona** | 4 pasos | 3.3 |
 | **Que alguien se inscriba solo** | Más opciones → Lugares e inscripciones → **Código para inscribir** | Mandar el enlace; esperar; aprobar | 2.3, 3.3 |
 | **Aprobar una inscripción** | Inicio → **Aprobar inscripciones** (aparece con 🔔) | Aprobar / No aceptar | 3.3 |
-| **Corregir nombre o teléfono** | Más opciones → **Personas** → persona → **Corregir su nombre o WhatsApp** | Guardar | 3.4 |
+| **Corregir nombre o teléfono** | **Sus datos** (botón en los cobros de la persona, o Más opciones → Personas → persona) → **Corregir su nombre o WhatsApp** | Guardar | 3.4 |
+| **Corregir un cobro** (monto o para qué es) | En el cobro → **Corregir este cobro** | Solo si no se mandó a pagar o ya caducó (24 h) | 3.2 |
 | **Cambiar quién le ayuda a pagar** | Más opciones → Personas → persona → **Corregir quién le ayuda** | Guardar | 3.4 |
 | **Pedir el pago a otra persona de la familia** | En el cobro → **Pedir el pago por CoDi** → **A quién le pedimos** | Elegir | 3.2 |
-| **Activar o programar un llavero** | Más opciones → **Imágenes y llaveros** → persona | Activar → Escribir en el chip → Comprobar | 3.5 |
+| **Activar o programar un llavero** | Más opciones (página 1) → **Imágenes y llaveros** → persona | Activar → Escribir en el chip → Comprobar | 3.5 |
 | **Reportar un llavero perdido** | Imágenes y llaveros → persona → **Desactivar: se perdió** | Después, **Hacer un código nuevo** para el reemplazo | 3.5 |
-| **Dar de baja** | Lugares e inscripciones → Quién tiene lugar → persona → **Dar de baja** | Confirmar | 3.6 |
+| **Dar de baja** | **Sus datos** → **Dar de baja** (o Lugares e inscripciones → Quién tiene lugar → persona) | Confirmar | 3.6 |
 | **Registrar o cambiar la cuenta que recibe** | Más opciones → **Cuenta que recibe** | Registrar para cobrar → Revisar si ya está lista | 3.1 |
 | **Ver cuánto se cobró** | Inicio (arriba) o Más opciones → **Reporte del mes** | Guardar como hoja de cálculo | 3.7 |
 | **Cambiar de taller** | Más opciones → **Cambiar de proyecto** | Elegir | 3.0 |
@@ -394,17 +423,17 @@ Cada tarea **empieza en un solo lugar**. Si hay otro camino, termina en la misma
 
 ## 5. Dónde alguien se puede perder
 
-Al mapear todo encontré estos puntos. **Son hallazgos de lectura del código; ninguno está probado en un celular.** Están ordenados por cuánto confunden, y cada uno trae una propuesta pequeña.
+Al mapear todo encontré estos puntos. **Son hallazgos de lectura del código; ninguno está probado en un celular.** Los marcados ✅ ya se arreglaron en la app.
 
-| # | Dónde | Qué pasa | Propuesta |
+| # | Dónde | Qué pasaba | Estado |
 |---|---|---|---|
-| 1 | *Cobros de la persona* → quiero corregir su teléfono | Desde ahí **no hay camino directo** a *Sus datos*. Hay que salir a *Más opciones → Personas → persona*: otra dirección completamente distinta. Es el caso típico de «navegar en distintas direcciones». | Agregar el botón **«Sus datos»** en *Cobros de la persona* (y en el aviso del llavero). Así corregir y cobrar quedan en la misma pantalla. |
-| 2 | *Sus datos* → imagen | No se puede cambiar el dibujo ni la foto de una persona ya creada. | Agregar **«Cambiar su imagen»** en *Sus datos* (reusa el selector que ya existe). |
-| 3 | Cobros | No existe en la app corregir el monto o el concepto de un cobro ya creado: hoy se crea otro y el equivocado queda pendiente. | Decidir la regla (¿se puede editar mientras esté pendiente?) y mostrarla en *¿Cómo paga?*. |
-| 4 | *Más opciones* tiene **tres páginas** | Reporte, Personas y Lugares están en la 1; *Cuenta que recibe* e *Imágenes y llaveros* en la 2; cambiar de proyecto y salir en la 3. Hay que tocar «Ver más» para llegar a los llaveros. | Mantener en la página 1 lo de uso diario y dejar clara la regla (se aprende una vez); o poner *Imágenes y llaveros* en la 1. |
-| 5 | Dar de baja | El texto de *Personas* dice «Nombres, teléfonos y bajas», pero la baja **no está ahí**: está en *Lugares → Quién tiene lugar → persona*. Quien la busca en *Personas* no la encuentra. | Poner también **«Dar de baja»** (con la misma advertencia) en *Sus datos*. |
-| 6 | Llavero desactivado | El aviso ofrece **Ver el llavero**, pero no explica que ahí se activa de nuevo. | Cambiar el texto del botón a **«Ver el llavero y activarlo de nuevo»**. |
-| 7 | iPhone | Escribir chips no funciona desde la web; la pantalla lo dice pero el camino alterno (otro celular) no se menciona en el botón. | Ya se avisa; si se decide app nativa para iPhone, este flujo se reemplaza. |
+| 1 | *Cobros de la persona* → corregir su teléfono | No había camino directo a *Sus datos*. | ✅ Botón **Sus datos** en los cobros de la persona. |
+| 2 | *Sus datos* → imagen | No se puede cambiar el dibujo ni la foto de una persona ya creada. | Pendiente: agregar **«Cambiar su imagen»** (reusa el selector que ya existe). |
+| 3 | Cobros | No se podía corregir el monto o el concepto de un cobro. | ✅ **Corregir este cobro**, con la regla de las 24 horas (ver 3.2). |
+| 4 | Dar de baja | *Personas* decía «bajas» pero la baja no estaba ahí. | ✅ **Dar de baja** dentro de *Sus datos*, con la misma advertencia. |
+| 5 | *Más opciones* | Los llaveros estaban en la segunda página. | ✅ *Imágenes y llaveros* ahora está en la página 1; la 2 queda con *Ver mejor* y *Cuenta que recibe*. |
+| 6 | Llavero desactivado | El aviso ofrece **Ver el llavero**, pero no explica que ahí se activa de nuevo. | Pendiente: cambiar el texto del botón a **«Ver el llavero y activarlo de nuevo»**. |
+| 7 | iPhone | Escribir chips no funciona desde la web; la pantalla lo dice pero no menciona el camino alterno. | Ya se avisa; si se decide app nativa para iPhone, este flujo se reemplaza. |
 
 **Lo que sí está bien resuelto** (conviene no tocarlo): todos los caminos de cobro convergen en *Cobros de la persona*; el efectivo siempre está a un toque; el pago se detecta solo; los errores dicen el motivo y dan tres salidas; el borrado definitivo es difícil de tocar por error; la inscripción pública no puede cobrar.
 

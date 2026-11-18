@@ -14,9 +14,10 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
       <section className="stack" data-guion="mas">
         <h1>Más opciones</h1>
         <Choice primary icon={<IcoCash />} label="Reporte del mes" hint="Quién pagó y quién falta" onClick={() => onView({ id: 'report', month: thisMonth() })} />
-        <Choice icon={<IcoPeople />} label="Personas" hint="Nombres, teléfonos y bajas" onClick={() => onView({ id: 'people' })} />
+        <Choice icon={<IcoPeople />} label="Personas" hint="Corregir sus datos o dar de baja" onClick={() => onView({ id: 'people' })} />
         <Choice icon={<IcoPeople />} label="Lugares e inscripciones" hint="Cupo, código QR y lista de espera" onClick={() => onView({ id: 'places' })} />
-        <Choice label="Ver más" hint="Voz, cuentas, llaveros y salir" onClick={() => onView({ id: 'more', page: 1 })} />
+        <Choice icon={<IcoKey />} label="Imágenes y llaveros" hint="Imágenes, escribir y activar llaveros" onClick={() => onView({ id: 'keyring-hub' })} />
+        <Choice label="Ver más" hint="Voz, cuenta que recibe y salir" onClick={() => onView({ id: 'more', page: 1 })} />
       </section>
     );
   }
@@ -26,7 +27,6 @@ export function More({ view, project, projects, onView, onReset, signOut }: Stag
         <h1>Más opciones</h1>
         <Choice primary icon={<IcoEye />} label="Ver mejor" hint="Voz, letra y colores" onClick={() => onView({ id: 'access' })} />
         <Choice icon={<IcoBank />} label="Cuenta que recibe" hint="A dónde llega el dinero" onClick={() => onView({ id: 'accounts', page: 0 })} />
-        <Choice icon={<IcoKey />} label="Imágenes y llaveros" hint="Descargar imágenes y activar llaveros" onClick={() => onView({ id: 'keyring-hub' })} />
         <Choice label="Ver más" hint="Cambiar de proyecto o salir" onClick={() => onView({ id: 'more', page: 2 })} />
       </section>
     );

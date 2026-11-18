@@ -90,6 +90,8 @@ const schema = a
       numRef: a.string(),
       pushTel: a.string(), // number the CoDi request was sent to: the person's own or one of their registered helpers
       paidAt: a.datetime(),
+      sentAt: a.datetime(), // when the payment code (QR or CoDi request) was sent; the charge cannot be edited while it is valid
+      sentAmount: a.float(), // the amount that was sent to Pey, to refuse a payment that no longer matches an edited charge
       confirmsPlace: a.boolean(), // true for the monthly fee: only that payment confirms a place
       projectId: a.id(),
     }).secondaryIndexes((i) => [i('transactionId')]).authorization((allow) => [allow.owner()]),
