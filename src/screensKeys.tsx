@@ -1,11 +1,12 @@
 // NFC keychain screens: the images of the active people (to download and print), and each person's keychain
 // (activate, switch off when lost, a new code for a replacement, the address that is written in the chip).
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { StageProps } from './screens';
 import { pageOf, type Per } from './model';
 import { emblemOf } from './emblems';
 import { activeForKeyring, dedupeNames, keyState, keyringFileName, keyringUrl, type KeyState } from './keyring';
 import { keychainPng, saveBlob } from './keychain';
+import { PROBLEM_TEXT, classifyTag, eraseTag, fitsSmallChip, nfcProblem, nfcSupported, readTag, writeTag, type NfcProblem, type TagContent } from './nfc';
 import { Alert, Avatar, Choice, IcoAlert, IcoCash, IcoClock, IcoKey, IcoPeople, Result, Status, WhoLine } from './ui';
 
 export type KeyAction = 'activate' | 'on' | 'off' | 'new' | 'emblem';
@@ -199,7 +200,8 @@ export function KeyringDetail({ people, personId, busy, onKey, onView }: StagePr
       {state === 'none' ? <Choice icon={<IcoKey />} label={busy ? 'Un momento…' : 'Activar llavero'} hint="Crea su código y su dirección" onClick={() => onKey(person.id, 'activate')} /> : null}
       {state === 'on' ? (
         <>
-          <Choice icon={<IcoKey />} label="Copiar la dirección" hint="Para escribirla en el chip" onClick={() => { void copy(); }} />
+          {nfcSupported() ? <Choice primary icon={<IcoKey />} label="Escribir en el chip" hint="Acerca el llavero al celular" onClick={() => onView({ id: 'keyring-write', personId: person.id, mode: 'write' })} /> : null}
+          <Choice icon={<IcoKey />} label="Copiar la dirección" hint="Para escribirla con otra aplicación" onClick={() => { void copy(); }} />
           <Choice icon={<IcoAlert />} label={busy ? 'Un momento…' : 'Desactivar: se perdió'} hint="Deja de funcionar al momento" onClick={() => onKey(person.id, 'off')} />
           <Choice label="Hacer un código nuevo" hint="Para un llavero de reemplazo" onClick={() => setAsking(true)} />
         </>
@@ -208,6 +210,146 @@ export function KeyringDetail({ people, personId, busy, onKey, onView }: StagePr
         <>
           <Choice icon={<IcoKey />} label={busy ? 'Un momento…' : 'Activar de nuevo'} hint="Si ya lo encontraste" onClick={() => onKey(person.id, 'on')} />
           <Choice label="Hacer un código nuevo" hint="Para un llavero de reemplazo" onClick={() => setAsking(true)} />
+        </>
+      ) : null}
+      {nfcSupported() ? <Choice icon={<IcoAlert />} label="Borrar un chip" hint="Lo deja vacío para usarlo de nuevo" onClick={() => onView({ id: 'keyring-write', personId: person.id, mode: 'erase' })} /> : <p className="hint">Para escribir o borrar chips desde la app hace falta Chrome en un Android. En iPhone, usa la guía con otra aplicación.</p>}
+    </section>
+  );
+}
+
+/** Write, erase or check a chip with the phone's own NFC (Chrome on Android). Reads the chip first so it never covers
+ *  another person's keychain without asking, and never claims success before the browser says the write finished. */
+type WriteStep =
+  | { k: 'ready' }
+  | { k: 'reading' }
+  | { k: 'confirm'; found: TagContent<Per> }
+  | { k: 'working' }
+  | { k: 'done' }
+  | { k: 'checking' }
+  | { k: 'checked'; ok: boolean; found: TagContent<Per> }
+  | { k: 'error'; problem: NfcProblem };
+
+export function KeyringWrite({ people, personId, mode, onView }: StageProps & { personId: string; mode: 'write' | 'erase' }) {
+  const person = people.find((x) => x.id === personId);
+  const [step, setStep] = useState<WriteStep>({ k: 'ready' });
+  const run = useRef<AbortController | null>(null);
+  useEffect(() => () => run.current?.abort(), []);
+  if (!person) return <NotFound onView={onView} />;
+  const first = person.name.split(' ')[0] ?? person.name;
+  const address = person.keyCode ? keyringUrl(location.origin, person.keyCode) : '';
+  const back = () => { run.current?.abort(); onView({ id: 'keyring', personId: person.id }); };
+  const fresh = () => { run.current?.abort(); const c = new AbortController(); run.current = c; return c.signal; };
+  const fail = (e: unknown) => { const problem = nfcProblem(e); if (problem === 'cancelled') setStep({ k: 'ready' }); else setStep({ k: 'error', problem }); };
+  const nameOf = (c: TagContent<Per>) => (c.kind === 'other' || c.kind === 'same' ? c.person.name.split(' ')[0] : '');
+
+  if (!nfcSupported()) {
+    return (
+      <section className="stack" data-guion="llavero-escribir">
+        <WhoLine name={person.name} person={person} />
+        <h1>{mode === 'write' ? 'Escribir en el chip' : 'Borrar un chip'}</h1>
+        <Alert>{PROBLEM_TEXT.unsupported}</Alert>
+        <Choice primary icon={<IcoKey />} label="Ver la guía" onClick={() => onView({ id: 'keyring-help' })} />
+        <Choice label="Volver" onClick={back} />
+      </section>
+    );
+  }
+  if (mode === 'write' && (!address || keyState(person) !== 'on')) {
+    return (
+      <section className="stack" data-guion="llavero-escribir">
+        <WhoLine name={person.name} person={person} />
+        <h1>Escribir en el chip</h1>
+        <Alert>Primero activa el llavero de {first}. Un llavero desactivado no se escribe.</Alert>
+        <Choice primary label="Volver" onClick={back} />
+      </section>
+    );
+  }
+  if (mode === 'write' && !fitsSmallChip(address)) {
+    return (
+      <section className="stack" data-guion="llavero-escribir">
+        <WhoLine name={person.name} person={person} />
+        <h1>Escribir en el chip</h1>
+        <Alert>La dirección es demasiado larga para los chips pequeños (NTAG213). Usa un chip más grande, como el NTAG215.</Alert>
+        <Choice primary label="Volver" onClick={back} />
+      </section>
+    );
+  }
+
+  const doWork = async () => {
+    setStep({ k: 'working' });
+    try {
+      const signal = fresh();
+      if (mode === 'write') await writeTag(address, signal);
+      else await eraseTag(signal);
+      setStep({ k: 'done' });
+    } catch (e) { fail(e); }
+  };
+  const start = async () => {
+    setStep({ k: 'reading' });
+    try {
+      const found = classifyTag(await readTag(fresh()), people, person.id);
+      if (mode === 'write' && (found.kind === 'empty' || found.kind === 'same')) await doWork();
+      else if (mode === 'erase' && found.kind === 'empty') setStep({ k: 'done' });
+      else setStep({ k: 'confirm', found });
+    } catch (e) { fail(e); }
+  };
+  const check = async () => {
+    setStep({ k: 'checking' });
+    try {
+      const found = classifyTag(await readTag(fresh()), people, person.id);
+      setStep({ k: 'checked', ok: mode === 'write' ? found.kind === 'same' : found.kind === 'empty', found });
+    } catch (e) { fail(e); }
+  };
+
+  const title = mode === 'write' ? `Escribir el llavero de ${first}` : 'Borrar un chip';
+  return (
+    <section className="stack" data-guion="llavero-escribir">
+      <WhoLine name={person.name} person={person} />
+      <h1>{title}</h1>
+      {step.k === 'ready' ? (
+        <>
+          <p className="lead">{mode === 'write' ? 'Se guarda en el chip la dirección de este llavero. Primero se mira lo que el chip ya tiene.' : 'Se deja el chip vacío para poder usarlo otra vez. Primero se mira lo que tiene.'}</p>
+          <p className="hint">Funciona si el chip no está bloqueado. Un chip bloqueado no se puede cambiar.</p>
+          <Choice primary icon={<IcoKey />} label="Empezar" hint="Después acerca el chip al celular" onClick={() => { void start(); }} />
+          <Choice label="Volver" onClick={back} />
+        </>
+      ) : null}
+      {step.k === 'reading' || step.k === 'working' || step.k === 'checking' ? (
+        <>
+          <p className="note" role="status"><IcoClock /><span>{step.k === 'reading' ? 'Acerca el chip a la parte de atrás del celular…' : step.k === 'checking' ? 'Acerca el chip otra vez para comprobarlo…' : 'Grabando. No muevas el chip.'}</span></p>
+          <Choice label="Cancelar" onClick={() => { run.current?.abort(); setStep({ k: 'ready' }); }} />
+        </>
+      ) : null}
+      {step.k === 'confirm' ? (
+        <>
+          <Alert>
+            {step.found.kind === 'other' ? `Este chip es el llavero de ${nameOf(step.found)}. Si sigues, el llavero de ${nameOf(step.found)} dejará de abrir.`
+              : step.found.kind === 'same' ? `Este chip ya es el llavero de ${nameOf(step.found)}.`
+              : step.found.kind === 'unknown' ? 'Este chip tiene un llavero de otro taller o uno que ya se cambió.'
+              : 'Este chip ya tiene otra cosa guardada.'}
+          </Alert>
+          <Choice primary danger icon={<IcoAlert />} label={mode === 'write' ? 'Sí, reemplazarlo' : 'Sí, borrarlo'} hint="Acerca el chip y no lo muevas" onClick={() => { void doWork(); }} />
+          <Choice label="No, dejarlo como está" onClick={back} />
+        </>
+      ) : null}
+      {step.k === 'done' ? (
+        <>
+          <Result kind="paid" title={mode === 'write' ? 'Listo, se grabó' : 'Listo, quedó vacío'} text={mode === 'write' ? 'Ahora compruébalo: acerca el chip otra vez y mira que sea el de esta persona.' : 'Ya puedes escribir otro llavero en este chip.'} />
+          <Choice primary icon={<IcoKey />} label="Comprobar el chip" onClick={() => { void check(); }} />
+          <Choice label="Terminar" onClick={back} />
+        </>
+      ) : null}
+      {step.k === 'checked' ? (
+        <>
+          <Result kind={step.ok ? 'paid' : 'bad'} title={step.ok ? 'El chip está bien' : 'El chip no coincide'} text={step.ok ? (mode === 'write' ? `Es el llavero de ${first}.` : 'Está vacío.') : step.found.kind === 'empty' ? 'Está vacío.' : step.found.kind === 'same' || step.found.kind === 'other' ? `Es el llavero de ${nameOf(step.found)}.` : 'Tiene otra cosa guardada.'} />
+          {step.ok ? null : <Choice primary icon={<IcoKey />} label={mode === 'write' ? 'Escribir otra vez' : 'Borrar otra vez'} onClick={() => { void start(); }} />}
+          <Choice primary={step.ok} label="Terminar" onClick={back} />
+        </>
+      ) : null}
+      {step.k === 'error' ? (
+        <>
+          <Alert>{PROBLEM_TEXT[step.problem]}</Alert>
+          <Choice primary icon={<IcoKey />} label="Intentar de nuevo" onClick={() => setStep({ k: 'ready' })} />
+          <Choice label="Volver" onClick={back} />
         </>
       ) : null}
     </section>
@@ -219,6 +361,7 @@ export function KeyringHelp() {
   return (
     <section className="stack" data-guion="llavero-ayuda">
       <h1>Cómo programar un llavero</h1>
+      {nfcSupported() ? <p className="lead">Con este celular puedes hacerlo desde la app: entra a la persona, activa su llavero y toca <strong>Escribir en el chip</strong>. Si prefieres otra aplicación, sigue estos pasos.</p> : <p className="hint">Este celular no puede escribir chips desde la app (pasa en iPhone). Un Android con Chrome sí puede, y después el iPhone solo tiene que leerlos. Mientras tanto, usa estos pasos.</p>}
       <ol className="steps-list">
         <li>Entra a la persona, activa su llavero y copia la dirección.</li>
         <li>Abre en tu celular una app para escribir etiquetas NFC (por ejemplo NFC Tools). Elige escribir un registro de tipo enlace y pega la dirección.</li>
