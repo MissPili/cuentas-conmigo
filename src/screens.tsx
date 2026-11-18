@@ -14,8 +14,9 @@ import { duePlans, type Plan } from './plans';
 import type { Problem } from './problems';
 import { AddPerson, type AddPersonInitial } from './AddPerson';
 import { KeyTap, KeyringDetail, KeyringHelp, KeyringHub, Keyrings, KeyringWrite, type KeyAction } from './screensKeys';
-import { ChargeTo, People, PersonData, PersonEditHelpers, PersonEditOwn } from './screensPeople';
+import { ChargeTo, People, PersonData, PersonEditHelpers, PersonEditOwn, PersonEditPicture } from './screensPeople';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
+import { canEditCharge, chargeLock, conceptLocked, paidWithOldCode, untilWords } from './chargeEdit';
 
 export type StageProps = {
   view: View;
@@ -38,6 +39,8 @@ export type StageProps = {
   addPersonInitial?: AddPersonInitial;
   onAddAccount: (input: { alias: string; legalName: string; clabe: string; entity: 'PERSON' | 'BUSINESS' }) => void;
   onCreateCharge: (personId: string, concept: string, amount: number, accountId: string, confirmsPlace: boolean) => void;
+  /** Correct a charge that was not sent to pay yet (or whose code already expired). */
+  onEditCharge: (chargeId: string, concept: string, amount: number) => void;
   onSaveProject: (input: { name: string; capacity: number; holdDays: number; plans: Plan[] }) => void;
   projects: Proj[];
   /** Cobrado este mes por proyecto, para la lista de proyectos. */
@@ -57,6 +60,8 @@ export type StageProps = {
   /** Asks Pey for a CoDi request on the phone. `phone` = which registered number gets it (default: the person's own). */
   onRequest: (chargeId: string, phone?: string) => void;
   /** Corrects the person's own name and WhatsApp (also on their charges). */
+  /** Change the drawing or the photo of a person who has no keychain yet. */
+  onSavePicture: (personId: string, input: { photo?: string; emblem?: string }) => void;
   onSaveOwn: (personId: string, input: { name: string; tel: string }) => void;
   /** Completes or corrects who helps the person pay, and where codes go by default. */
   onSaveHelpers: (personId: string, input: { helpers: Helper[]; sendTo: string; consentShared: boolean }) => void;
@@ -116,6 +121,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'who') return <Who {...p} page={v.page} />;
   if (v.id === 'person') return <PersonCharges {...p} personId={v.personId} page={v.page} />;
   if (v.id === 'charge') return <ChargeStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
+  if (v.id === 'charge-edit') return <ChargeEdit {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'cash') return <CashStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'wait') return <WaitStep {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'qr') return <QrStep {...p} charge={findCharge(p.charges, v.chargeId)} img={v.img} />;
@@ -138,7 +144,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'keyring-write') return <KeyringWrite {...p} personId={v.personId} mode={v.mode} />;
   if (v.id === 'people') return <People {...p} page={v.page ?? 0} />;
   if (v.id === 'person-data') return <PersonData {...p} personId={v.personId} />;
-  if (v.id === 'person-edit') return v.part === 'own' ? <PersonEditOwn {...p} personId={v.personId} /> : <PersonEditHelpers {...p} personId={v.personId} />;
+  if (v.id === 'person-edit') return v.part === 'own' ? <PersonEditOwn {...p} personId={v.personId} /> : v.part === 'picture' ? <PersonEditPicture {...p} personId={v.personId} /> : <PersonEditHelpers {...p} personId={v.personId} />;
   if (v.id === 'charge-to') return <ChargeTo {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'add-person') return <AddPerson {...p} />;
   if (v.id === 'accounts') return <Accounts {...p} page={v.page} />;
@@ -299,6 +305,7 @@ function PersonCharges({ people, charges, accounts, project, onCreateCharge, onV
       <h1>Sus cobros de {monthName(month).toLowerCase()}</h1>
       {slice.rows.map((row) => <div key={row.key}>{row.node}</div>)}
       {slice.more ? <Choice label={slice.more.label} hint={slice.more.hint} onClick={() => onView({ id: 'person', personId, page: slice.more!.page })} /> : null}
+      <Choice icon={<IcoPeople />} label="Sus datos" hint="Corregir su nombre, WhatsApp o quién le ayuda" onClick={() => onView({ id: 'person-data', personId })} />
     </section>
   );
 }
@@ -310,6 +317,7 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
   const name = findPerson(people, charge.personId)?.name || charge.personName;
   // With registered helpers the collector chooses who gets the request today; with none it goes to the person.
   const several = (() => { const who = findPerson(people, charge.personId); return !!who && helpersOf(who).length > 0; })();
+  const lock = chargeLock(charge);
   return (
     <section className="stack" data-guion={canCell ? 'cobrar' : 'cobrar-efectivo'}>
       <WhoLine name={name} person={findPerson(people, charge.personId)} />
@@ -318,6 +326,8 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
       <p className="lead">{charge.concept}. {account ? `El dinero llega a ${account.alias}.` : 'No encuentro la cuenta de este cobro.'}</p>
       <Status kind={chargeKind(charge)}>{chargeWords(charge)}</Status>
       {!canCell ? <Alert>Esta cuenta aún no está lista. Por ahora solo puedes anotar efectivo.</Alert> : null}
+      {lock.kind === 'sent' ? <p className="note" role="status"><IcoClock /><span>Ya se mandó a pagar. El código sirve hasta {untilWords(lock.until)}; después podrás corregir el cobro.</span></p> : null}
+      {lock.kind === 'expired' ? <p className="note" role="status"><IcoClock /><span>El código que se mandó ya caducó. Si corriges el cobro, hay que mandar un código nuevo.</span></p> : null}
       {canCell ? (
         <Choice primary icon={<IcoQr />} label={busy ? busyLabel : 'Mostrar código para pagar'} hint="Lo escanea con su banco" onClick={() => onShowQr(charge.id)} />
       ) : null}
@@ -330,7 +340,47 @@ function ChargeStep({ charge, accounts, people, busy, onRequest, onShowQr, onVie
         />
       ) : null}
       <Choice primary={!canCell} mark={!canCell ? '💵' : undefined} icon={<IcoCash />} label="Ya lo recibí en efectivo" hint="Tú guardas el dinero" onClick={() => onView({ id: 'cash', chargeId: charge.id })} />
+      {canEditCharge(lock) ? <Choice icon={<IcoCash />} label="Corregir este cobro" hint="Cambiar el monto o para qué es" onClick={() => onView({ id: 'charge-edit', chargeId: charge.id })} /> : null}
       <Choice label="Crear otro cobro" onClick={() => onView({ id: 'new-charge', personId: charge.personId })} />
+    </section>
+  );
+}
+
+/** Correct the amount or the reason of a charge: only while it was not sent to pay, or after its code expired. */
+function ChargeEdit({ charge, people, project, busy, formError, onEditCharge, onView }: StageProps & { charge: Chg | undefined }) {
+  if (!charge) return <Missing onHome={() => onView({ id: 'home' })} />;
+  const lock = chargeLock(charge);
+  const back = () => onView({ id: 'charge', chargeId: charge.id });
+  const person = findPerson(people, charge.personId);
+  if (!canEditCharge(lock)) {
+    return (
+      <section className="stack" data-guion="cobro-corregir-no">
+        <WhoLine name={person?.name || charge.personName} person={person} />
+        <h1>Este cobro ya no se corrige</h1>
+        <Alert>{lock.kind === 'paid' ? 'Ya está pagado.' : `Ya se mandó a pagar y el código sirve hasta ${untilWords(lock.kind === 'sent' ? lock.until : new Date())}. Cuando caduque podrás corregirlo.`}</Alert>
+        <Choice primary label="Volver" onClick={back} />
+      </section>
+    );
+  }
+  const fixed = conceptLocked(charge, (project?.plans ?? []).map((p) => p.concept));
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    onEditCharge(charge.id, fixed ? charge.concept : String(data.get('concept') || ''), parseAmount(String(data.get('amount') || '')));
+  };
+  return (
+    <section className="stack" data-guion="cobro-corregir">
+      <WhoLine name={person?.name || charge.personName} person={person} />
+      <h1>Corregir el cobro</h1>
+      {lock.kind === 'expired' ? <p className="note" role="status"><IcoClock /><span>El código anterior ya caducó. Al guardar, hay que mandar un código nuevo.</span></p> : null}
+      <form className="stack" onSubmit={submit}>
+        {formError ? <Alert>{formError}</Alert> : null}
+        <Field label="¿Para qué es?"><input name="concept" defaultValue={charge.concept} autoComplete="off" required readOnly={fixed} /></Field>
+        {fixed ? <p className="hint">Este cobro viene de lo que cobra el proyecto: aquí solo se cambia el monto.</p> : null}
+        <Field label="¿Cuánto?"><input name="amount" defaultValue={String(charge.amount)} required inputMode="decimal" autoComplete="off" /></Field>
+        <Choice primary type="submit" label={busy ? busyLabel : 'Guardar cambios'} />
+        <Choice label="No cambiar nada" onClick={back} />
+      </form>
     </section>
   );
 }
@@ -370,9 +420,11 @@ function WaitStep({ charge, people, busy, onCheck, onShowQr, onView }: StageProp
 function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onReset({ id: 'home' })} />;
   const name = findPerson(people, charge.personId)?.name || charge.personName;
+  const old = paidWithOldCode(charge);
   return (
     <section className="stack" data-guion="pagado">
       <Result kind="paid" title="Ya pagó" text={`${name} pagó ${money(charge.amount)}. ${charge.concept}.`} />
+      {old ? <Alert>Pagó con un código anterior. El cobro se había corregido a {money(old.shouldBe)}, pero se pagaron {money(old.paid)}. Revisa si hay que devolver o abonar la diferencia.</Alert> : null}
       <Status kind="paid">{chargeWords(charge)}</Status>
       <Choice primary mark="💬" label="Enviar comprobante" hint="Por WhatsApp" onClick={() => onView({ id: 'receipt', chargeId: charge.id })} />
       <Choice icon={<IcoPeople />} label="Siguiente persona" onClick={() => onReset({ id: 'who', page: 0 })} />

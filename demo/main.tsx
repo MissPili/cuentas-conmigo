@@ -175,6 +175,8 @@ function Demo() {
         addPersonInitial={addSteps[first]}
         onAddAccount={noop}
         onCreateCharge={noop}
+        onEditCharge={noop}
+        onSavePicture={noop}
         onSaveProject={noop}
         onDeleteAccount={noop}
         onShareLink={async ({ image }) => { console.log('SHARE_SIZE', image.length); return 'https://demo.invalid/?t=demo-demo-demo-demo-demo-demo'; }}

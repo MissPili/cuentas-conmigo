@@ -112,7 +112,7 @@ export const handler: Handler = async (event) => {
       bankAccountId: acc.peyId, // always explicit: the webhook only echoes it if sent here
       metadata: { chargeId: ch.id },
     });
-    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.transactionId, numRef, pushTel: to });
+    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.transactionId, numRef, pushTel: to, sentAt: new Date().toISOString(), sentAmount: ch.amount });
     return r.transactionId;
   }
 
@@ -132,7 +132,7 @@ export const handler: Handler = async (event) => {
       metadata: { chargeId: ch.id },
     });
     // Keep the QR id so the webhook can still find the charge if metadata is missing.
-    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.id, numRef });
+    await client.models.Charge.update({ id, via: 'CODI', transactionId: r.id, numRef, sentAt: new Date().toISOString(), sentAmount: ch.amount });
     return JSON.stringify({ qrImage: r.qrImage ?? null, qrString: r.qrString ?? null });
   }
 
@@ -152,7 +152,9 @@ export const handler: Handler = async (event) => {
     }
     if (!paid) return 'PENDING';
     const paidAt = paid.datePaid ? new Date(paid.datePaid * 1000).toISOString() : new Date().toISOString();
-    await client.models.Charge.update({ id, status: 'PAID', via: 'CODI', paidAt });
+    // Same as the webhook: a code sent before a correction was paid, so what was paid is the code's amount.
+    const old = ch.sentAmount != null && Math.abs(ch.sentAmount - ch.amount) > 0.005;
+    await client.models.Charge.update({ id, status: 'PAID', via: 'CODI', paidAt, ...(old ? { amount: ch.sentAmount!, correctedAmount: ch.amount } : {}) });
     return 'PAID';
   }
 

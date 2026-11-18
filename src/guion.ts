@@ -60,11 +60,13 @@ export const GUION: Record<string, Guion> = {
   'cuenta-borrar': 'Esto quita la cuenta de esta app. Si estás segura, toca Sí, eliminar. Si no, toca No, volver.',
   'cuenta-nueva': 'Escribe cómo le dices a la cuenta y los 18 números. Después toca Guardar.',
   'falta-cuenta': 'Primero necesitas la cuenta donde llega el dinero. Toca Agregar cuenta.',
+  'cobro-corregir': 'Aquí corriges el cobro. Cambia lo que necesites y toca Guardar cambios. Si ya se mandó a pagar, tienes que esperar a que caduque.',
+  'cobro-corregir-no': 'Este cobro ya no se puede corregir ahora. Lee el recuadro. Toca Volver.',
   'cobro-extra': (el) => `Este cobro de ${nombre(el)} es para algo especial, no el de siempre. Escribe para qué es y cuánto, y toca Crear cobro.`,
   'ya-no-esta': 'Ese dato ya no está en la lista. Toca Volver al inicio.',
 
   mas: 'Aquí hay más cosas de tu taller. Para ver quién pagó, toca Reporte del mes.',
-  'mas-2': 'Desde aquí puedes cambiar la letra, la voz y los colores. También ves la cuenta y los llaveros.',
+  'mas-2': 'Desde aquí puedes cambiar la letra, la voz y los colores. También ves la cuenta que recibe el dinero.',
   'mas-3': 'Desde aquí cambias de taller o sales. La zona de peligro borra datos: no la toques si no te ayudan.',
   reporte: 'Este es el reporte del mes: cuánto esperabas, cuánto llegó y cuánto falta. Si lo quieres guardar, toca Guardar como hoja de cálculo.',
   'ver-mejor': 'Aquí prendes o apagas la voz, la letra grande, los colores fuertes y el sonido. Toca el renglón que quieras cambiar.',
@@ -87,6 +89,8 @@ export const GUION: Record<string, Guion> = {
   llavero: (el) => `Esta es la imagen y el llavero de ${nombre(el)}. El recuadro de color dice si está activo. El botón morado es el siguiente paso.`,
   'llavero-nuevo': 'Un código nuevo deja de servir el llavero viejo. Hazlo solo si se perdió. Si sí, toca Sí, hacer un código nuevo.',
   'llavero-ayuda': 'Estas son las instrucciones para grabar el llavero. Léelas con calma, de arriba hacia abajo. No bloquees el chip hasta probarlo.',
+  'imagen-guardar': 'Mira la imagen que elegiste. Si te gusta, toca Guardar esta imagen. Después de que tenga llavero ya no se cambia.',
+  'imagen-no': 'Esta persona ya tiene llavero, por eso su imagen ya no se cambia. Toca Volver.',
   'llavero-escribir': 'Sigue el recuadro. Acerca el llavero a la parte de atrás del celular y no lo muevas hasta que diga que terminó.',
   'llavero-toque': 'Este llavero no abre un cobro. Lee el recuadro. Para volver, toca Ir al inicio.',
 
