@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import type { StageProps } from './screens';
 import { money, monthName, pageOf, parseAmount, shiftMonth, thisMonth, ready, type Kind, type Per } from './model';
+import { fmtTel } from './payers';
 import { emblemOf } from './emblems';
 import { MAX_PLANS, cycleEnd, cycleStart, duePlans, type Plan } from './plans';
 import { Alert, Avatar, WhoLine, Choice, Field, IcoCash, IcoCheck, IcoPeople, IcoPhone, IcoQr, IcoClock, Status } from './ui';
@@ -23,8 +24,6 @@ const WORDS: Record<PlaceState, { kind: Kind; text: string }> = {
   waitlist: { kind: 'due', text: 'En lista de espera' },
   released: { kind: 'due', text: 'Sin lugar' },
 };
-
-const fmtTel = (t: string) => (t.length === 10 ? `${t.slice(0, 2)} ${t.slice(2, 6)} ${t.slice(6)}` : t);
 
 export function PlacesHub({ project, people, charges, onView }: StageProps) {
   const now = new Date();

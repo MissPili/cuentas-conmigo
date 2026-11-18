@@ -72,9 +72,9 @@ Lo que no cabe en la regla:
 
 ### 6. El armado funciona, pero es delicado, y hay copias viejas
 
-**Dónde.** `prototype/source/build.py` arma el HTML desde `prototype/source/base/paga-con-tu-foto.v5.bak.html` y las piezas de `prototype/source/parts/`. Busca líneas concretas de ese respaldo. `prototype/archive/` guarda versiones anteriores.
+**Dónde.** `prototype/source/build.py` arma el HTML desde `prototype/source/base/paga-con-tu-foto.v5.bak.html` y las piezas de `prototype/source/parts/`. Busca líneas concretas de ese respaldo.
 
-**Por qué importa.** Hoy el armado reproduce el HTML. Un cambio pequeño en el respaldo puede romperlo, porque el script cuenta líneas. El archivo de la versión 5 no se puede borrar: sin él, `build.py` no arma nada. `archive/` sí se puede dejar fuera más adelante; el `README.md` ya lo dice.
+**Por qué importa.** Hoy el armado reproduce el HTML. Un cambio pequeño en el respaldo puede romperlo, porque el script cuenta líneas. El archivo de la versión 5 no se puede borrar: sin él, `build.py` no arma nada. Las copias viejas (versiones 2 a 4 y sus parches) ya se quitaron del repositorio.
 
 **Recomendación.** No borrar `source/base` hasta cambiar la forma de armar el archivo. Cuando empiece la app en React, no seguir parchando este HTML.
 

@@ -1,4 +1,4 @@
-import type { Helper } from './model';
+import { money, type Helper } from './model.ts';
 
 // Payment receipt and "code to pay" card: tall pictures (1080x1350) that are easy to read and easy to send.
 // Big letters, one idea per row, an icon beside each idea, and the name of the workshop at the top, for people
@@ -20,8 +20,7 @@ const SOFT = '#4A3358';
 const PAID = '#0F5F28';
 const GOLD = '#EDB438';
 
-export const money = (n: number) =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
+export { money };
 
 export const viaName = (v: ReceiptData['via']) => (v === 'CASH' ? 'Efectivo' : 'Por celular');
 
@@ -239,5 +238,3 @@ export async function saveSvg(svg: string, filename: string): Promise<void> {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-export const shareImage = (d: ReceiptData) => shareSvg(receiptSvg(d), `comprobante-${d.folio}.png`, receiptText(d));
