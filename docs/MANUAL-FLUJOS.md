@@ -122,7 +122,7 @@ flowchart TD
   D -->|"llavero desactivado"| A1["Este llavero está desactivado<br>Se marcó como perdido"]
   D -->|"la persona se dio de baja"| A2["Esa persona ya no está activa"]
   D -->|"nadie tiene ese código"| A3["No reconocemos este llavero<br>otro taller, o se cambió por uno nuevo"]
-  A1 --> V["Botón Ver el llavero de la persona<br>ahí se puede activar de nuevo"]
+  A1 --> V["Botón Ver el llavero y activarlo de nuevo<br>lleva al llavero de esa persona"]
   A1 --> H1["Botón Ir al inicio"]
   A2 --> H1
   A3 --> H1
@@ -432,7 +432,7 @@ Al mapear todo encontré estos puntos. **Son hallazgos de lectura del código; n
 | 3 | Cobros | No se podía corregir el monto o el concepto de un cobro. | ✅ **Corregir este cobro**, con la regla de las 24 horas (ver 3.2). |
 | 4 | Dar de baja | *Personas* decía «bajas» pero la baja no estaba ahí. | ✅ **Dar de baja** dentro de *Sus datos*, con la misma advertencia. |
 | 5 | *Más opciones* | Los llaveros estaban en la segunda página. | ✅ *Imágenes y llaveros* ahora está en la página 1; la 2 queda con *Ver mejor* y *Cuenta que recibe*. |
-| 6 | Llavero desactivado | El aviso ofrece **Ver el llavero**, pero no explica que ahí se activa de nuevo. | Pendiente: cambiar el texto del botón a **«Ver el llavero y activarlo de nuevo»**. |
+| 6 | Llavero desactivado | El aviso ofrece **Ver el llavero**, pero no explica que ahí se activa de nuevo. | ✅ El botón ahora dice **«Ver el llavero y activarlo de nuevo»**. |
 | 7 | iPhone | Escribir chips no funciona desde la web; la pantalla lo dice pero no menciona el camino alterno. | Ya se avisa; si se decide app nativa para iPhone, este flujo se reemplaza. |
 
 **Lo que sí está bien resuelto** (conviene no tocarlo): todos los caminos de cobro convergen en *Cobros de la persona*; el efectivo siempre está a un toque; el pago se detecta solo; los errores dicen el motivo y dan tres salidas; el borrado definitivo es difícil de tocar por error; la inscripción pública no puede cobrar.
