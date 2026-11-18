@@ -1,12 +1,13 @@
 // People: the list, what is registered about each one (and who helps them pay), correcting or completing it,
 // and choosing WHICH registered number gets a CoDi request on a given day.
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { StageProps } from './screens';
 import { chargeKind, money, pageOf, type Chg, type Per } from './model';
 import { emblemOf } from './emblems';
 import { destinations } from './comprobante';
 import { digits, fmtTel, helperGaps, helpersOf, payProblem } from './payers';
-import { PayersFields, SendToChoice, usePayers } from './pickers';
+import { PayersFields, PictureStep, SendToChoice, usePayers, usePicture } from './pickers';
+import { keyState } from './keyring';
 import { Alert, Avatar, Choice, Field, IcoCheck, IcoPeople, IcoPhone, Status, WhoLine } from './ui';
 
 const busyLabel = 'Un momento…';
@@ -59,6 +60,7 @@ export function PersonData({ people, personId, busy, onView, onOpenPerson, onSea
       <div className="stat">
         <p><strong>Su WhatsApp:</strong> {fmtTel(person.tel)}</p>
         <p><strong>Su imagen:</strong> {picture}</p>
+        {keyState(person) !== 'none' ? <p className="hint">Su imagen ya no se cambia porque tiene llavero: el llavero impreso lleva esa imagen.</p> : null}
         <p><strong>Cómo paga:</strong> {helpers.length ? 'con ayuda de un familiar' : 'desde su celular'}</p>
       </div>
       {helpers.map((h, i) => {
@@ -76,6 +78,7 @@ export function PersonData({ people, personId, busy, onView, onOpenPerson, onSea
       ) : null}
       <Choice primary mark="💰" label="Cobrarle" hint="Ver sus cobros" onClick={() => onOpenPerson(person.id)} />
       <Choice icon={<IcoPeople />} label="Corregir su nombre o WhatsApp" onClick={() => onView({ id: 'person-edit', personId, part: 'own' })} />
+      {keyState(person) === 'none' ? <Choice icon={<IcoPeople />} label="Cambiar su imagen" hint="Otro dibujo u otra foto" onClick={() => onView({ id: 'person-edit', personId, part: 'picture' })} /> : null}
       <Choice icon={<IcoPeople />} label={helpers.length ? 'Corregir quién le ayuda' : 'Agregar quién le ayuda'} hint={helpers.length ? 'Cambiar, completar o quitar' : 'Hasta 3 personas'} onClick={() => onView({ id: 'person-edit', personId, part: 'helpers' })} />
       <Choice danger label="Dar de baja" hint="Queda libre su lugar" onClick={() => setLeaving(true)} />
       {leaving ? (
@@ -85,6 +88,62 @@ export function PersonData({ people, personId, busy, onView, onOpenPerson, onSea
           <Choice label="No, volver" onClick={() => setLeaving(false)} />
         </div>
       ) : null}
+    </section>
+  );
+}
+
+/** Change the drawing or the photo. Only while the person has no keychain: the printed keychain carries that image. */
+export function PersonEditPicture({ people, personId, busy, formError, onSavePicture, onInterceptBack, onView }: StageProps & { personId: string }) {
+  const person = people.find((x) => x.id === personId);
+  const [error, setError] = useState('');
+  const [chosen, setChosen] = useState(false);
+  // Drawings that the OTHER people hold are never offered again; this person's own drawing is free to swap.
+  const taken = people.filter((x) => x.id !== personId && x.status !== 'RELEASED' && x.emblem).map((x) => x.emblem as string);
+  const pic = usePicture(taken, setError);
+  const backRef = useRef<() => boolean>(() => false);
+  backRef.current = () => {
+    setError('');
+    if (chosen) { setChosen(false); return true; }
+    if (pic.pic !== 'menu') { pic.setPic('menu'); return true; }
+    return false;
+  };
+  useEffect(() => {
+    onInterceptBack(() => backRef.current());
+    return () => onInterceptBack(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (!person) return <Missing onHome={() => onView({ id: 'home' })} />;
+  const back = () => onView({ id: 'person-data', personId });
+  if (keyState(person) !== 'none') {
+    return (
+      <section className="stack" data-guion="imagen-no">
+        <WhoLine name={person.name} person={person} />
+        <h1>Su imagen ya no se cambia</h1>
+        <Alert>{person.name.split(' ')[0]} ya tiene llavero, y el llavero impreso lleva su imagen actual.</Alert>
+        <Choice primary label="Volver" onClick={back} />
+      </section>
+    );
+  }
+  if (chosen) {
+    const e = emblemOf(pic.emblem);
+    return (
+      <section className="stack" data-guion="imagen-guardar">
+        <WhoLine name={person.name} person={person} />
+        <h1>¿Usar esta imagen?</h1>
+        {pic.photo ? <img className="shot" alt={`Foto de ${person.name}`} src={pic.photo} /> : e ? <p className="lead"><span aria-hidden="true">{e.glyph}</span> {e.name}</p> : null}
+        <p className="hint">Después de que tenga llavero ya no se podrá cambiar.</p>
+        {formError || error ? <Alert>{formError || error}</Alert> : null}
+        <Choice primary icon={<IcoCheck />} label={busy ? busyLabel : 'Guardar esta imagen'} onClick={() => onSavePicture(person.id, pic.photo ? { photo: pic.photo } : { emblem: pic.emblem })} />
+        <Choice label="Elegir otra" onClick={() => setChosen(false)} />
+      </section>
+    );
+  }
+  return (
+    <section className="stack">
+      <WhoLine name={person.name} person={person} />
+      {error ? <Alert>{error}</Alert> : null}
+      <PictureStep p={pic} who="other" setError={setError} onChosen={() => setChosen(true)} />
+      <Choice label="No cambiar nada" onClick={back} />
     </section>
   );
 }

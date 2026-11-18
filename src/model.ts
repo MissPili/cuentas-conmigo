@@ -80,6 +80,8 @@ export type Chg = {
   paidAt?: string | null;
   /** When the payment code was sent (QR or CoDi request); null if it never was. */
   sentAt?: string | null;
+  /** Set when a code sent before a correction was paid: the amount the charge had in the app at that moment. */
+  correctedAmount?: number | null;
   /** Last change in the database; stands in for sentAt on charges sent before that field existed. */
   updatedAt?: string | null;
   /** True for the monthly fee: only that payment confirms a place. */
@@ -102,7 +104,7 @@ export type View =
   | { id: 'receipt'; chargeId: string }
   | { id: 'people'; page?: number }
   | { id: 'person-data'; personId: string }
-  | { id: 'person-edit'; personId: string; part: 'own' | 'helpers' }
+  | { id: 'person-edit'; personId: string; part: 'own' | 'helpers' | 'picture' }
   | { id: 'charge-to'; chargeId: string }
   | { id: 'add-person' }
   | { id: 'new-charge'; personId: string }

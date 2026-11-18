@@ -265,7 +265,7 @@ stateDiagram-v2
 
 - **Dónde:** *¿Cómo paga?* → **Corregir este cobro** (el botón solo aparece cuando se puede). Si ya se mandó, la pantalla dice hasta qué hora sirve el código.
 - **Los cobros que vienen del plan del proyecto** (inscripción, mensualidad) solo permiten cambiar el **monto**: la app los reconoce por su nombre y, si se cambiara, volvería a ofrecer el cobro del mes como pendiente.
-- **Protección del dinero:** si alguien paga un código viejo después de que el cobro se corrigió con otro monto, el aviso de Pey **no lo marca como pagado** (queda registrado en el servidor para revisarlo en Pey). Así el monto que figura nunca difiere del que se pagó.
+- **Si alguien paga un código viejo** después de que el cobro se corrigió con otro monto (por ejemplo una solicitud CoDi que Pey todavía tenía viva), el dinero ya está en la cuenta. La app **marca el cobro como pagado por lo que realmente se pagó** (el monto del código viejo, tanto con el aviso de Pey como con *Revisar si ya pagó*) y muestra en *Ya pagó* un recuadro: «Pagó con un código anterior. El cobro se había corregido a $X, pero se pagaron $Y. Revisa si hay que devolver o abonar la diferencia». Así nunca queda como pendiente algo que ya se pagó. El código viejo se conserva ligado al cobro a propósito, para poder encontrar ese pago.
 - La cuenta que recibe no se cambia en un cobro ya creado.
 
 **Qué hay que saber:**
@@ -328,6 +328,8 @@ flowchart TD
   M["Más opciones"] --> PE["Personas<br>lista"]
   PE -->|"toca a la persona"| PD["Sus datos<br>muestra qué le falta"]
   PD -->|"Corregir su nombre o WhatsApp"| E1["Corregir sus datos<br>nombre completo y WhatsApp de 10 números"]
+  PD -->|"Cambiar su imagen<br>solo si no tiene llavero"| E3["Elegir un dibujo, que lo elija la app<br>o tomar una foto con permiso<br>Guardar esta imagen"]
+  E3 --> OK
   PD -->|"Corregir quién le ayuda<br>o Agregar quién le ayuda"| E2["Quién le ayuda<br>cambiar, completar o quitar<br>y a quién se mandan los códigos"]
   PD -->|"Cobrarle"| PC["Cobros de la persona"]
   PC -->|"Sus datos"| PD
@@ -345,7 +347,7 @@ flowchart TD
 | Nombre y WhatsApp de la persona | Sí | *Cobros de la persona* o *Más opciones → Personas* → **Sus datos** → *Corregir su nombre o WhatsApp* |
 | Quién le ayuda, su relación y a quién se mandan los códigos | Sí | Sus datos → *Corregir quién le ayuda* |
 | A quién se le pide el pago de **un cobro** | Sí | En el cobro → *Pedir el pago por CoDi* → *A quién le pedimos el pago* |
-| Su dibujo o foto | **No** (solo se elige un dibujo si aún no tiene) | Imágenes y llaveros → la persona → *Elegir un dibujo* |
+| Su dibujo o foto | **Sí, solo mientras no tenga llavero** (el llavero impreso lleva esa imagen). Con llavero ya no se cambia | *Sus datos* → **Cambiar su imagen** |
 | Monto y concepto de un cobro (en los del plan, solo el monto) | **Sí**, si no se ha mandado a pagar o si su código ya caducó (24 h) | En el cobro → *Corregir este cobro* (ver 3.2) |
 | La cuenta que recibe | Se puede registrar de nuevo en Pey o eliminar | Más opciones → *Cuenta que recibe* |
 
@@ -409,6 +411,7 @@ Cada tarea **empieza en un solo lugar**. Si hay otro camino, termina en la misma
 | **Que alguien se inscriba solo** | Más opciones → Lugares e inscripciones → **Código para inscribir** | Mandar el enlace; esperar; aprobar | 2.3, 3.3 |
 | **Aprobar una inscripción** | Inicio → **Aprobar inscripciones** (aparece con 🔔) | Aprobar / No aceptar | 3.3 |
 | **Corregir nombre o teléfono** | **Sus datos** (botón en los cobros de la persona, o Más opciones → Personas → persona) → **Corregir su nombre o WhatsApp** | Guardar | 3.4 |
+| **Cambiar su imagen** | **Sus datos** → **Cambiar su imagen** | Solo si no tiene llavero | 3.4 |
 | **Corregir un cobro** (monto o para qué es) | En el cobro → **Corregir este cobro** | Solo si no se mandó a pagar o ya caducó (24 h) | 3.2 |
 | **Cambiar quién le ayuda a pagar** | Más opciones → Personas → persona → **Corregir quién le ayuda** | Guardar | 3.4 |
 | **Pedir el pago a otra persona de la familia** | En el cobro → **Pedir el pago por CoDi** → **A quién le pedimos** | Elegir | 3.2 |
@@ -428,7 +431,7 @@ Al mapear todo encontré estos puntos. **Son hallazgos de lectura del código; n
 | # | Dónde | Qué pasaba | Estado |
 |---|---|---|---|
 | 1 | *Cobros de la persona* → corregir su teléfono | No había camino directo a *Sus datos*. | ✅ Botón **Sus datos** en los cobros de la persona. |
-| 2 | *Sus datos* → imagen | No se puede cambiar el dibujo ni la foto de una persona ya creada. | Pendiente: agregar **«Cambiar su imagen»** (reusa el selector que ya existe). |
+| 2 | *Sus datos* → imagen | No se podía cambiar el dibujo ni la foto de una persona ya creada. | ✅ **Cambiar su imagen**, solo mientras no tenga llavero. Con llavero ya no, porque el llavero impreso lleva esa imagen (si se pierde, el de reemplazo se imprime con la misma imagen). |
 | 3 | Cobros | No se podía corregir el monto o el concepto de un cobro. | ✅ **Corregir este cobro**, con la regla de las 24 horas (ver 3.2). |
 | 4 | Dar de baja | *Personas* decía «bajas» pero la baja no estaba ahí. | ✅ **Dar de baja** dentro de *Sus datos*, con la misma advertencia. |
 | 5 | *Más opciones* | Los llaveros estaban en la segunda página. | ✅ *Imágenes y llaveros* ahora está en la página 1; la 2 queda con *Ver mejor* y *Cuenta que recibe*. |

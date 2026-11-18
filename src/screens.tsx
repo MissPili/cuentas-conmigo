@@ -14,9 +14,9 @@ import { duePlans, type Plan } from './plans';
 import type { Problem } from './problems';
 import { AddPerson, type AddPersonInitial } from './AddPerson';
 import { KeyTap, KeyringDetail, KeyringHelp, KeyringHub, Keyrings, KeyringWrite, type KeyAction } from './screensKeys';
-import { ChargeTo, People, PersonData, PersonEditHelpers, PersonEditOwn } from './screensPeople';
+import { ChargeTo, People, PersonData, PersonEditHelpers, PersonEditOwn, PersonEditPicture } from './screensPeople';
 import { canCharge, placesOn, toApprove, waitlisted } from './places';
-import { canEditCharge, chargeLock, conceptLocked, untilWords } from './chargeEdit';
+import { canEditCharge, chargeLock, conceptLocked, paidWithOldCode, untilWords } from './chargeEdit';
 
 export type StageProps = {
   view: View;
@@ -60,6 +60,8 @@ export type StageProps = {
   /** Asks Pey for a CoDi request on the phone. `phone` = which registered number gets it (default: the person's own). */
   onRequest: (chargeId: string, phone?: string) => void;
   /** Corrects the person's own name and WhatsApp (also on their charges). */
+  /** Change the drawing or the photo of a person who has no keychain yet. */
+  onSavePicture: (personId: string, input: { photo?: string; emblem?: string }) => void;
   onSaveOwn: (personId: string, input: { name: string; tel: string }) => void;
   /** Completes or corrects who helps the person pay, and where codes go by default. */
   onSaveHelpers: (personId: string, input: { helpers: Helper[]; sendTo: string; consentShared: boolean }) => void;
@@ -142,7 +144,7 @@ export function Stage(p: StageProps) {
   if (v.id === 'keyring-write') return <KeyringWrite {...p} personId={v.personId} mode={v.mode} />;
   if (v.id === 'people') return <People {...p} page={v.page ?? 0} />;
   if (v.id === 'person-data') return <PersonData {...p} personId={v.personId} />;
-  if (v.id === 'person-edit') return v.part === 'own' ? <PersonEditOwn {...p} personId={v.personId} /> : <PersonEditHelpers {...p} personId={v.personId} />;
+  if (v.id === 'person-edit') return v.part === 'own' ? <PersonEditOwn {...p} personId={v.personId} /> : v.part === 'picture' ? <PersonEditPicture {...p} personId={v.personId} /> : <PersonEditHelpers {...p} personId={v.personId} />;
   if (v.id === 'charge-to') return <ChargeTo {...p} charge={findCharge(p.charges, v.chargeId)} />;
   if (v.id === 'add-person') return <AddPerson {...p} />;
   if (v.id === 'accounts') return <Accounts {...p} page={v.page} />;
@@ -418,9 +420,11 @@ function WaitStep({ charge, people, busy, onCheck, onShowQr, onView }: StageProp
 function PaidStep({ charge, people, onReset, onView }: StageProps & { charge: Chg | undefined }) {
   if (!charge) return <Missing onHome={() => onReset({ id: 'home' })} />;
   const name = findPerson(people, charge.personId)?.name || charge.personName;
+  const old = paidWithOldCode(charge);
   return (
     <section className="stack" data-guion="pagado">
       <Result kind="paid" title="Ya pagó" text={`${name} pagó ${money(charge.amount)}. ${charge.concept}.`} />
+      {old ? <Alert>Pagó con un código anterior. El cobro se había corregido a {money(old.shouldBe)}, pero se pagaron {money(old.paid)}. Revisa si hay que devolver o abonar la diferencia.</Alert> : null}
       <Status kind="paid">{chargeWords(charge)}</Status>
       <Choice primary mark="💬" label="Enviar comprobante" hint="Por WhatsApp" onClick={() => onView({ id: 'receipt', chargeId: charge.id })} />
       <Choice icon={<IcoPeople />} label="Siguiente persona" onClick={() => onReset({ id: 'who', page: 0 })} />

@@ -1,7 +1,7 @@
 // When a charge can be corrected: free until it is sent to pay, locked while its code is valid, free again after it expires.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CHARGE_HOURS, RESET_SENT, canEditCharge, chargeLock, conceptLocked, untilWords } from '../src/chargeEdit.ts';
+import { CHARGE_HOURS, canEditCharge, chargeLock, conceptLocked, paidWithOldCode, untilWords } from '../src/chargeEdit.ts';
 
 const T0 = new Date('2026-11-18T10:00:00Z');
 const hours = (h: number) => new Date(T0.getTime() + h * 3600 * 1000);
@@ -44,8 +44,10 @@ test('el concepto de un cobro del plan no se cambia; el de uno extraordinario s�
   assert.equal(conceptLocked({ concept: 'Cooperación', confirmsPlace: false }, ['Mensualidad']), false);
 });
 
-test('al corregir un cobro caducado se desliga el código viejo', () => {
-  assert.deepEqual(RESET_SENT, { via: null, transactionId: null, numRef: null, pushTel: null, sentAt: null });
+test('un pago de un código anterior se muestra con lo pagado y lo corregido', () => {
+  assert.deepEqual(paidWithOldCode({ amount: 130, correctedAmount: 100 }), { paid: 130, shouldBe: 100 });
+  assert.equal(paidWithOldCode({ amount: 130, correctedAmount: 130 }), null);
+  assert.equal(paidWithOldCode({ amount: 130 }), null);
 });
 
 test('la hora límite se dice con palabras', () => {

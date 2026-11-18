@@ -48,14 +48,12 @@ export const handler: LambdaFunctionURLHandler = async (event) => {
   }
   if (!charge) return reply(200, 'no matching charge'); // ack so Pey does not retry forever
   if (charge.status === 'PAID') return reply(200, 'already recorded'); // idempotent
-  // The charge was corrected after a code had been sent, and no new code was sent since: this payment belongs to the old
-  // amount. Do not mark it paid; the money is in the account and shows in Pey, so it can be settled by hand.
-  if (charge.sentAmount != null && Math.abs(charge.sentAmount - charge.amount) > 0.005) {
-    console.error('payment for an edited charge, not recorded', charge.id);
-    return reply(200, 'amount changed');
-  }
 
   const paidAt = evt.datePaid ? new Date(Number(evt.datePaid) * 1000).toISOString() : new Date().toISOString();
-  await client.models.Charge.update({ id: charge.id, status: 'PAID', via: 'CODI', transactionId, paidAt });
+  // The charge was corrected after a code was sent and no new code was sent since: the code that was paid carries the OLD
+  // amount (a QR has a fixed amount), and that money is already in the account. Record what was really paid and keep the
+  // corrected amount, so the app shows a warning instead of a pending charge that someone might collect twice.
+  const old = charge.sentAmount != null && Math.abs(charge.sentAmount - charge.amount) > 0.005;
+  await client.models.Charge.update({ id: charge.id, status: 'PAID', via: 'CODI', transactionId, paidAt, ...(old ? { amount: charge.sentAmount!, correctedAmount: charge.amount } : {}) });
   return reply(200, 'ok');
 };

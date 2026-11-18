@@ -152,7 +152,9 @@ export const handler: Handler = async (event) => {
     }
     if (!paid) return 'PENDING';
     const paidAt = paid.datePaid ? new Date(paid.datePaid * 1000).toISOString() : new Date().toISOString();
-    await client.models.Charge.update({ id, status: 'PAID', via: 'CODI', paidAt });
+    // Same as the webhook: a code sent before a correction was paid, so what was paid is the code's amount.
+    const old = ch.sentAmount != null && Math.abs(ch.sentAmount - ch.amount) > 0.005;
+    await client.models.Charge.update({ id, status: 'PAID', via: 'CODI', paidAt, ...(old ? { amount: ch.sentAmount!, correctedAmount: ch.amount } : {}) });
     return 'PAID';
   }
 
