@@ -234,3 +234,5 @@ Las llaves nunca van en el repositorio ni en el código. Hay un aviso de presupu
 6. Confirmar con Pey cuántas cuentas admite una llave y si el titular de una cuenta puede ser distinto del dueño de la llave (necesario para la cuenta del DIF).
 
 La arquitectura prevista (Pey, CoDi, Amplify y las reglas de aprobación) está en `docs/ARQUITECTURA.md`.
+
+Cómo se usa la app, tarea por tarea y con diagramas de flujo (persona mayor con y sin llavero, cobrar, dar de alta, corregir, llaveros): [`docs/MANUAL-FLUJOS.md`](docs/MANUAL-FLUJOS.md). Cómo funcionan los ambientes dev, QA y producción: [`docs/AMBIENTES.md`](docs/AMBIENTES.md).
