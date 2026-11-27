@@ -387,7 +387,7 @@ export function KeyTap({ kind, personId, people, onView, onReset }: StageProps &
   return (
     <section className="stack" data-guion="llavero-toque">
       <Result kind="bad" title={copy.title} text={copy.text} />
-      {kind === 'off' && person ? <Choice primary icon={<IcoKey />} label={`Ver el llavero de ${person.name.split(' ')[0]}`} hint="Ahí puedes activarlo de nuevo" onClick={() => onView({ id: 'keyring', personId: person.id })} /> : null}
+      {kind === 'off' && person ? <Choice primary icon={<IcoKey />} label="Ver el llavero y activarlo de nuevo" hint={`Es el de ${person.name.split(' ')[0]}`} onClick={() => onView({ id: 'keyring', personId: person.id })} /> : null}
       <Choice primary={!(kind === 'off' && person)} label="Ir al inicio" onClick={() => onReset({ id: 'home' })} />
     </section>
   );
